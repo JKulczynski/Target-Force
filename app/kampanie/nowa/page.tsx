@@ -6,6 +6,13 @@ import { useState } from "react";
 import { dodajKampanie } from "@/lib/store";
 import { ZRODLA, pustaKampania, type ZrodloId } from "@/lib/types";
 
+/**
+ * Kreator w 3 krokach (ustalenie z 26.09): jeden długi formularz pytał o wszystko naraz.
+ * Każdy krok odpowiada na jedno pytanie: o co chodzi, do kogo, jak i kiedy.
+ */
+
+const KROKI = ["O co chodzi", "Do kogo", "Jak i kiedy"] as const;
+
 const Etykieta = ({ children }: { children: React.ReactNode }) => (
   <span className="block text-sm font-medium text-slate-700">{children}</span>
 );
@@ -19,8 +26,10 @@ const pole =
 
 export default function NowaKampania() {
   const router = useRouter();
+  const [krok, setKrok] = useState(0);
   const [dane, setDane] = useState(pustaKampania());
   const [blad, setBlad] = useState<string | null>(null);
+  const [zapisuje, setZapisuje] = useState(false);
 
   function przelaczZrodlo(id: ZrodloId) {
     setDane((d) => ({
@@ -29,20 +38,51 @@ export default function NowaKampania() {
     }));
   }
 
+  /** Zwraca komunikat błędu dla bieżącego kroku albo null, jeśli można iść dalej. */
+  function sprawdz(k: number): string | null {
+    if (k === 0) {
+      if (!dane.nazwa.trim()) return "Kampania potrzebuje nazwy, żeby dało się ją odróżnić.";
+      if (!dane.cel.trim()) return "Opisz w dwóch zdaniach, o co chodzi. Z tego powstaną wiadomości.";
+    }
+    if (k === 1 && dane.zrodla.length === 0) return "Wybierz co najmniej jedno źródło kontaktów.";
+    return null;
+  }
+
+  function dalej() {
+    const b = sprawdz(krok);
+    if (b) return setBlad(b);
+    setBlad(null);
+    setKrok((k) => k + 1);
+  }
+
+  function wstecz() {
+    setBlad(null);
+    setKrok((k) => k - 1);
+  }
+
   async function zapisz(e: React.FormEvent) {
     e.preventDefault();
-    if (!dane.nazwa.trim()) return setBlad("Kampania potrzebuje nazwy, żeby dało się ją odróżnić.");
-    if (dane.zrodla.length === 0) return setBlad("Wybierz co najmniej jedno źródło kontaktów.");
+    if (krok < KROKI.length - 1) return dalej();
+    for (let k = 0; k < KROKI.length; k++) {
+      const b = sprawdz(k);
+      if (b) {
+        setKrok(k);
+        return setBlad(b);
+      }
+    }
+    setZapisuje(true);
     try {
       const nowa = await dodajKampanie({ ...dane, nazwa: dane.nazwa.trim() });
       router.push(`/kampanie/${nowa.id}`);
     } catch {
+      setZapisuje(false);
       setBlad("Nie udało się zapisać. Sprawdź, czy jesteś w zespole, albo spróbuj ponownie.");
     }
   }
 
   const politycy = (Object.keys(ZRODLA) as ZrodloId[]).filter((z) => ZRODLA[z].typ === "politycy");
   const b2b = (Object.keys(ZRODLA) as ZrodloId[]).filter((z) => ZRODLA[z].typ === "b2b");
+  const ostatni = krok === KROKI.length - 1;
 
   return (
     <>
@@ -51,127 +91,198 @@ export default function NowaKampania() {
       </Link>
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">Nowa kampania</h1>
 
+      <ol className="mt-6 flex gap-2">
+        {KROKI.map((nazwa, i) => (
+          <li key={nazwa} className="flex-1">
+            <div className={`h-1 rounded-full ${i <= krok ? "bg-slate-900" : "bg-slate-200"}`} />
+            <p className={`mt-2 text-xs ${i === krok ? "font-medium text-slate-900" : "text-slate-400"}`}>
+              {i + 1}. {nazwa}
+            </p>
+          </li>
+        ))}
+      </ol>
+
       <form onSubmit={zapisz} className="mt-8 space-y-8">
-        <section className="rounded-xl border border-slate-200 bg-white p-6">
-          <label>
-            <Etykieta>Nazwa kampanii</Etykieta>
-            <Podpowiedz>Dla ciebie, żeby odróżnić ją od innych.</Podpowiedz>
-            <input
-              className={pole}
-              value={dane.nazwa}
-              onChange={(e) => setDane({ ...dane, nazwa: e.target.value })}
-              placeholder="np. Ustawa o zamówieniach, wrzesień"
-            />
-          </label>
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-6">
-          <Etykieta>Do kogo piszemy</Etykieta>
-          <Podpowiedz>Skąd bierzemy kontakty. Możesz połączyć kilka źródeł.</Podpowiedz>
-
-          <p className="mt-5 text-xs font-medium tracking-wide text-slate-400 uppercase">
-            Decydenci publiczni
-          </p>
-          <div className="mt-2 space-y-2">
-            {politycy.map((id) => (
-              <ZrodloPole
-                key={id}
-                id={id}
-                zaznaczone={dane.zrodla.includes(id)}
-                onChange={() => przelaczZrodlo(id)}
-              />
-            ))}
-          </div>
-
-          <p className="mt-6 text-xs font-medium tracking-wide text-slate-400 uppercase">B2B</p>
-          <div className="mt-2 space-y-2">
-            {b2b.map((id) => (
-              <ZrodloPole
-                key={id}
-                id={id}
-                zaznaczone={dane.zrodla.includes(id)}
-                onChange={() => przelaczZrodlo(id)}
-              />
-            ))}
-          </div>
-
-          <label className="mt-6 block">
-            <Etykieta>Kogo dokładnie szukamy</Etykieta>
-            <Podpowiedz>
-              Zawężenie wewnątrz wybranych źródeł, np. posłowie z komisji obrony, albo dyrektorzy
-              zakupów w firmach produkcyjnych.
-            </Podpowiedz>
-            <input
-              className={pole}
-              value={dane.kogoSzukamy}
-              onChange={(e) => setDane({ ...dane, kogoSzukamy: e.target.value })}
-              placeholder="np. posłowie zasiadający w komisji obrony narodowej"
-            />
-          </label>
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-6 space-y-6">
-          <label className="block">
-            <Etykieta>Co chcesz osiągnąć</Etykieta>
-            <Podpowiedz>
-              Na tej podstawie powstaną wiadomości. Im konkretniej, tym mniej generyczne będą.
-            </Podpowiedz>
-            <textarea
-              className={`${pole} min-h-28 resize-y`}
-              value={dane.cel}
-              onChange={(e) => setDane({ ...dane, cel: e.target.value })}
-              placeholder="np. zwrócić uwagę na skutki art. 12 projektu ustawy dla małych producentów i poprosić o spotkanie"
-            />
-          </label>
-
-          <label className="block">
-            <Etykieta>W czyim imieniu piszemy</Etykieta>
-            <Podpowiedz>Kto jest nadawcą i dlaczego odbiorca miałby go słuchać.</Podpowiedz>
-            <input
-              className={pole}
-              value={dane.nadawca}
-              onChange={(e) => setDane({ ...dane, nadawca: e.target.value })}
-              placeholder="np. Związek Pracodawców Branży X"
-            />
-          </label>
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-6 space-y-6">
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-slate-300"
-              checked={dane.psychografia}
-              onChange={(e) => setDane({ ...dane, psychografia: e.target.checked })}
-            />
-            <span>
-              <Etykieta>Psychografia odbiorców</Etykieta>
-              <Podpowiedz>
-                Przed napisaniem wiadomości zbieramy kontekst o każdym odbiorcy: ostatnie
-                głosowania, wypowiedzi, obszary zainteresowania.
-              </Podpowiedz>
-            </span>
-          </label>
-
-          <label className="block">
-            <Etykieta>Liczba wariantów wiadomości</Etykieta>
-            <Podpowiedz>
-              Różne tytuły i treści zamiast jednego szablonu do wszystkich. Mniejsze ryzyko
-              oznaczenia jako spam.
-            </Podpowiedz>
-            <div className="mt-3 flex items-center gap-4">
+        {krok === 0 && (
+          <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6">
+            <label className="block">
+              <Etykieta>Nazwa kampanii</Etykieta>
+              <Podpowiedz>Dla ciebie, żeby odróżnić ją od innych.</Podpowiedz>
               <input
-                type="range"
-                min={1}
-                max={7}
-                value={dane.liczbaWariantow}
-                onChange={(e) => setDane({ ...dane, liczbaWariantow: Number(e.target.value) })}
-                className="w-56 accent-slate-900"
+                className={pole}
+                value={dane.nazwa}
+                onChange={(e) => setDane({ ...dane, nazwa: e.target.value })}
+                placeholder="np. Pokaz filmu, Holandia, październik"
               />
-              <span className="text-sm font-medium tabular-nums">{dane.liczbaWariantow}</span>
+            </label>
+
+            <label className="block">
+              <Etykieta>O co chodzi, w dwóch zdaniach</Etykieta>
+              <Podpowiedz>
+                Co chcesz osiągnąć. Na tej podstawie powstaną wiadomości, więc im konkretniej, tym
+                mniej generyczne będą.
+              </Podpowiedz>
+              <textarea
+                className={`${pole} min-h-28 resize-y`}
+                value={dane.cel}
+                onChange={(e) => setDane({ ...dane, cel: e.target.value })}
+                placeholder="np. zaprosić na pokaz filmu i rozmowę po seansie, 12 października w Hadze"
+              />
+            </label>
+
+            <label className="block">
+              <Etykieta>Link do filmu albo strony</Etykieta>
+              <Podpowiedz>Opcjonalnie. Trafi do treści wiadomości.</Podpowiedz>
+              <input
+                type="url"
+                className={pole}
+                value={dane.linkFilm}
+                onChange={(e) => setDane({ ...dane, linkFilm: e.target.value })}
+                placeholder="https://"
+              />
+            </label>
+
+            <label className="block">
+              <Etykieta>Materiały</Etykieta>
+              <Podpowiedz>
+                Opcjonalnie. Linki do artykułów, opis, fakty, które warto wpleść. Czytamy je przed
+                napisaniem wiadomości.
+              </Podpowiedz>
+              <textarea
+                className={`${pole} min-h-24 resize-y`}
+                value={dane.materialy}
+                onChange={(e) => setDane({ ...dane, materialy: e.target.value })}
+              />
+            </label>
+
+            <label className="block">
+              <Etykieta>W czyim imieniu piszemy</Etykieta>
+              <Podpowiedz>Kto jest nadawcą i dlaczego odbiorca miałby go słuchać.</Podpowiedz>
+              <input
+                className={pole}
+                value={dane.nadawca}
+                onChange={(e) => setDane({ ...dane, nadawca: e.target.value })}
+                placeholder="np. reżyser filmu, fundacja X"
+              />
+            </label>
+          </section>
+        )}
+
+        {krok === 1 && (
+          <section className="rounded-xl border border-slate-200 bg-white p-6">
+            <Etykieta>Skąd bierzemy kontakty</Etykieta>
+            <Podpowiedz>Możesz połączyć kilka źródeł.</Podpowiedz>
+
+            <p className="mt-5 text-xs font-medium tracking-wide text-slate-400 uppercase">
+              Decydenci publiczni
+            </p>
+            <div className="mt-2 space-y-2">
+              {politycy.map((id) => (
+                <ZrodloPole
+                  key={id}
+                  id={id}
+                  zaznaczone={dane.zrodla.includes(id)}
+                  onChange={() => przelaczZrodlo(id)}
+                />
+              ))}
             </div>
-          </label>
-        </section>
+
+            <p className="mt-6 text-xs font-medium tracking-wide text-slate-400 uppercase">B2B</p>
+            <div className="mt-2 space-y-2">
+              {b2b.map((id) => (
+                <ZrodloPole
+                  key={id}
+                  id={id}
+                  zaznaczone={dane.zrodla.includes(id)}
+                  onChange={() => przelaczZrodlo(id)}
+                />
+              ))}
+            </div>
+
+            <label className="mt-6 block">
+              <Etykieta>Kogo dokładnie szukamy</Etykieta>
+              <Podpowiedz>
+                Zawężenie wewnątrz wybranych źródeł, np. posłowie z komisji kultury, albo dyrektorzy
+                zakupów w firmach produkcyjnych.
+              </Podpowiedz>
+              <input
+                className={pole}
+                value={dane.kogoSzukamy}
+                onChange={(e) => setDane({ ...dane, kogoSzukamy: e.target.value })}
+                placeholder="np. członkowie komisji spraw zagranicznych"
+              />
+            </label>
+
+            <p className="mt-6 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500 ring-1 ring-slate-100">
+              Wkrótce: licznik odbiorców przy każdym źródle i import własnej listy z pliku CSV.
+            </p>
+          </section>
+        )}
+
+        {krok === 2 && (
+          <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                checked={dane.psychografia}
+                onChange={(e) => setDane({ ...dane, psychografia: e.target.checked })}
+              />
+              <span>
+                <Etykieta>Psychografia odbiorców</Etykieta>
+                <Podpowiedz>
+                  Przed napisaniem wiadomości zbieramy kontekst o każdym odbiorcy: czym się
+                  zajmuje, co mówił publicznie, na czym mu zależy.
+                </Podpowiedz>
+              </span>
+            </label>
+
+            <Suwak
+              etykieta="Liczba wariantów wiadomości"
+              podpowiedz="Różne tytuły i treści zamiast jednego szablonu do wszystkich. Mniejsze ryzyko oznaczenia jako spam."
+              min={1}
+              max={7}
+              wartosc={dane.liczbaWariantow}
+              onChange={(v) => setDane({ ...dane, liczbaWariantow: v })}
+            />
+
+            <Suwak
+              etykieta="Przypomnienia bez odpowiedzi"
+              podpowiedz="Ile kolejnych wiadomości wysyłamy osobom, które nie odpisały. Odpowiedź zatrzymuje kolejkę."
+              min={0}
+              max={5}
+              wartosc={dane.liczbaFollowupow}
+              onChange={(v) => setDane({ ...dane, liczbaFollowupow: v })}
+            />
+
+            {dane.liczbaFollowupow > 0 && (
+              <Suwak
+                etykieta="Odstęp między wiadomościami (dni)"
+                min={1}
+                max={14}
+                wartosc={dane.odstepDni}
+                onChange={(v) => setDane({ ...dane, odstepDni: v })}
+              />
+            )}
+
+            <label className="block">
+              <Etykieta>Start wysyłki</Etykieta>
+              <Podpowiedz>Opcjonalnie. Możesz ustalić później.</Podpowiedz>
+              <input
+                type="date"
+                className={`${pole} w-auto`}
+                value={dane.start ?? ""}
+                onChange={(e) => setDane({ ...dane, start: e.target.value || null })}
+              />
+            </label>
+
+            <p className="text-sm text-slate-500">
+              Każda osoba dostanie najwyżej {1 + dane.liczbaFollowupow}{" "}
+              {1 + dane.liczbaFollowupow === 1 ? "wiadomość" : "wiadomości"}
+              {dane.liczbaFollowupow > 0 && `, co ${dane.odstepDni} dni`}.
+            </p>
+          </section>
+        )}
 
         {blad && (
           <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
@@ -180,11 +291,21 @@ export default function NowaKampania() {
         )}
 
         <div className="flex items-center gap-4">
+          {krok > 0 && (
+            <button
+              type="button"
+              onClick={wstecz}
+              className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 ring-1 ring-slate-300 transition hover:bg-slate-50"
+            >
+              Wstecz
+            </button>
+          )}
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700"
+            disabled={zapisuje}
+            className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:bg-slate-400"
           >
-            Zapisz kampanię
+            {ostatni ? (zapisuje ? "Zapisuję..." : "Zapisz kampanię") : "Dalej"}
           </button>
           <Link href="/" className="text-sm text-slate-500 transition hover:text-slate-900">
             Anuluj
@@ -192,6 +313,40 @@ export default function NowaKampania() {
         </div>
       </form>
     </>
+  );
+}
+
+function Suwak({
+  etykieta,
+  podpowiedz,
+  min,
+  max,
+  wartosc,
+  onChange,
+}: {
+  etykieta: string;
+  podpowiedz?: string;
+  min: number;
+  max: number;
+  wartosc: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="block">
+      <Etykieta>{etykieta}</Etykieta>
+      {podpowiedz && <Podpowiedz>{podpowiedz}</Podpowiedz>}
+      <div className="mt-3 flex items-center gap-4">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={wartosc}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-56 accent-slate-900"
+        />
+        <span className="text-sm font-medium tabular-nums">{wartosc}</span>
+      </div>
+    </label>
   );
 }
 

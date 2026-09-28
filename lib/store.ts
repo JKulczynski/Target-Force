@@ -20,10 +20,16 @@ type Wiersz = {
   nadawca: string;
   psychografia: boolean;
   liczba_wariantow: number;
+  link_film: string;
+  materialy: string;
+  liczba_followupow: number;
+  odstep_dni: number;
+  start: string | null;
 };
 
+// Jeden literał, bo klient Supabase wyprowadza typ wyniku z treści tego napisu.
 const KOLUMNY =
-  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow";
+  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start";
 
 function zWiersza(w: Wiersz): Kampania {
   return {
@@ -37,6 +43,11 @@ function zWiersza(w: Wiersz): Kampania {
     nadawca: w.nadawca,
     psychografia: w.psychografia,
     liczbaWariantow: w.liczba_wariantow,
+    linkFilm: w.link_film,
+    materialy: w.materialy,
+    liczbaFollowupow: w.liczba_followupow,
+    odstepDni: w.odstep_dni,
+    start: w.start,
   };
 }
 
@@ -50,6 +61,11 @@ function doWiersza(k: Partial<Kampania>): Partial<Wiersz> {
   if (k.nadawca !== undefined) w.nadawca = k.nadawca;
   if (k.psychografia !== undefined) w.psychografia = k.psychografia;
   if (k.liczbaWariantow !== undefined) w.liczba_wariantow = k.liczbaWariantow;
+  if (k.linkFilm !== undefined) w.link_film = k.linkFilm;
+  if (k.materialy !== undefined) w.materialy = k.materialy;
+  if (k.liczbaFollowupow !== undefined) w.liczba_followupow = k.liczbaFollowupow;
+  if (k.odstepDni !== undefined) w.odstep_dni = k.odstepDni;
+  if (k.start !== undefined) w.start = k.start;
   return w;
 }
 

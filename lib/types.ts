@@ -61,10 +61,21 @@ export type Kampania = {
   /** Kto pisze, w czyim imieniu */
   nadawca: string;
 
+  /** Link do filmu albo strony, o której piszemy. Może być pusty. */
+  linkFilm: string;
+  /** Dodatkowe materiały: linki, notatki, fragmenty. Trafiają do promptu. */
+  materialy: string;
+
   /** Czy generujemy psychografię odbiorców przed pisaniem wiadomości */
   psychografia: boolean;
   /** Ile wariantów wiadomości generujemy. Piotr prosił o 7 (22.09). */
   liczbaWariantow: number;
+  /** Ile przypomnień po pierwszej wiadomości, jeśli brak odpowiedzi */
+  liczbaFollowupow: number;
+  /** Co ile dni kolejne przypomnienie */
+  odstepDni: number;
+  /** Dzień startu wysyłki (RRRR-MM-DD) albo null, jeśli jeszcze nie ustalony */
+  start: string | null;
 };
 
 export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
@@ -75,7 +86,12 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     kogoSzukamy: "",
     cel: "",
     nadawca: "",
+    linkFilm: "",
+    materialy: "",
     psychografia: true,
     liczbaWariantow: 7,
+    liczbaFollowupow: 2,
+    odstepDni: 4,
+    start: null,
   };
 }

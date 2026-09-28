@@ -79,9 +79,11 @@ export default function SzczegolyKampanii() {
           <Wiersz etykieta="Zawężenie" wartosc={k.kogoSzukamy} />
         </Karta>
 
-        <Karta tytul="Po co">
+        <Karta tytul="O co chodzi">
           <Wiersz etykieta="Cel" wartosc={k.cel} />
           <Wiersz etykieta="Nadawca" wartosc={k.nadawca} />
+          <Wiersz etykieta="Film albo strona" wartosc={k.linkFilm} />
+          <Wiersz etykieta="Materiały" wartosc={k.materialy} />
         </Karta>
 
         <Karta tytul="Jak piszemy">
@@ -90,6 +92,18 @@ export default function SzczegolyKampanii() {
             wartosc={k.psychografia ? "Tak, przed napisaniem wiadomości" : "Nie"}
           />
           <Wiersz etykieta="Wariantów wiadomości" wartosc={String(k.liczbaWariantow)} />
+          <Wiersz
+            etykieta="Przypomnienia bez odpowiedzi"
+            wartosc={
+              k.liczbaFollowupow === 0
+                ? "Brak, tylko pierwsza wiadomość"
+                : `${k.liczbaFollowupow}, co ${k.odstepDni} dni`
+            }
+          />
+          <Wiersz
+            etykieta="Start wysyłki"
+            wartosc={k.start ? new Date(k.start).toLocaleDateString("pl-PL") : ""}
+          />
         </Karta>
 
         <Karta tytul="Postęp">
