@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { wyloguj } from "./login/actions";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,6 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/zrodla" className="transition hover:text-slate-900">
                 Źródła
               </Link>
+              <form action={wyloguj}>
+                <button className="transition hover:text-slate-900">Wyloguj</button>
+              </form>
             </nav>
           </div>
         </header>

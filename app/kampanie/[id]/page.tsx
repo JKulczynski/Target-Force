@@ -12,7 +12,9 @@ export default function SzczegolyKampanii() {
   const [k, setK] = useState<Kampania | null | undefined>(undefined);
 
   useEffect(() => {
-    setK(kampania(id) ?? null);
+    kampania(id)
+      .then((wynik) => setK(wynik ?? null))
+      .catch(() => setK(null));
   }, [id]);
 
   if (k === undefined) return <p className="text-sm text-slate-400">Wczytuję...</p>;
@@ -21,7 +23,7 @@ export default function SzczegolyKampanii() {
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
         <p className="font-medium text-slate-700">Nie ma takiej kampanii</p>
         <p className="mt-2 text-sm text-slate-500">
-          Mogła zostać usunięta albo powstała w innej przeglądarce.
+          Mogła zostać usunięta albo nie masz jeszcze dostępu do zespołu.
         </p>
         <Link
           href="/"
@@ -35,13 +37,13 @@ export default function SzczegolyKampanii() {
 
   const status = STATUSY[k.status];
 
-  function uruchom() {
-    const zmieniona = zmienKampanie(k!.id, { status: "uruchomiona" });
+  async function uruchom() {
+    const zmieniona = await zmienKampanie(k!.id, { status: "uruchomiona" });
     if (zmieniona) setK(zmieniona);
   }
 
-  function usun() {
-    usunKampanie(k!.id);
+  async function usun() {
+    await usunKampanie(k!.id);
     router.push("/");
   }
 

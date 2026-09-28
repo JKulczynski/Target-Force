@@ -7,9 +7,12 @@ import { STATUSY, ZRODLA, type Kampania } from "@/lib/types";
 
 export default function Kampanie() {
   const [kampanie, setKampanie] = useState<Kampania[] | null>(null);
+  const [blad, setBlad] = useState<string | null>(null);
 
   useEffect(() => {
-    setKampanie(wszystkieKampanie());
+    wszystkieKampanie()
+      .then(setKampanie)
+      .catch(() => setBlad("Nie udało się wczytać kampanii. Odśwież stronę."));
   }, []);
 
   return (
@@ -30,7 +33,9 @@ export default function Kampanie() {
         </Link>
       </div>
 
-      {kampanie === null ? (
+      {blad ? (
+        <p className="mt-10 text-sm text-red-600">{blad}</p>
+      ) : kampanie === null ? (
         <p className="mt-10 text-sm text-slate-400">Wczytuję...</p>
       ) : kampanie.length === 0 ? (
         <div className="mt-10 rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">

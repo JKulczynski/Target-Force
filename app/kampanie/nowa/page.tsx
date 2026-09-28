@@ -29,12 +29,16 @@ export default function NowaKampania() {
     }));
   }
 
-  function zapisz(e: React.FormEvent) {
+  async function zapisz(e: React.FormEvent) {
     e.preventDefault();
     if (!dane.nazwa.trim()) return setBlad("Kampania potrzebuje nazwy, żeby dało się ją odróżnić.");
     if (dane.zrodla.length === 0) return setBlad("Wybierz co najmniej jedno źródło kontaktów.");
-    const nowa = dodajKampanie({ ...dane, nazwa: dane.nazwa.trim() });
-    router.push(`/kampanie/${nowa.id}`);
+    try {
+      const nowa = await dodajKampanie({ ...dane, nazwa: dane.nazwa.trim() });
+      router.push(`/kampanie/${nowa.id}`);
+    } catch {
+      setBlad("Nie udało się zapisać. Sprawdź, czy jesteś w zespole, albo spróbuj ponownie.");
+    }
   }
 
   const politycy = (Object.keys(ZRODLA) as ZrodloId[]).filter((z) => ZRODLA[z].typ === "politycy");
