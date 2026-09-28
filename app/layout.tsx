@@ -26,6 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/zrodla" className="transition hover:text-slate-900">
                 Źródła
               </Link>
+              <Link href="/ustawienia" className="transition hover:text-slate-900">
+                Ustawienia
+              </Link>
               <form action={wyloguj}>
                 <button className="transition hover:text-slate-900">Wyloguj</button>
               </form>
