@@ -32,6 +32,12 @@ export const ZRODLA = {
     api: null,
     typ: "b2b",
   },
+  wlasna_lista: {
+    nazwa: "Własna lista",
+    opis: "Import z pliku CSV albo wklejka. Dla odbiorców, których nie ma w żadnym API.",
+    api: null,
+    typ: "wlasne",
+  },
 } as const;
 
 export type ZrodloId = keyof typeof ZRODLA;

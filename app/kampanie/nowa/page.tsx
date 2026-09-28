@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { dodajKampanie } from "@/lib/store";
+import { useEffect, useState } from "react";
+import { parsujListe, type WynikImportu } from "@/lib/csv";
+import { dodajKampanie, dodajKontakty } from "@/lib/store";
 import { ZRODLA, pustaKampania, type ZrodloId } from "@/lib/types";
+
+type Licznik = { razem: number; zEmailem: number } | "blad" | "laduje";
+
+/** Źródła z otwartym API, dla których liczymy odbiorców na żywo. */
+const Z_LICZNIKIEM: ZrodloId[] = ["sejm", "tweede_kamer", "parlament_ue"];
 
 /**
  * Kreator w 3 krokach (ustalenie z 26.09): jeden długi formularz pytał o wszystko naraz.
@@ -30,6 +36,46 @@ export default function NowaKampania() {
   const [dane, setDane] = useState(pustaKampania());
   const [blad, setBlad] = useState<string | null>(null);
   const [zapisuje, setZapisuje] = useState(false);
+  const [liczniki, setLiczniki] = useState<Partial<Record<ZrodloId, Licznik>>>({});
+  const [lista, setLista] = useState<WynikImportu | null>(null);
+  const [tekstListy, setTekstListy] = useState("");
+
+  // Liczniki pobieramy raz, przy pierwszym wejściu w krok 2. Serwer trzyma je w cache przez dobę.
+  useEffect(() => {
+    if (krok !== 1) return;
+    for (const id of Z_LICZNIKIEM) {
+      if (liczniki[id]) continue;
+      setLiczniki((l) => ({ ...l, [id]: "laduje" }));
+      fetch(`/api/zrodla/${id}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d: { razem: number; zEmailem: number }) => setLiczniki((l) => ({ ...l, [id]: d })))
+        .catch(() => setLiczniki((l) => ({ ...l, [id]: "blad" })));
+    }
+  }, [krok, liczniki]);
+
+  function wczytajListe(tekst: string) {
+    setTekstListy(tekst);
+    const wynik = tekst.trim() ? parsujListe(tekst) : null;
+    setLista(wynik);
+    const maListe = !!wynik && wynik.wiersze.length > 0;
+    setDane((d) => ({
+      ...d,
+      zrodla: maListe
+        ? d.zrodla.includes("wlasna_lista") ? d.zrodla : [...d.zrodla, "wlasna_lista"]
+        : d.zrodla.filter((z) => z !== "wlasna_lista"),
+    }));
+  }
+
+  async function wczytajPlik(e: React.ChangeEvent<HTMLInputElement>) {
+    const plik = e.target.files?.[0];
+    if (plik) wczytajListe(await plik.text());
+  }
+
+  const zasieg = dane.zrodla.reduce((suma, id) => {
+    if (id === "wlasna_lista") return suma + (lista?.wiersze.length ?? 0);
+    const l = liczniki[id];
+    return typeof l === "object" ? suma + l.zEmailem : suma;
+  }, 0);
 
   function przelaczZrodlo(id: ZrodloId) {
     setDane((d) => ({
@@ -73,6 +119,9 @@ export default function NowaKampania() {
     setZapisuje(true);
     try {
       const nowa = await dodajKampanie({ ...dane, nazwa: dane.nazwa.trim() });
+      if (lista && dane.zrodla.includes("wlasna_lista")) {
+        await dodajKontakty(nowa.id, lista.wiersze);
+      }
       router.push(`/kampanie/${nowa.id}`);
     } catch {
       setZapisuje(false);
@@ -183,8 +232,40 @@ export default function NowaKampania() {
                   id={id}
                   zaznaczone={dane.zrodla.includes(id)}
                   onChange={() => przelaczZrodlo(id)}
+                  licznik={liczniki[id]}
                 />
               ))}
+            </div>
+
+            <p className="mt-6 text-xs font-medium tracking-wide text-slate-400 uppercase">
+              Własna lista
+            </p>
+            <div className="mt-2 rounded-lg border border-slate-200 p-3.5">
+              <p className="text-sm text-slate-500">
+                Artyści, szefowie instytucji, dziennikarze: każdy, kogo nie ma w API. Wgraj CSV
+                z kolumną <span className="font-medium text-slate-700">email</span> (opcjonalnie
+                imię, nazwisko, organizacja, stanowisko) albo wklej listę, jedna osoba w linii.
+              </p>
+              <input
+                type="file"
+                accept=".csv,.txt,text/csv,text/plain"
+                onChange={wczytajPlik}
+                className="mt-3 block text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-slate-200"
+              />
+              <textarea
+                className={`${pole} min-h-24 resize-y font-mono text-xs`}
+                value={tekstListy}
+                onChange={(e) => wczytajListe(e.target.value)}
+                placeholder={"Jan Kowalski, jan.kowalski@teatr.pl\nanna.nowak@muzeum.pl"}
+              />
+              {lista && (
+                <p className="mt-2 text-sm text-slate-600">
+                  <span className="font-medium text-slate-900">{lista.wiersze.length}</span>{" "}
+                  {lista.wiersze.length === 1 ? "osoba" : "osób"} z poprawnym e-mailem
+                  {lista.pominiete > 0 && `, pominięto ${lista.pominiete} bez adresu`}
+                  {lista.duplikaty > 0 && `, ${lista.duplikaty} powtórzeń`}.
+                </p>
+              )}
             </div>
 
             <p className="mt-6 text-xs font-medium tracking-wide text-slate-400 uppercase">B2B</p>
@@ -213,8 +294,10 @@ export default function NowaKampania() {
               />
             </label>
 
-            <p className="mt-6 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500 ring-1 ring-slate-100">
-              Wkrótce: licznik odbiorców przy każdym źródle i import własnej listy z pliku CSV.
+            <p className="mt-6 rounded-lg bg-slate-900 px-4 py-3 text-sm text-white">
+              Dotrzesz do <span className="font-semibold tabular-nums">{zasieg}</span>{" "}
+              {zasieg === 1 ? "osoby" : "osób"} z adresem e-mail
+              {dane.kogoSzukamy.trim() && ", przed zawężeniem grupy"}.
             </p>
           </section>
         )}
@@ -354,10 +437,12 @@ function ZrodloPole({
   id,
   zaznaczone,
   onChange,
+  licznik,
 }: {
   id: ZrodloId;
   zaznaczone: boolean;
   onChange: () => void;
+  licznik?: Licznik;
 }) {
   const z = ZRODLA[id];
   return (
@@ -375,6 +460,15 @@ function ZrodloPole({
       <span className="min-w-0">
         <span className="block text-sm font-medium">{z.nazwa}</span>
         <span className="mt-0.5 block text-sm text-slate-500">{z.opis}</span>
+        {licznik && (
+          <span className="mt-1.5 block text-xs text-slate-600">
+            {licznik === "laduje"
+              ? "Liczę odbiorców..."
+              : licznik === "blad"
+                ? "Źródło chwilowo nie odpowiada"
+                : `${licznik.razem} osób, ${licznik.zEmailem} z e-mailem`}
+          </span>
+        )}
       </span>
     </label>
   );

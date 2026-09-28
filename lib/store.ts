@@ -2,6 +2,7 @@
 
 import { createClient } from "./supabase/client";
 import type { Kampania, StatusKampanii, ZrodloId } from "./types";
+import type { WierszListy } from "./csv";
 
 /**
  * Warstwa danych, celowo za jednym interfejsem. Od 28.09 siedzi na Supabase.
@@ -110,6 +111,35 @@ export async function zmienKampanie(
     .maybeSingle();
   if (error) throw error;
   return data ? zWiersza(data as Wiersz) : undefined;
+}
+
+/** Zapisuje kontakty z własnej listy. Duplikaty e-maili w kampanii pomija baza (unique). */
+export async function dodajKontakty(kampaniaId: string, wiersze: WierszListy[]) {
+  if (wiersze.length === 0) return;
+  const { error } = await createClient()
+    .from("kontakty")
+    .upsert(
+      wiersze.map((w) => ({
+        kampania_id: kampaniaId,
+        zrodlo: "wlasna_lista",
+        imie: w.imie,
+        nazwisko: w.nazwisko,
+        email: w.email,
+        organizacja: w.organizacja,
+        stanowisko: w.stanowisko,
+      })),
+      { onConflict: "kampania_id,email", ignoreDuplicates: true },
+    );
+  if (error) throw error;
+}
+
+export async function liczbaKontaktow(kampaniaId: string): Promise<number> {
+  const { count, error } = await createClient()
+    .from("kontakty")
+    .select("id", { count: "exact", head: true })
+    .eq("kampania_id", kampaniaId);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function usunKampanie(id: string) {
