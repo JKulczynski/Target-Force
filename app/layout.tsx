@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { wyloguj } from "./login/actions";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,7 +10,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+async function statusDostepu(): Promise<{ email: string; wZespole: boolean } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const email = data?.claims?.email as string | undefined;
+  if (!data?.claims || !email) return null;
+  const { data: wZespole } = await supabase.rpc("czy_w_zespole");
+  return { email, wZespole: Boolean(wZespole) };
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const dostep = await statusDostepu();
   return (
     <html lang="pl">
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
@@ -35,6 +46,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </div>
         </header>
+        {dostep && !dostep.wZespole && (
+          <div className="border-b border-amber-200 bg-amber-50">
+            <p className="mx-auto max-w-5xl px-6 py-3 text-sm text-amber-900">
+              <span className="font-semibold">Nie masz jeszcze dostępu do danych zespołu.</span> Jesteś zalogowany jako{" "}
+              {dostep.email}. Poproś Jana o dodanie do zespołu. Do tego czasu nie zobaczysz ani nie zapiszesz kampanii.
+            </p>
+          </div>
+        )}
         <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
       </body>
     </html>
