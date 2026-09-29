@@ -3,18 +3,22 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { kampania, usunKampanie, zmienKampanie } from "@/lib/store";
+import { kampania, liczbaKontaktow, usunKampanie, zmienKampanie } from "@/lib/store";
 import { STATUSY, ZRODLA, type Kampania } from "@/lib/types";
 
 export default function SzczegolyKampanii() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [k, setK] = useState<Kampania | null | undefined>(undefined);
+  const [zListy, setZListy] = useState<number | null>(null);
 
   useEffect(() => {
     kampania(id)
       .then((wynik) => setK(wynik ?? null))
       .catch(() => setK(null));
+    liczbaKontaktow(id)
+      .then(setZListy)
+      .catch(() => setZListy(null));
   }, [id]);
 
   if (k === undefined) return <p className="text-sm text-slate-400">Wczytuję...</p>;
@@ -76,6 +80,9 @@ export default function SzczegolyKampanii() {
               </span>
             ))}
           </div>
+          {k.zrodla.includes("wlasna_lista") && (
+            <Wiersz etykieta="Własna lista" wartosc={zListy === null ? "..." : `${zListy} ${zListy === 1 ? "osoba" : "osób"} zapisanych`} />
+          )}
           <Wiersz etykieta="Zawężenie" wartosc={k.kogoSzukamy} />
         </Karta>
 
