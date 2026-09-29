@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Swiatlo, WynikDomeny } from "@/lib/dns-poczty";
+import { Skrzynki } from "./Skrzynki";
 
 const pole =
   "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10";
@@ -76,12 +77,7 @@ export default function Ustawienia() {
         )}
       </section>
 
-      <section className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-6">
-        <h2 className="font-medium text-slate-700">Podłącz skrzynkę nadawcy</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Wkrótce: podłączenie skrzynki przez SMTP i hasło aplikacji, testowa wysyłka, dzienny limit.
-        </p>
-      </section>
+      <Skrzynki />
     </>
   );
 }
