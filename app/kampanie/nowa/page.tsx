@@ -68,7 +68,16 @@ export default function NowaKampania() {
 
   async function wczytajPlik(e: React.ChangeEvent<HTMLInputElement>) {
     const plik = e.target.files?.[0];
-    if (plik) wczytajListe(await plik.text());
+    if (!plik) return;
+    if (/\.(xlsx|xls|ods)$/i.test(plik.name)) {
+      // Excel/Arkusze: pierwszy arkusz zamieniamy na CSV i dalej jak zwykła lista.
+      const XLSX = await import("xlsx");
+      const skoroszyt = XLSX.read(await plik.arrayBuffer());
+      const arkusz = skoroszyt.Sheets[skoroszyt.SheetNames[0]];
+      wczytajListe(XLSX.utils.sheet_to_csv(arkusz, { FS: ";" }));
+    } else {
+      wczytajListe(await plik.text());
+    }
   }
 
   const zasieg = dane.zrodla.reduce((suma, id) => {
@@ -242,13 +251,13 @@ export default function NowaKampania() {
             </p>
             <div className="mt-2 rounded-lg border border-slate-200 p-3.5">
               <p className="text-sm text-slate-500">
-                Artyści, szefowie instytucji, dziennikarze: każdy, kogo nie ma w API. Wgraj CSV
-                z kolumną <span className="font-medium text-slate-700">email</span> (opcjonalnie
-                imię, nazwisko, organizacja, stanowisko) albo wklej listę, jedna osoba w linii.
+                Artyści, szefowie instytucji, dziennikarze: każdy, kogo nie ma w API. Wgraj plik
+                (Excel, CSV) z kolumną <span className="font-medium text-slate-700">email</span> (opcjonalnie
+                imię, nazwisko, organizacja, stanowisko) albo wklej listę, jedna osoba w linii. Możesz też skopiować komórki z Excela lub Arkuszy Google i wkleić.
               </p>
               <input
                 type="file"
-                accept=".csv,.txt,text/csv,text/plain"
+                accept=".csv,.txt,.xlsx,.xls,.ods,text/csv,text/plain"
                 onChange={wczytajPlik}
                 className="mt-3 block text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-slate-200"
               />
