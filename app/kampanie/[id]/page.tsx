@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { kampania, liczbaKontaktow, usunKampanie, zmienKampanie } from "@/lib/store";
 import { STATUSY, ZRODLA, type Kampania } from "@/lib/types";
+import { SkrzynkaKampanii } from "@/components/SkrzynkaKampanii";
 
 export default function SzczegolyKampanii() {
   const { id } = useParams<{ id: string }>();
@@ -121,6 +122,14 @@ export default function SzczegolyKampanii() {
           <Krok nazwa="Wysyłka i follow-upy" />
         </Karta>
       </div>
+
+      <SkrzynkaKampanii
+        skrzynkaId={k.skrzynkaId}
+        onZmiana={async (skrzynkaId) => {
+          const zmieniona = await zmienKampanie(k.id, { skrzynkaId });
+          if (zmieniona) setK(zmieniona);
+        }}
+      />
 
       <div className="mt-10 flex flex-wrap items-center gap-4">
         <button

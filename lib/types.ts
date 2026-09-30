@@ -82,6 +82,8 @@ export type Kampania = {
   odstepDni: number;
   /** Dzień startu wysyłki (RRRR-MM-DD) albo null, jeśli jeszcze nie ustalony */
   start: string | null;
+  /** Skrzynka, z której wysyłamy tę kampanię (każda kampania ma swoją). */
+  skrzynkaId: string | null;
 };
 
 export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
@@ -99,5 +101,6 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     liczbaFollowupow: 2,
     odstepDni: 4,
     start: null,
+    skrzynkaId: null,
   };
 }

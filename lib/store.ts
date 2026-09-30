@@ -26,11 +26,12 @@ type Wiersz = {
   liczba_followupow: number;
   odstep_dni: number;
   start: string | null;
+  skrzynka_id: string | null;
 };
 
 // Jeden literał, bo klient Supabase wyprowadza typ wyniku z treści tego napisu.
 const KOLUMNY =
-  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start";
+  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id";
 
 function zWiersza(w: Wiersz): Kampania {
   return {
@@ -49,6 +50,7 @@ function zWiersza(w: Wiersz): Kampania {
     liczbaFollowupow: w.liczba_followupow,
     odstepDni: w.odstep_dni,
     start: w.start,
+    skrzynkaId: w.skrzynka_id,
   };
 }
 
@@ -67,6 +69,7 @@ function doWiersza(k: Partial<Kampania>): Partial<Wiersz> {
   if (k.liczbaFollowupow !== undefined) w.liczba_followupow = k.liczbaFollowupow;
   if (k.odstepDni !== undefined) w.odstep_dni = k.odstepDni;
   if (k.start !== undefined) w.start = k.start;
+  if (k.skrzynkaId !== undefined) w.skrzynka_id = k.skrzynkaId;
   return w;
 }
 
