@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { ZRODLA, type ZrodloId } from "@/lib/types";
+import { WARSZTAT } from "@/lib/prompty/pisanie";
 
 export const runtime = "nodejs";
 // Generowanie kilku wariantów z myśleniem trwa zwykle 1-2 minuty.
@@ -22,17 +23,11 @@ const JEZYK: Partial<Record<ZrodloId, string>> = {
   parlament_ue: "angielski",
 };
 
-const SYSTEM = `Piszesz wiadomości e-mail do decydentów w imieniu nadawcy kampanii (Target Force).
-Zasady:
-- Psychografia dotyczy GRUPY odbiorców (np. posłowie komisji spraw zagranicznych), nigdy konkretnych nazwanych osób.
-- Używasz wyłącznie faktów z celu i materiałów kampanii. Nie wymyślasz liczb, cytatów ani wydarzeń.
-- Wiadomość ma brzmieć jak od prawdziwego człowieka: krótko (120-180 słów), rzeczowo, uprzejmie, bez patosu i bez marketingowych haseł.
-- Jedna jasna prośba na końcu (np. obejrzenie filmu, odpowiedź, spotkanie). Link, jeśli jest, wpleciony naturalnie.
-- Każdy wariant ma inny kąt, inne otwarcie i inną strukturę, żeby maile nie wyglądały na masową wysyłkę.
-- Tematy krótkie i konkretne, bez clickbaitu i bez wielkich liter.
-- Przypomnienia są krótsze (50-90 słów), nawiązują do wcześniejszej wiadomości i niczego nie wymuszają.
-- Zwrot grzecznościowy neutralny płciowo (bez imion). Podpis: nadawca kampanii.
-- Nigdy nie używaj długiego myślnika (znak Unicode U+2014). Zamiast niego przecinek, kropka albo nawias.`;
+const SYSTEM = `Piszesz wiadomości e-mail do decydentów w imieniu nadawcy kampanii w narzędziu Target Force.
+Psychografia dotyczy GRUPY odbiorców (np. posłowie komisji spraw zagranicznych), nigdy konkretnych nazwanych osób.
+Trzymaj się poniższego warsztatu.
+
+${WARSZTAT}`;
 
 export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -72,7 +67,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: "medium", format: betaZodOutputFormat(Wynik) },
-      system: SYSTEM,
+      system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: brief }],
     });
     if (odp.stop_reason === "refusal") {
