@@ -149,3 +149,42 @@ export async function usunKampanie(id: string) {
   const { error } = await createClient().from("kampanie").delete().eq("id", id);
   if (error) throw error;
 }
+
+export type Wariant = {
+  id: string;
+  krok: number;
+  numer: number;
+  temat: string;
+  tresc: string;
+  status: "szkic" | "zatwierdzony" | "odrzucony";
+};
+
+/** Warianty wiadomości kampanii: krok 0 = pierwsza wiadomość, 1..n = przypomnienia. */
+export async function warianty(kampaniaId: string): Promise<Wariant[]> {
+  const { data, error } = await createClient()
+    .from("warianty")
+    .select("id, krok, numer, temat, tresc, status")
+    .eq("kampania_id", kampaniaId)
+    .order("krok")
+    .order("numer");
+  if (error) throw error;
+  return data as Wariant[];
+}
+
+export async function zmienWariant(id: string, zmiany: Partial<Pick<Wariant, "temat" | "tresc" | "status">>) {
+  const { error } = await createClient()
+    .from("warianty")
+    .update({ ...zmiany, zmieniony: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function psychografiaKampanii(kampaniaId: string): Promise<{ opis: string | null; jezyk: string | null }> {
+  const { data, error } = await createClient()
+    .from("kampanie")
+    .select("psychografia_opis, jezyk")
+    .eq("id", kampaniaId)
+    .maybeSingle();
+  if (error) throw error;
+  return { opis: data?.psychografia_opis ?? null, jezyk: data?.jezyk ?? null };
+}

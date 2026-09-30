@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { kampania, liczbaKontaktow, usunKampanie, zmienKampanie } from "@/lib/store";
 import { STATUSY, ZRODLA, type Kampania } from "@/lib/types";
 import { SkrzynkaKampanii } from "@/components/SkrzynkaKampanii";
+import { Wiadomosci } from "@/components/Wiadomosci";
 
 export default function SzczegolyKampanii() {
   const { id } = useParams<{ id: string }>();
@@ -122,6 +123,8 @@ export default function SzczegolyKampanii() {
           <Krok nazwa="Wysyłka i follow-upy" />
         </Karta>
       </div>
+
+      <Wiadomosci kampaniaId={k.id} />
 
       <SkrzynkaKampanii
         skrzynkaId={k.skrzynkaId}
