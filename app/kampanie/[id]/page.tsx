@@ -7,6 +7,7 @@ import { kampania, liczbaKontaktow, usunKampanie, zmienKampanie } from "@/lib/st
 import { STATUSY, ZRODLA, type Kampania } from "@/lib/types";
 import { SkrzynkaKampanii } from "@/components/SkrzynkaKampanii";
 import { Wiadomosci } from "@/components/Wiadomosci";
+import { Wysylka } from "@/components/Wysylka";
 
 export default function SzczegolyKampanii() {
   const { id } = useParams<{ id: string }>();
@@ -134,6 +135,8 @@ export default function SzczegolyKampanii() {
         }}
       />
 
+      <Wysylka kampaniaId={k.id} kogoSzukamy={k.kogoSzukamy} maSkrzynke={!!k.skrzynkaId} />
+
       <div className="mt-10 flex flex-wrap items-center gap-4">
         <button
           onClick={uruchom}
@@ -150,10 +153,6 @@ export default function SzczegolyKampanii() {
         </button>
       </div>
 
-      <p className="mt-8 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-100">
-        Na tym etapie „Uruchom" tylko zmienia status. Pobieranie kontaktów, psychografia
-        i wysyłka dochodzą kolejno, w tej kolejności.
-      </p>
     </>
   );
 }
