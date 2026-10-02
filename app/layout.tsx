@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="pl">
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <header className="border-b border-slate-200 bg-white">
+        <header className="border-b border-slate-200 bg-white print:hidden">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
             <Link href="/" className="flex items-baseline gap-2">
               <span className="text-lg font-semibold tracking-tight">Target Force</span>
@@ -47,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         </header>
         {dostep && !dostep.wZespole && (
-          <div className="border-b border-amber-200 bg-amber-50">
+          <div className="border-b border-amber-200 bg-amber-50 print:hidden">
             <p className="mx-auto max-w-5xl px-6 py-3 text-sm text-amber-900">
               <span className="font-semibold">Nie masz jeszcze dostępu do danych zespołu.</span> Jesteś zalogowany jako{" "}
               {dostep.email}. Poproś Jana o dodanie do zespołu. Do tego czasu nie zobaczysz ani nie zapiszesz kampanii.

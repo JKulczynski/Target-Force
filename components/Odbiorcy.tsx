@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Odbiorca = {
@@ -23,7 +24,13 @@ type Widok = "wszyscy" | "wyslane" | "kliknieci" | "odpisali";
  * Lista odbiorców ze statusem. "Odpisał" zaznacza nadawca ręcznie, bo odpowiedzi trafiają do jego skrzynki.
  * To pierwsza część dowodu efektu z wizji (30.09): kto dostał, kto kliknął, kto odpowiedział.
  */
-export function Odbiorcy({ kampaniaId, odswiez }: { kampaniaId: string; odswiez: number }) {
+export function Odbiorcy({
+  kampaniaId,
+  odswiez,
+}: {
+  kampaniaId: string;
+  odswiez: number;
+}) {
   const [lista, setLista] = useState<Odbiorca[] | null>(null);
   const [widok, setWidok] = useState<Widok>("wszyscy");
   const [szukaj, setSzukaj] = useState("");
@@ -37,7 +44,14 @@ export function Odbiorcy({ kampaniaId, odswiez }: { kampaniaId: string; odswiez:
 
   async function przelaczOdpisal(o: Odbiorca) {
     const odpisal = !o.odpowiedzial;
-    setLista((l) => l?.map((x) => (x.id === o.id ? { ...x, odpowiedzial: odpisal ? new Date().toISOString() : null } : x)) ?? null);
+    setLista(
+      (l) =>
+        l?.map((x) =>
+          x.id === o.id
+            ? { ...x, odpowiedzial: odpisal ? new Date().toISOString() : null }
+            : x,
+        ) ?? null,
+    );
     await fetch(`/api/kampanie/${kampaniaId}/odbiorcy`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -55,8 +69,22 @@ export function Odbiorcy({ kampaniaId, odswiez }: { kampaniaId: string; odswiez:
   };
   const fraza = szukaj.trim().toLowerCase();
   const widoczni = lista
-    .filter((o) => (widok === "wyslane" ? o.wyslanychKrokow > 0 : widok === "kliknieci" ? o.kliknal : widok === "odpisali" ? !!o.odpowiedzial : true))
-    .filter((o) => !fraza || [o.imie, o.nazwisko, o.email, o.klub, o.okreg].some((v) => v?.toLowerCase().includes(fraza)));
+    .filter((o) =>
+      widok === "wyslane"
+        ? o.wyslanychKrokow > 0
+        : widok === "kliknieci"
+          ? o.kliknal
+          : widok === "odpisali"
+            ? !!o.odpowiedzial
+            : true,
+    )
+    .filter(
+      (o) =>
+        !fraza ||
+        [o.imie, o.nazwisko, o.email, o.klub, o.okreg].some((v) =>
+          v?.toLowerCase().includes(fraza),
+        ),
+    );
 
   const zakladki: { id: Widok; etykieta: string }[] = [
     { id: "wszyscy", etykieta: "Wszyscy" },
@@ -68,13 +96,23 @@ export function Odbiorcy({ kampaniaId, odswiez }: { kampaniaId: string; odswiez:
   return (
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">Odbiorcy</h2>
-        <input
-          className="w-56 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-slate-900"
-          placeholder="Szukaj: nazwisko, klub, okręg"
-          value={szukaj}
-          onChange={(e) => setSzukaj(e.target.value)}
-        />
+        <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+          Odbiorcy
+        </h2>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/kampanie/${kampaniaId}/raport`}
+            className="text-sm text-slate-500 underline-offset-2 transition hover:text-slate-900 hover:underline"
+          >
+            Raport dla klienta
+          </Link>
+          <input
+            className="w-56 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-slate-900"
+            placeholder="Szukaj: nazwisko, klub, okręg"
+            value={szukaj}
+            onChange={(e) => setSzukaj(e.target.value)}
+          />
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {zakladki.map((z) => (
@@ -87,7 +125,10 @@ export function Odbiorcy({ kampaniaId, odswiez }: { kampaniaId: string; odswiez:
           </button>
         ))}
       </div>
-      <p className="mt-2 text-xs text-slate-400">Odpowiedzi przychodzą do skrzynki nadawcy. Zaznacz „Odpisał”, żeby liczyć wynik i nie wysyłać tej osobie przypomnień.</p>
+      <p className="mt-2 text-xs text-slate-400">
+        Odpowiedzi przychodzą do skrzynki nadawcy. Zaznacz „Odpisał”, żeby
+        liczyć wynik i nie wysyłać tej osobie przypomnień.
+      </p>
 
       <div className="mt-4 max-h-[28rem] overflow-y-auto">
         <table className="w-full text-left text-sm">
@@ -104,26 +145,53 @@ export function Odbiorcy({ kampaniaId, odswiez }: { kampaniaId: string; odswiez:
             {widoczni.map((o) => (
               <tr key={o.id} className="border-t border-slate-100">
                 <td className="py-2 pr-3">
-                  <p className="text-slate-800">{[o.imie, o.nazwisko].filter(Boolean).join(" ") || o.email}</p>
+                  <p className="text-slate-800">
+                    {[o.imie, o.nazwisko].filter(Boolean).join(" ") || o.email}
+                  </p>
                   <p className="text-xs text-slate-400">{o.email}</p>
                 </td>
-                <td className="py-2 pr-3 text-xs text-slate-500">{[o.klub, o.okreg].filter(Boolean).join(" · ")}</td>
+                <td className="py-2 pr-3 text-xs text-slate-500">
+                  {[o.klub, o.okreg].filter(Boolean).join(" · ")}
+                </td>
                 <td className="py-2 pr-3 text-xs">
                   {o.blad ? (
-                    <span className="text-red-600" title={o.blad}>Błąd</span>
+                    <span className="text-red-600" title={o.blad}>
+                      Błąd
+                    </span>
                   ) : o.wyslanychKrokow > 0 ? (
                     <span className="text-slate-700">
-                      {o.wyslanychKrokow === 1 ? "1 mail" : `${o.wyslanychKrokow} maile`}
-                      {o.ostatniaWyslana && <span className="text-slate-400"> · {new Date(o.ostatniaWyslana).toLocaleDateString("pl-PL")}</span>}
+                      {o.wyslanychKrokow === 1
+                        ? "1 mail"
+                        : `${o.wyslanychKrokow} maile`}
+                      {o.ostatniaWyslana && (
+                        <span className="text-slate-400">
+                          {" "}
+                          ·{" "}
+                          {new Date(o.ostatniaWyslana).toLocaleDateString(
+                            "pl-PL",
+                          )}
+                        </span>
+                      )}
                     </span>
                   ) : (
                     <span className="text-slate-300">nie</span>
                   )}
                 </td>
-                <td className="py-2 pr-3 text-xs">{o.kliknal ? <span className="font-medium text-emerald-700">tak</span> : <span className="text-slate-300">nie</span>}</td>
+                <td className="py-2 pr-3 text-xs">
+                  {o.kliknal ? (
+                    <span className="font-medium text-emerald-700">tak</span>
+                  ) : (
+                    <span className="text-slate-300">nie</span>
+                  )}
+                </td>
                 <td className="py-2">
                   <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-600">
-                    <input type="checkbox" checked={!!o.odpowiedzial} onChange={() => przelaczOdpisal(o)} disabled={o.wyslanychKrokow === 0} />
+                    <input
+                      type="checkbox"
+                      checked={!!o.odpowiedzial}
+                      onChange={() => przelaczOdpisal(o)}
+                      disabled={o.wyslanychKrokow === 0}
+                    />
                     {o.odpowiedzial ? "tak" : ""}
                   </label>
                 </td>
@@ -131,7 +199,11 @@ export function Odbiorcy({ kampaniaId, odswiez }: { kampaniaId: string; odswiez:
             ))}
           </tbody>
         </table>
-        {widoczni.length === 0 && <p className="py-4 text-center text-sm text-slate-400">Nikogo w tym widoku.</p>}
+        {widoczni.length === 0 && (
+          <p className="py-4 text-center text-sm text-slate-400">
+            Nikogo w tym widoku.
+          </p>
+        )}
       </div>
     </section>
   );
