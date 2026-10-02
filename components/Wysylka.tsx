@@ -3,7 +3,20 @@
 import { useEffect, useState } from "react";
 
 type Filtr = { komisje?: string[]; kluby?: string[] };
-type Stan = { odbiorcy: number; wyslane: number; bledy: number; doWyslania: number; limit: number; dzis: number; zostaloDzis: number; kliknieci?: number; doPrzypomnienia?: number; filtr?: Filtr };
+type Stan = {
+  odbiorcy: number;
+  wyslane: number;
+  bledy: number;
+  doWyslania: number;
+  limit: number;
+  dzis: number;
+  zostaloDzis: number;
+  kliknieci?: number;
+  doPrzypomnienia?: number;
+  filtr?: Filtr;
+  auto?: boolean;
+  start?: string | null;
+};
 type Komisja = { kod: string; nazwa: string; czlonkow: number };
 
 const pole =
@@ -29,13 +42,17 @@ export function Wysylka({
   const [stan, setStan] = useState<Stan | null>(null);
   const [testDo, setTestDo] = useState("");
   const [ile, setIle] = useState(10);
-  const [pracuje, setPracuje] = useState<null | "odbiorcy" | "test" | "partia" | "przypomnienia">(null);
+  const [pracuje, setPracuje] = useState<
+    null | "odbiorcy" | "test" | "partia" | "przypomnienia"
+  >(null);
   const [info, setInfo] = useState<string | null>(null);
   const [blad, setBlad] = useState<string | null>(null);
   const [komisje, setKomisje] = useState<Komisja[]>([]);
   const [kluby, setKluby] = useState<string[]>([]);
   const [wybraneKomisje, setWybraneKomisje] = useState<string[]>([]);
   const [wybraneKluby, setWybraneKluby] = useState<string[]>([]);
+  const [startAuto, setStartAuto] = useState("");
+  const [zapisujeAuto, setZapisujeAuto] = useState(false);
 
   async function wczytaj() {
     const odp = await fetch(`/api/kampanie/${kampaniaId}/wysylka`);
@@ -50,6 +67,7 @@ export function Wysylka({
         setStan(dane);
         setWybraneKomisje(dane.filtr?.komisje ?? []);
         setWybraneKluby(dane.filtr?.kluby ?? []);
+        setStartAuto(dane.start ?? "");
       })
       .catch(() => {});
   }, [kampaniaId]);
@@ -66,9 +84,12 @@ export function Wysylka({
       .catch(() => {});
   }, [zSejmu]);
 
-  const przelacz = (lista: string[], ustaw: (l: string[]) => void, x: string) => ustaw(lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x]);
+  const przelacz = (lista: string[], ustaw: (l: string[]) => void, x: string) =>
+    ustaw(lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x]);
 
-  async function wyslij(tryb: "odbiorcy" | "test" | "partia" | "przypomnienia") {
+  async function wyslij(
+    tryb: "odbiorcy" | "test" | "partia" | "przypomnienia",
+  ) {
     setPracuje(tryb);
     setBlad(null);
     setInfo(null);
@@ -76,14 +97,27 @@ export function Wysylka({
       const odp = await fetch(`/api/kampanie/${kampaniaId}/wysylka`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tryb, do: testDo, ile, filtr: { komisje: wybraneKomisje, kluby: wybraneKluby } }),
+        body: JSON.stringify({
+          tryb,
+          do: testDo,
+          ile,
+          filtr: { komisje: wybraneKomisje, kluby: wybraneKluby },
+        }),
       });
       const dane = await odp.json().catch(() => ({}));
       if (!odp.ok) return setBlad(dane.blad ?? "Coś poszło nie tak.");
-      if (tryb === "odbiorcy") setInfo(`Lista odbiorców gotowa: ${dane.odbiorcy} osób z e-mailem (nowych: ${dane.dodane}).`);
-      if (tryb === "test") setInfo(`Wysłano ${dane.wyslane} ${dane.wyslane === 1 ? "wiadomość testową" : "wiadomości testowe"} na ${dane.do}. Sprawdź, czy są w odebranych, a nie w spamie.`);
+      if (tryb === "odbiorcy")
+        setInfo(
+          `Lista odbiorców gotowa: ${dane.odbiorcy} osób z e-mailem (nowych: ${dane.dodane}).`,
+        );
+      if (tryb === "test")
+        setInfo(
+          `Wysłano ${dane.wyslane} ${dane.wyslane === 1 ? "wiadomość testową" : "wiadomości testowe"} na ${dane.do}. Sprawdź, czy są w odebranych, a nie w spamie.`,
+        );
       if (tryb === "partia" || tryb === "przypomnienia")
-        setInfo(`Wysłano ${dane.wyslanoTeraz}.${dane.bledyTeraz?.length ? ` Błędy: ${dane.bledyTeraz.join(" ")}` : ""}`);
+        setInfo(
+          `Wysłano ${dane.wyslanoTeraz}.${dane.bledyTeraz?.length ? ` Błędy: ${dane.bledyTeraz.join(" ")}` : ""}`,
+        );
       await wczytaj();
       onZmiana?.();
     } catch {
@@ -93,52 +127,137 @@ export function Wysylka({
     }
   }
 
+  async function ustawAuto(wlacz: boolean) {
+    setZapisujeAuto(true);
+    setBlad(null);
+    setInfo(null);
+    try {
+      const odp = await fetch(`/api/kampanie/${kampaniaId}/wysylka`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tryb: "auto", wlacz, start: startAuto || null }),
+      });
+      const dane = await odp.json().catch(() => ({}));
+      if (!odp.ok) return setBlad(dane.blad ?? "Coś poszło nie tak.");
+      setStan((st) =>
+        st ? { ...st, auto: dane.auto, start: dane.start } : st,
+      );
+      setInfo(
+        wlacz
+          ? "Automat włączony. Pierwsza partia w najbliższy dzień roboczy rano (od dnia startu)."
+          : "Automat wyłączony. Wysyłasz ręcznie.",
+      );
+    } catch {
+      setBlad("Brak połączenia z serwerem.");
+    } finally {
+      setZapisujeAuto(false);
+    }
+  }
+
   const maxPartia = stan ? Math.min(25, stan.zostaloDzis, stan.doWyslania) : 0;
 
   return (
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">Wysyłka</h2>
+      <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+        Wysyłka
+      </h2>
 
-      {!maSkrzynke && <p className="mt-4 text-sm text-amber-700">Najpierw wybierz skrzynkę nadawcy (sekcja niżej).</p>}
+      {!maSkrzynke && (
+        <p className="mt-4 text-sm text-amber-700">
+          Najpierw wybierz skrzynkę nadawcy (sekcja niżej).
+        </p>
+      )}
 
       {stan && (
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
           <Liczba etykieta="Odbiorcy z e-mailem" wartosc={stan.odbiorcy} />
           <Liczba etykieta="Wysłane" wartosc={stan.wyslane} />
           <Liczba etykieta="Do wysłania" wartosc={stan.doWyslania} />
-          <Liczba etykieta="Dziś ze skrzynki" wartosc={`${stan.dzis} / ${stan.limit}`} />
-          {stan.wyslane > 0 && <Liczba etykieta="Kliknęło w link" wartosc={`${stan.kliknieci ?? 0} (${Math.round(((stan.kliknieci ?? 0) / stan.wyslane) * 100)}%)`} />}
+          <Liczba
+            etykieta="Dziś ze skrzynki"
+            wartosc={`${stan.dzis} / ${stan.limit}`}
+          />
+          {stan.wyslane > 0 && (
+            <Liczba
+              etykieta="Kliknęło w link"
+              wartosc={`${stan.kliknieci ?? 0} (${Math.round(((stan.kliknieci ?? 0) / stan.wyslane) * 100)}%)`}
+            />
+          )}
         </div>
       )}
-      {stan && stan.bledy > 0 && <p className="mt-2 text-xs text-red-600">Nieudane wysyłki: {stan.bledy}.</p>}
+      {stan && stan.bledy > 0 && (
+        <p className="mt-2 text-xs text-red-600">
+          Nieudane wysyłki: {stan.bledy}.
+        </p>
+      )}
 
       <div className="mt-6 space-y-6">
-        <Krok nr={1} tytul="Lista odbiorców" opis="Pobiera osoby z e-mailem ze źródeł kampanii (Sejm, Tweede Kamer). Własna lista jest już w bazie. Zmiana zawężenia i ponowne kliknięcie odświeża listę (osób, które już dostały maila, nie usuwamy).">
+        <Krok
+          nr={1}
+          tytul="Lista odbiorców"
+          opis="Pobiera osoby z e-mailem ze źródeł kampanii (Sejm, Tweede Kamer). Własna lista jest już w bazie. Zmiana zawężenia i ponowne kliknięcie odświeża listę (osób, które już dostały maila, nie usuwamy)."
+        >
           {zSejmu && (
             <div className="mb-4 space-y-3">
-              {kogoSzukamy && <p className="text-xs text-slate-500">Zawężenie z kreatora: „{kogoSzukamy}”. Wybierz niżej komisje albo kluby, które mu odpowiadają.</p>}
+              {kogoSzukamy && (
+                <p className="text-xs text-slate-500">
+                  Zawężenie z kreatora: „{kogoSzukamy}”. Wybierz niżej komisje
+                  albo kluby, które mu odpowiadają.
+                </p>
+              )}
               <div>
-                <p className="mb-1.5 text-xs font-medium text-slate-600">Komisje Sejmu {wybraneKomisje.length === 0 && <span className="font-normal text-slate-400">(nic nie wybrane = wszyscy posłowie)</span>}</p>
+                <p className="mb-1.5 text-xs font-medium text-slate-600">
+                  Komisje Sejmu{" "}
+                  {wybraneKomisje.length === 0 && (
+                    <span className="font-normal text-slate-400">
+                      (nic nie wybrane = wszyscy posłowie)
+                    </span>
+                  )}
+                </p>
                 <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 p-2">
-                  {komisje.length === 0 && <p className="p-1 text-xs text-slate-400">Wczytuję komisje...</p>}
+                  {komisje.length === 0 && (
+                    <p className="p-1 text-xs text-slate-400">
+                      Wczytuję komisje...
+                    </p>
+                  )}
                   {komisje.map((k) => (
-                    <label key={k.kod} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm text-slate-700 hover:bg-slate-50">
-                      <input type="checkbox" checked={wybraneKomisje.includes(k.kod)} onChange={() => przelacz(wybraneKomisje, setWybraneKomisje, k.kod)} />
+                    <label
+                      key={k.kod}
+                      className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={wybraneKomisje.includes(k.kod)}
+                        onChange={() =>
+                          przelacz(wybraneKomisje, setWybraneKomisje, k.kod)
+                        }
+                      />
                       <span className="flex-1">{k.nazwa}</span>
-                      <span className="text-xs text-slate-400">{k.czlonkow}</span>
+                      <span className="text-xs text-slate-400">
+                        {k.czlonkow}
+                      </span>
                     </label>
                   ))}
                 </div>
               </div>
               {kluby.length > 0 && (
                 <div>
-                  <p className="mb-1.5 text-xs font-medium text-slate-600">Kluby {wybraneKluby.length === 0 && <span className="font-normal text-slate-400">(nic nie wybrane = wszystkie)</span>}</p>
+                  <p className="mb-1.5 text-xs font-medium text-slate-600">
+                    Kluby{" "}
+                    {wybraneKluby.length === 0 && (
+                      <span className="font-normal text-slate-400">
+                        (nic nie wybrane = wszystkie)
+                      </span>
+                    )}
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {kluby.map((c) => (
                       <button
                         key={c}
                         type="button"
-                        onClick={() => przelacz(wybraneKluby, setWybraneKluby, c)}
+                        onClick={() =>
+                          przelacz(wybraneKluby, setWybraneKluby, c)
+                        }
                         className={`rounded-full px-3 py-1 text-xs ring-1 transition ${wybraneKluby.includes(c) ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-300 hover:ring-slate-900"}`}
                       >
                         {c}
@@ -149,21 +268,44 @@ export function Wysylka({
               )}
             </div>
           )}
-          <button onClick={() => wyslij("odbiorcy")} disabled={!!pracuje} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50">
-            {pracuje === "odbiorcy" ? "Pobieram..." : "Przygotuj listę odbiorców"}
+          <button
+            onClick={() => wyslij("odbiorcy")}
+            disabled={!!pracuje}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
+          >
+            {pracuje === "odbiorcy"
+              ? "Pobieram..."
+              : "Przygotuj listę odbiorców"}
           </button>
         </Krok>
 
-        <Krok nr={2} tytul="Test na własny adres" opis="Wysyła każdy zatwierdzony tekst (wiadomości i przypomnienia) z dopiskiem [TEST], z przykładowymi danymi posła w polach {nazwisko} i {okreg}. Puste pole = na adres skrzynki nadawcy.">
+        <Krok
+          nr={2}
+          tytul="Test na własny adres"
+          opis="Wysyła każdy zatwierdzony tekst (wiadomości i przypomnienia) z dopiskiem [TEST], z przykładowymi danymi posła w polach {nazwisko} i {okreg}. Puste pole = na adres skrzynki nadawcy."
+        >
           <div className="flex flex-wrap gap-3">
-            <input className={`${pole} max-w-xs`} placeholder="twoj@adres.pl" value={testDo} onChange={(e) => setTestDo(e.target.value)} />
-            <button onClick={() => wyslij("test")} disabled={!!pracuje || !maSkrzynke} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50">
+            <input
+              className={`${pole} max-w-xs`}
+              placeholder="twoj@adres.pl"
+              value={testDo}
+              onChange={(e) => setTestDo(e.target.value)}
+            />
+            <button
+              onClick={() => wyslij("test")}
+              disabled={!!pracuje || !maSkrzynke}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
+            >
               {pracuje === "test" ? "Wysyłam..." : "Wyślij test"}
             </button>
           </div>
         </Krok>
 
-        <Krok nr={3} tytul="Wyślij partię" opis="Do kolejnych odbiorców, w granicach dziennego limitu skrzynki. Między mailami kilka sekund przerwy, więc 10 maili to ok. pół minuty.">
+        <Krok
+          nr={3}
+          tytul="Wyślij partię"
+          opis="Do kolejnych odbiorców, w granicach dziennego limitu skrzynki. Między mailami kilka sekund przerwy, więc 10 maili to ok. pół minuty."
+        >
           <div className="flex flex-wrap items-center gap-3">
             <input
               type="number"
@@ -178,33 +320,106 @@ export function Wysylka({
               disabled={!!pracuje || !maSkrzynke || maxPartia < 1}
               className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:bg-slate-300"
             >
-              {pracuje === "partia" ? "Wysyłam..." : `Wyślij ${Math.min(ile, Math.max(maxPartia, 1))} maili`}
+              {pracuje === "partia"
+                ? "Wysyłam..."
+                : `Wyślij ${Math.min(ile, Math.max(maxPartia, 1))} maili`}
             </button>
           </div>
-          {stan && stan.zostaloDzis === 0 && stan.limit > 0 && <p className="mt-2 text-xs text-slate-500">Dzienny limit skrzynki wyczerpany. Kolejna partia jutro.</p>}
+          {stan && stan.zostaloDzis === 0 && stan.limit > 0 && (
+            <p className="mt-2 text-xs text-slate-500">
+              Dzienny limit skrzynki wyczerpany. Kolejna partia jutro.
+            </p>
+          )}
         </Krok>
 
-        <Krok nr={4} tytul="Przypomnienia" opis="Do osób, które nie odpisały po ustawionej w kampanii liczbie dni. Idzie w tym samym wątku (Re: temat). Zaznacz w liście odbiorców, kto odpisał.">
+        <Krok
+          nr={4}
+          tytul="Przypomnienia"
+          opis="Do osób, które nie odpisały po ustawionej w kampanii liczbie dni. Idzie w tym samym wątku (Re: temat). Zaznacz w liście odbiorców, kto odpisał."
+        >
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => wyslij("przypomnienia")}
               disabled={!!pracuje || !maSkrzynke || !stan?.doPrzypomnienia}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
             >
-              {pracuje === "przypomnienia" ? "Wysyłam..." : `Wyślij przypomnienia (${stan?.doPrzypomnienia ?? 0})`}
+              {pracuje === "przypomnienia"
+                ? "Wysyłam..."
+                : `Wyślij przypomnienia (${stan?.doPrzypomnienia ?? 0})`}
             </button>
-            {stan && !stan.doPrzypomnienia && <span className="text-xs text-slate-400">Na razie nikt nie czeka na przypomnienie.</span>}
+            {stan && !stan.doPrzypomnienia && (
+              <span className="text-xs text-slate-400">
+                Na razie nikt nie czeka na przypomnienie.
+              </span>
+            )}
+          </div>
+        </Krok>
+
+        <Krok
+          nr={5}
+          tytul="Wysyłka automatyczna"
+          opis="Zamiast klikać: w dni robocze rano (ok. 8:30-9:30) system sam wysyła kolejną partię w dziennym limicie skrzynki i przypomnienia tym, którzy nie odpisali. Włącz dopiero po udanym teście."
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="text-xs text-slate-600">
+              Start od
+              <input
+                type="date"
+                className={`${pole} ml-2 inline-block w-auto py-1.5`}
+                value={startAuto}
+                onChange={(e) => setStartAuto(e.target.value)}
+              />
+            </label>
+            {stan?.auto ? (
+              <button
+                onClick={() => ustawAuto(false)}
+                disabled={zapisujeAuto}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
+              >
+                {zapisujeAuto ? "Zapisuję..." : "Wyłącz automat"}
+              </button>
+            ) : (
+              <button
+                onClick={() => ustawAuto(true)}
+                disabled={zapisujeAuto || !maSkrzynke}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:bg-slate-300"
+              >
+                {zapisujeAuto ? "Zapisuję..." : "Włącz automat"}
+              </button>
+            )}
+            {stan?.auto && (
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
+                Działa
+                {stan.start
+                  ? ` od ${new Date(stan.start).toLocaleDateString("pl-PL")}`
+                  : ""}
+              </span>
+            )}
           </div>
         </Krok>
       </div>
 
-      {info && <p className="mt-5 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-100">{info}</p>}
-      {blad && <p className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">{blad}</p>}
+      {info && (
+        <p className="mt-5 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-100">
+          {info}
+        </p>
+      )}
+      {blad && (
+        <p className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
+          {blad}
+        </p>
+      )}
     </section>
   );
 }
 
-function Liczba({ etykieta, wartosc }: { etykieta: string; wartosc: number | string }) {
+function Liczba({
+  etykieta,
+  wartosc,
+}: {
+  etykieta: string;
+  wartosc: number | string;
+}) {
   return (
     <div className="rounded-lg bg-slate-50 px-3 py-2">
       <p className="text-xs text-slate-400">{etykieta}</p>
@@ -213,7 +428,17 @@ function Liczba({ etykieta, wartosc }: { etykieta: string; wartosc: number | str
   );
 }
 
-function Krok({ nr, tytul, opis, children }: { nr: number; tytul: string; opis: string; children: React.ReactNode }) {
+function Krok({
+  nr,
+  tytul,
+  opis,
+  children,
+}: {
+  nr: number;
+  tytul: string;
+  opis: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <p className="text-sm font-medium text-slate-800">
