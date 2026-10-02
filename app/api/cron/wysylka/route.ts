@@ -26,13 +26,18 @@ export async function GET(req: NextRequest) {
 
   const koniec = Date.now() + BUDZET_MS;
   const dzis = new Date().toISOString().slice(0, 10);
-  const { data: kampanie } = await supabase
+  const { data: kampanie, error } = await supabase
     .from("kampanie")
     .select("id, nazwa, status, skrzynka_id, start")
     .eq("auto_wysylka", true)
     .neq("status", "zakonczona")
     .not("skrzynka_id", "is", null)
     .or(`start.is.null,start.lte.${dzis}`);
+  // Np. błędny klucz serwisowy: bez tego automat wyglądałby jak "brak kampanii".
+  if (error) {
+    console.error("cron wysylka: blad bazy", error.message);
+    return NextResponse.json({ blad: `Baza: ${error.message}` }, { status: 500 });
+  }
 
   const raport: { kampania: string; partia: string; przypomnienia: string }[] =
     [];
