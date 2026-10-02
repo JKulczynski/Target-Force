@@ -44,7 +44,9 @@ export function SkrzynkaKampanii({
 
   return (
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">Skrzynka nadawcy</h2>
+      <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+        Skrzynka nadawcy
+      </h2>
       {wybrana ? (
         <Podlaczona s={wybrana} onOdlacz={() => onZmiana(null)} />
       ) : (
@@ -65,7 +67,9 @@ function Podlaczona({ s, onOdlacz }: { s: Skrzynka; onOdlacz: () => void }) {
   const [domena, setDomena] = useState<WynikDomeny | null>(null);
   const [odbiorca, setOdbiorca] = useState("");
   const [trwa, setTrwa] = useState(false);
-  const [wynik, setWynik] = useState<{ ok: boolean; tekst: string } | null>(null);
+  const [wynik, setWynik] = useState<{ ok: boolean; tekst: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     fetch(`/api/domena?d=${encodeURIComponent(s.email_nadawcy)}`)
@@ -86,7 +90,10 @@ function Podlaczona({ s, onOdlacz }: { s: Skrzynka; onOdlacz: () => void }) {
       const dane = await odp.json();
       setWynik(
         odp.ok
-          ? { ok: true, tekst: `Wysłane na ${dane.do}. Sprawdź, czy trafiło do odebranych, a nie do spamu.` }
+          ? {
+              ok: true,
+              tekst: `Skrzynka działa: krótki mail techniczny poszedł na ${dane.do}. Teksty kampanii testujesz niżej, w Wysyłce, krok 2.`,
+            }
           : { ok: false, tekst: dane.blad ?? "Nie udało się wysłać." },
       );
     } catch {
@@ -109,19 +116,30 @@ function Podlaczona({ s, onOdlacz }: { s: Skrzynka; onOdlacz: () => void }) {
             Połączenie działa · limit {s.dzienny_limit} maili dziennie
           </p>
         </div>
-        <button onClick={onOdlacz} className="text-xs text-slate-400 transition hover:text-red-600">
+        <button
+          onClick={onOdlacz}
+          className="text-xs text-slate-400 transition hover:text-red-600"
+        >
           Zmień skrzynkę
         </button>
       </div>
       {domena && <Werdykt wynik={domena} />}
       <div className="flex gap-3">
-        <input className={pole} type="email" value={odbiorca} onChange={(e) => setOdbiorca(e.target.value)} placeholder={`wyślij test na... (domyślnie ${s.email_nadawcy})`} />
+        <input
+          className={pole}
+          type="email"
+          value={odbiorca}
+          onChange={(e) => setOdbiorca(e.target.value)}
+          placeholder={`krótki mail techniczny na... (domyślnie ${s.email_nadawcy})`}
+        />
         <button onClick={test} disabled={trwa} className={przycisk}>
-          {trwa ? "Wysyłam..." : "Wyślij test"}
+          {trwa ? "Sprawdzam..." : "Sprawdź skrzynkę"}
         </button>
       </div>
       {wynik && (
-        <p className={`rounded-lg px-4 py-3 text-sm ring-1 ${wynik.ok ? "bg-emerald-50 text-emerald-800 ring-emerald-100" : "bg-red-50 text-red-700 ring-red-100"}`}>
+        <p
+          className={`rounded-lg px-4 py-3 text-sm ring-1 ${wynik.ok ? "bg-emerald-50 text-emerald-800 ring-emerald-100" : "bg-red-50 text-red-700 ring-red-100"}`}
+        >
           {wynik.tekst}
         </p>
       )}
@@ -155,10 +173,17 @@ function Wybor({
       const odp = await fetch("/api/skrzynka", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, haslo, nazwa, host: inny ? host : "", port: inny ? port : "" }),
+        body: JSON.stringify({
+          email,
+          haslo,
+          nazwa,
+          host: inny ? host : "",
+          port: inny ? port : "",
+        }),
       });
       const dane = await odp.json();
-      if (!odp.ok) return setBlad(dane.blad ?? "Nie udało się podłączyć skrzynki.");
+      if (!odp.ok)
+        return setBlad(dane.blad ?? "Nie udało się podłączyć skrzynki.");
       await onNowa(dane.id);
     } catch {
       setBlad("Nie udało się podłączyć skrzynki.");
@@ -170,13 +195,16 @@ function Wybor({
   return (
     <div className="mt-3">
       <p className="text-sm text-slate-500">
-        Z tej skrzynki pójdą wiadomości tej kampanii. Przy Gmailu wpisz <b>hasło aplikacji</b> (16 znaków z
-        myaccount.google.com/apppasswords), nie zwykłe hasło. Hasło zapisujemy zaszyfrowane.
+        Z tej skrzynki pójdą wiadomości tej kampanii. Przy Gmailu wpisz{" "}
+        <b>hasło aplikacji</b> (16 znaków z myaccount.google.com/apppasswords),
+        nie zwykłe hasło. Hasło zapisujemy zaszyfrowane.
       </p>
 
       {lista.length > 0 && (
         <div className="mt-4">
-          <p className="text-sm font-medium text-slate-700">Użyj skrzynki podłączonej wcześniej:</p>
+          <p className="text-sm font-medium text-slate-700">
+            Użyj skrzynki podłączonej wcześniej:
+          </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {lista.map((s) => (
               <button
@@ -188,27 +216,67 @@ function Wybor({
               </button>
             ))}
           </div>
-          <p className="mt-4 text-sm font-medium text-slate-700">albo podłącz nową:</p>
+          <p className="mt-4 text-sm font-medium text-slate-700">
+            albo podłącz nową:
+          </p>
         </div>
       )}
 
       <form onSubmit={podlacz} className="mt-3 space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
-          <input className={pole} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="adres, np. biuro@firma.pl" />
-          <input className={pole} type="password" required value={haslo} onChange={(e) => setHaslo(e.target.value)} placeholder="hasło aplikacji" autoComplete="new-password" />
+          <input
+            className={pole}
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="adres, np. biuro@firma.pl"
+          />
+          <input
+            className={pole}
+            type="password"
+            required
+            value={haslo}
+            onChange={(e) => setHaslo(e.target.value)}
+            placeholder="hasło aplikacji"
+            autoComplete="new-password"
+          />
         </div>
-        <input className={pole} value={nazwa} onChange={(e) => setNazwa(e.target.value)} placeholder="nazwa nadawcy widoczna u odbiorcy, np. Piotr z Manifesto (opcjonalnie)" />
+        <input
+          className={pole}
+          value={nazwa}
+          onChange={(e) => setNazwa(e.target.value)}
+          placeholder="nazwa nadawcy widoczna u odbiorcy, np. Piotr z Manifesto (opcjonalnie)"
+        />
         <label className="flex items-center gap-2 text-sm text-slate-500">
-          <input type="checkbox" checked={inny} onChange={(e) => setInny(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={inny}
+            onChange={(e) => setInny(e.target.checked)}
+          />
           Poczta firmowa albo inna niż Gmail/Outlook (podam serwer sam)
         </label>
         {inny && (
           <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
-            <input className={pole} value={host} onChange={(e) => setHost(e.target.value)} placeholder="serwer SMTP, np. smtp.twojadomena.pl" />
-            <input className={pole} value={port} onChange={(e) => setPort(e.target.value)} placeholder="port, np. 465" />
+            <input
+              className={pole}
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+              placeholder="serwer SMTP, np. smtp.twojadomena.pl"
+            />
+            <input
+              className={pole}
+              value={port}
+              onChange={(e) => setPort(e.target.value)}
+              placeholder="port, np. 465"
+            />
           </div>
         )}
-        {blad && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">{blad}</p>}
+        {blad && (
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
+            {blad}
+          </p>
+        )}
         <button disabled={trwa} className={przycisk}>
           {trwa ? "Sprawdzam połączenie..." : "Podłącz i sprawdź"}
         </button>
