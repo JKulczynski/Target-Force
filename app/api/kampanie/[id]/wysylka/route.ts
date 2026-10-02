@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { odszyfruj } from "@/lib/szyfr";
 import { opiszBladSmtp, transport } from "@/lib/smtp";
 import { POBIERACZE } from "@/lib/zrodla-serwer";
+import { personalizuj, polaKontaktu, POLA_TESTOWE } from "@/lib/personalizacja";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -67,7 +68,8 @@ async function stan(supabase: Supabase, kampaniaId: string, skrzynkaId: string |
     const { data: klik } = await supabase.from("zdarzenia").select("wiadomosc_id").eq("typ", "klikniecie").in("wiadomosc_id", wysylkaIds.map((w) => w.id));
     kliknieci = new Set((klik ?? []).map((z) => z.wiadomosc_id)).size;
   }
-  return { odbiorcy: odbiorcy ?? 0, wyslane, bledy, doWyslania, limit, dzis, zostaloDzis: Math.max(limit - dzis, 0), kliknieci };
+  const doPrzypomnienia = (await gotowiDoPrzypomnienia(supabase, kampaniaId)).length;
+  return { odbiorcy: odbiorcy ?? 0, wyslane, bledy, doWyslania, limit, dzis, zostaloDzis: Math.max(limit - dzis, 0), kliknieci, doPrzypomnienia };
 }
 
 async function wczytajKampanie(supabase: Supabase, id: string) {
@@ -96,10 +98,11 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
 }
 
 /**
- * Trzy tryby:
+ * Tryby:
  * - "odbiorcy": pobiera kontakty z e-mailem ze źródeł kampanii (Sejm, Tweede Kamer) do bazy, żeby było wiadomo, do kogo idzie wysyłka.
  * - "test": wysyła zatwierdzone warianty pierwszej wiadomości na podany adres (własny), z dopiskiem [TEST]. Nie liczy się do kampanii.
  * - "partia": wysyła pierwszą wiadomość do kolejnych odbiorców, w granicach dziennego limitu skrzynki.
+ * - "przypomnienia": kolejne przypomnienie (w tym samym wątku) do tych, którzy nie odpisali po ustawionej liczbie dni.
  */
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -152,18 +155,20 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
           email: c.email!.trim().toLowerCase(),
           organizacja: c.organizacja,
           stanowisko: c.stanowisko,
+          dane: c.dane ?? {},
         }));
       if (wiersze.length === 0) continue;
-      const { error, count } = await supabase
-        .from("kontakty")
-        .upsert(wiersze, { onConflict: "kampania_id,email", ignoreDuplicates: true, count: "exact" });
+      const { count: przed } = await supabase.from("kontakty").select("id", { count: "exact", head: true }).eq("kampania_id", id);
+      // Bez ignoreDuplicates: odświeża dane istniejących osób (np. okręg do personalizacji).
+      const { error } = await supabase.from("kontakty").upsert(wiersze, { onConflict: "kampania_id,email" });
       if (error) return NextResponse.json({ blad: "Nie udało się zapisać odbiorców." }, { status: 500 });
-      dodane += count ?? 0;
+      const { count: po } = await supabase.from("kontakty").select("id", { count: "exact", head: true }).eq("kampania_id", id);
+      dodane += Math.max((po ?? 0) - (przed ?? 0), 0);
     }
     return NextResponse.json({ ...(await stan(supabase, id, k.skrzynka_id)), ok: true, dodane, filtr });
   }
 
-  if (tryb !== "test" && tryb !== "partia") return NextResponse.json({ blad: "Nieznany tryb." }, { status: 400 });
+  if (tryb !== "test" && tryb !== "partia" && tryb !== "przypomnienia") return NextResponse.json({ blad: "Nieznany tryb." }, { status: 400 });
 
   if (!k.skrzynka_id) return NextResponse.json({ blad: "Kampania nie ma skrzynki nadawcy. Wybierz ją niżej, w sekcji Skrzynka." }, { status: 400 });
   const { data: s } = await supabase
@@ -176,14 +181,15 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const { data: sekret, error: bladSekretu } = await supabase.rpc("pobierz_sekret_skrzynki", { p_skrzynka: s.id });
   if (bladSekretu || !sekret) return NextResponse.json({ blad: "Brak zapisanego hasła skrzynki. Podłącz ją ponownie." }, { status: 400 });
 
-  const { data: zatwierdzone } = await supabase
+  const { data: wszystkieZatw } = await supabase
     .from("warianty")
-    .select("id, numer, temat, tresc")
+    .select("id, krok, numer, temat, tresc")
     .eq("kampania_id", id)
-    .eq("krok", 0)
     .eq("status", "zatwierdzony")
+    .order("krok")
     .order("numer");
-  if (!zatwierdzone || zatwierdzone.length === 0)
+  const zatwierdzone = (wszystkieZatw ?? []).filter((w) => w.krok === 0);
+  if (tryb !== "przypomnienia" && zatwierdzone.length === 0)
     return NextResponse.json({ blad: "Brak zatwierdzonych wiadomości. Zatwierdź co najmniej jeden wariant pierwszej wiadomości." }, { status: 400 });
 
   const poczta = transport({ host: s.smtp_host, port: s.smtp_port, uzytkownik: s.smtp_uzytkownik, haslo: odszyfruj(sekret as string) });
@@ -192,49 +198,80 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if (tryb === "test") {
     const doKogo = String(body.do ?? "").trim() || s.email_nadawcy;
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(doKogo)) return NextResponse.json({ blad: "Podaj poprawny adres odbiorcy testu." }, { status: 400 });
+    // Test: wszystkie zatwierdzone teksty (pierwsza wiadomość i przypomnienia) z przykładowymi polami personalizacji.
+    const doTestu = wszystkieZatw ?? [];
     try {
-      for (const w of zatwierdzone) {
-        await poczta.sendMail({ from: od, to: doKogo, subject: `[TEST ${w.numer}] ${w.temat}`, text: w.tresc });
+      for (const w of doTestu) {
+        const etykieta = w.krok === 0 ? `TEST ${w.numer}` : `TEST przypomnienie ${w.krok}`;
+        await poczta.sendMail({ from: od, to: doKogo, subject: `[${etykieta}] ${personalizuj(w.temat, POLA_TESTOWE)}`, text: personalizuj(w.tresc, POLA_TESTOWE) });
       }
     } catch (e) {
       return NextResponse.json({ blad: opiszBladSmtp(e) }, { status: 400 });
     }
-    return NextResponse.json({ ok: true, do: doKogo, wyslane: zatwierdzone.length });
+    return NextResponse.json({ ok: true, do: doKogo, wyslane: doTestu.length });
   }
 
-  // Partia: tylu, ilu pozwala dzienny limit skrzynki, maks. MAKS_PARTIA na kliknięcie.
+  // Dzienny limit skrzynki, maks. MAKS_PARTIA na kliknięcie.
   const dzis = await wyslaneDzisZeSkrzynki(supabase, s.id);
   const prosba = Math.min(Math.max(Number(body.ile) || 10, 1), MAKS_PARTIA);
   const ile = Math.min(prosba, s.dzienny_limit - dzis);
   if (ile <= 0) return NextResponse.json({ blad: `Dzienny limit skrzynki wyczerpany (${s.dzienny_limit}). Kolejna partia jutro.` }, { status: 429 });
 
-  // Kontakty, które nie dostały jeszcze pierwszej wiadomości.
-  const { data: juz } = await supabase.from("wiadomosci").select("kontakt_id").eq("kampania_id", id).eq("krok", 0);
-  const pominac = new Set((juz ?? []).map((w) => w.kontakt_id));
-  const { data: kontakty } = await supabase
-    .from("kontakty")
-    .select("id, email")
-    .eq("kampania_id", id)
-    .eq("wypisany", false)
-    .not("email", "is", null)
-    .order("utworzony")
-    .limit(pominac.size + ile);
-  const kolejka = (kontakty ?? []).filter((c) => !pominac.has(c.id)).slice(0, ile);
-  if (kolejka.length === 0) return NextResponse.json({ blad: "Wszyscy odbiorcy dostali już pierwszą wiadomość." }, { status: 400 });
+  type Kontakt = { id: string; email: string | null; imie: string | null; nazwisko: string | null; dane: unknown };
+  type Pozycja = { kontakt: Kontakt; krok: number; numer: number; temat: string; tresc: string; inReplyTo?: string | null };
+  let kolejka: Pozycja[] = [];
+
+  if (tryb === "partia") {
+    const { data: juz } = await supabase.from("wiadomosci").select("kontakt_id").eq("kampania_id", id).eq("krok", 0);
+    const pominac = new Set((juz ?? []).map((w) => w.kontakt_id));
+    const { data: kontakty } = await supabase
+      .from("kontakty")
+      .select("id, email, imie, nazwisko, dane")
+      .eq("kampania_id", id)
+      .eq("wypisany", false)
+      .not("email", "is", null)
+      .order("utworzony")
+      .limit(pominac.size + ile);
+    kolejka = (kontakty ?? [])
+      .filter((c) => !pominac.has(c.id))
+      .slice(0, ile)
+      .map((c, i) => {
+        // Warianty po kolei: każdy odbiorca dostaje inny tekst, co zmniejsza ryzyko filtra antyspamowego.
+        const w = zatwierdzone[(pominac.size + i) % zatwierdzone.length];
+        return { kontakt: c, krok: 0, numer: w.numer, temat: w.temat, tresc: w.tresc };
+      });
+    if (kolejka.length === 0) return NextResponse.json({ blad: "Wszyscy odbiorcy dostali już pierwszą wiadomość." }, { status: 400 });
+  } else {
+    const gotowi = await gotowiDoPrzypomnienia(supabase, id);
+    kolejka = gotowi.slice(0, ile).flatMap((g) => {
+      const w = (wszystkieZatw ?? []).find((x) => x.krok === g.nastepnyKrok);
+      // Przypomnienie w tym samym wątku: "Re: temat poprzedniego maila".
+      return w ? [{ kontakt: g.kontakt, krok: g.nastepnyKrok, numer: w.numer, temat: `Re: ${g.poprzedniTemat}`, tresc: w.tresc, inReplyTo: g.poprzednieMessageId }] : [];
+    });
+    if (kolejka.length === 0)
+      return NextResponse.json({ blad: "Nikt nie czeka na przypomnienie (za wcześnie, ktoś odpisał albo brak zatwierdzonego przypomnienia)." }, { status: 400 });
+  }
 
   let wyslane = 0;
   const bledy: string[] = [];
-  for (const [i, c] of kolejka.entries()) {
-    // Warianty po kolei: każdy odbiorca dostaje inny tekst, co zmniejsza ryzyko filtra antyspamowego.
-    const w = zatwierdzone[(pominac.size + i) % zatwierdzone.length];
+  for (const [i, p] of kolejka.entries()) {
+    const pola = polaKontaktu(p.kontakt);
+    const temat = personalizuj(p.temat, pola);
+    const tresc = personalizuj(p.tresc, pola);
     const { data: wiersz, error } = await supabase
       .from("wiadomosci")
-      .insert({ kampania_id: id, kontakt_id: c.id, krok: 0, wariant: w.numer, temat: w.temat, tresc: w.tresc, status: "zaplanowana", zaplanowana_na: new Date().toISOString() })
+      .insert({ kampania_id: id, kontakt_id: p.kontakt.id, krok: p.krok, wariant: p.numer, temat, tresc, status: "zaplanowana", zaplanowana_na: new Date().toISOString() })
       .select("id")
       .single();
     if (error || !wiersz) continue; // już w kolejce (np. drugie kliknięcie naraz), pomijamy
     try {
-      const info = await poczta.sendMail({ from: od, to: c.email!, subject: w.temat, text: zLinkamiSledzacymi(w.tresc, req.nextUrl.origin, wiersz.id) });
+      const info = await poczta.sendMail({
+        from: od,
+        to: p.kontakt.email!,
+        subject: temat,
+        text: zLinkamiSledzacymi(tresc, req.nextUrl.origin, wiersz.id),
+        ...(p.inReplyTo ? { inReplyTo: p.inReplyTo, references: [p.inReplyTo] } : {}),
+      });
       await supabase.from("wiadomosci").update({ status: "wyslana", wyslana: new Date().toISOString(), message_id: info.messageId }).eq("id", wiersz.id);
       wyslane++;
     } catch (e) {
@@ -250,4 +287,38 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if (wyslane > 0 && k.status !== "uruchomiona") await supabase.from("kampanie").update({ status: "uruchomiona" }).eq("id", id);
 
   return NextResponse.json({ ...(await stan(supabase, id, s.id)), ok: true, wyslanoTeraz: wyslane, bledyTeraz: bledy.slice(0, 3) });
+}
+
+/**
+ * Kto czeka na kolejne przypomnienie: ostatnia wysłana wiadomość starsza niż odstęp z kampanii,
+ * osoba nie odpisała, nie wypisała się, a kampania przewiduje kolejny krok.
+ */
+async function gotowiDoPrzypomnienia(supabase: Supabase, kampaniaId: string) {
+  const { data: k } = await supabase.from("kampanie").select("odstep_dni, liczba_followupow").eq("id", kampaniaId).maybeSingle();
+  if (!k || (k.liczba_followupow ?? 0) === 0) return [];
+  const { data: wys } = await supabase
+    .from("wiadomosci")
+    .select("kontakt_id, krok, temat, wyslana, message_id, status")
+    .eq("kampania_id", kampaniaId)
+    .in("status", ["wyslana", "zaplanowana", "blad"]);
+  const ostatnia = new Map<string, { krok: number; temat: string; wyslana: string | null; message_id: string | null; status: string }>();
+  for (const w of wys ?? []) {
+    const o = ostatnia.get(w.kontakt_id);
+    if (!o || w.krok > o.krok) ostatnia.set(w.kontakt_id, w);
+  }
+  const granica = Date.now() - (k.odstep_dni ?? 4) * 24 * 60 * 60 * 1000;
+  const kandydaci = [...ostatnia.entries()].filter(
+    ([, o]) => o.status === "wyslana" && o.wyslana && new Date(o.wyslana).getTime() <= granica && o.krok < (k.liczba_followupow ?? 0),
+  );
+  if (kandydaci.length === 0) return [];
+  const { data: kontakty } = await supabase
+    .from("kontakty")
+    .select("id, email, imie, nazwisko, dane, odpowiedzial, wypisany")
+    .in("id", kandydaci.map(([kid]) => kid));
+  const mapa = new Map((kontakty ?? []).map((c) => [c.id, c]));
+  return kandydaci.flatMap(([kid, o]) => {
+    const c = mapa.get(kid);
+    if (!c || c.odpowiedzial || c.wypisany || !c.email) return [];
+    return [{ kontakt: c, nastepnyKrok: o.krok + 1, poprzedniTemat: o.temat.replace(/^Re:\s*/i, ""), poprzednieMessageId: o.message_id }];
+  });
 }

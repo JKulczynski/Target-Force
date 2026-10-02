@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 type Filtr = { komisje?: string[]; kluby?: string[] };
-type Stan = { odbiorcy: number; wyslane: number; bledy: number; doWyslania: number; limit: number; dzis: number; zostaloDzis: number; kliknieci?: number; filtr?: Filtr };
+type Stan = { odbiorcy: number; wyslane: number; bledy: number; doWyslania: number; limit: number; dzis: number; zostaloDzis: number; kliknieci?: number; doPrzypomnienia?: number; filtr?: Filtr };
 type Komisja = { kod: string; nazwa: string; czlonkow: number };
 
 const pole =
@@ -13,11 +13,23 @@ const pole =
  * Wysyłka partiami (Jan, 30.09: absolutny core do 02.10). Kolejność: odbiorcy -> test na własny adres -> partie.
  * Partia mieści się w dziennym limicie skrzynki; każdy odbiorca dostaje kolejny zatwierdzony wariant.
  */
-export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke, zSejmu }: { kampaniaId: string; kogoSzukamy: string; maSkrzynke: boolean; zSejmu: boolean }) {
+export function Wysylka({
+  kampaniaId,
+  kogoSzukamy,
+  maSkrzynke,
+  zSejmu,
+  onZmiana,
+}: {
+  kampaniaId: string;
+  kogoSzukamy: string;
+  maSkrzynke: boolean;
+  zSejmu: boolean;
+  onZmiana?: () => void;
+}) {
   const [stan, setStan] = useState<Stan | null>(null);
   const [testDo, setTestDo] = useState("");
   const [ile, setIle] = useState(10);
-  const [pracuje, setPracuje] = useState<null | "odbiorcy" | "test" | "partia">(null);
+  const [pracuje, setPracuje] = useState<null | "odbiorcy" | "test" | "partia" | "przypomnienia">(null);
   const [info, setInfo] = useState<string | null>(null);
   const [blad, setBlad] = useState<string | null>(null);
   const [komisje, setKomisje] = useState<Komisja[]>([]);
@@ -56,7 +68,7 @@ export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke, zSejmu }: { kampa
 
   const przelacz = (lista: string[], ustaw: (l: string[]) => void, x: string) => ustaw(lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x]);
 
-  async function wyslij(tryb: "odbiorcy" | "test" | "partia") {
+  async function wyslij(tryb: "odbiorcy" | "test" | "partia" | "przypomnienia") {
     setPracuje(tryb);
     setBlad(null);
     setInfo(null);
@@ -70,9 +82,10 @@ export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke, zSejmu }: { kampa
       if (!odp.ok) return setBlad(dane.blad ?? "Coś poszło nie tak.");
       if (tryb === "odbiorcy") setInfo(`Lista odbiorców gotowa: ${dane.odbiorcy} osób z e-mailem (nowych: ${dane.dodane}).`);
       if (tryb === "test") setInfo(`Wysłano ${dane.wyslane} ${dane.wyslane === 1 ? "wiadomość testową" : "wiadomości testowe"} na ${dane.do}. Sprawdź, czy są w odebranych, a nie w spamie.`);
-      if (tryb === "partia")
+      if (tryb === "partia" || tryb === "przypomnienia")
         setInfo(`Wysłano ${dane.wyslanoTeraz}.${dane.bledyTeraz?.length ? ` Błędy: ${dane.bledyTeraz.join(" ")}` : ""}`);
       await wczytaj();
+      onZmiana?.();
     } catch {
       setBlad("Brak połączenia z serwerem.");
     } finally {
@@ -141,7 +154,7 @@ export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke, zSejmu }: { kampa
           </button>
         </Krok>
 
-        <Krok nr={2} tytul="Test na własny adres" opis="Wysyła każdy zatwierdzony wariant z dopiskiem [TEST]. Puste pole = na adres skrzynki nadawcy.">
+        <Krok nr={2} tytul="Test na własny adres" opis="Wysyła każdy zatwierdzony tekst (wiadomości i przypomnienia) z dopiskiem [TEST], z przykładowymi danymi posła w polach {nazwisko} i {okreg}. Puste pole = na adres skrzynki nadawcy.">
           <div className="flex flex-wrap gap-3">
             <input className={`${pole} max-w-xs`} placeholder="twoj@adres.pl" value={testDo} onChange={(e) => setTestDo(e.target.value)} />
             <button onClick={() => wyslij("test")} disabled={!!pracuje || !maSkrzynke} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50">
@@ -169,6 +182,19 @@ export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke, zSejmu }: { kampa
             </button>
           </div>
           {stan && stan.zostaloDzis === 0 && stan.limit > 0 && <p className="mt-2 text-xs text-slate-500">Dzienny limit skrzynki wyczerpany. Kolejna partia jutro.</p>}
+        </Krok>
+
+        <Krok nr={4} tytul="Przypomnienia" opis="Do osób, które nie odpisały po ustawionej w kampanii liczbie dni. Idzie w tym samym wątku (Re: temat). Zaznacz w liście odbiorców, kto odpisał.">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => wyslij("przypomnienia")}
+              disabled={!!pracuje || !maSkrzynke || !stan?.doPrzypomnienia}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
+            >
+              {pracuje === "przypomnienia" ? "Wysyłam..." : `Wyślij przypomnienia (${stan?.doPrzypomnienia ?? 0})`}
+            </button>
+            {stan && !stan.doPrzypomnienia && <span className="text-xs text-slate-400">Na razie nikt nie czeka na przypomnienie.</span>}
+          </div>
         </Krok>
       </div>
 

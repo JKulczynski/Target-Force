@@ -12,6 +12,8 @@ export type KontaktZrodla = {
   email: string | null;
   organizacja: string;
   stanowisko: string;
+  /** Dodatkowe pola do personalizacji, np. okręg wyborczy. */
+  dane?: Record<string, string | number>;
 };
 
 const DOBA = 60 * 60 * 24;
@@ -30,6 +32,9 @@ async function sejm(): Promise<KontaktZrodla[]> {
     email?: string;
     club?: string;
     active: boolean;
+    districtName?: string;
+    districtNum?: number;
+    voivodeship?: string;
   };
   const poslowie = await json<Posel[]>("https://api.sejm.gov.pl/sejm/term10/MP");
   return poslowie
@@ -41,6 +46,11 @@ async function sejm(): Promise<KontaktZrodla[]> {
       email: p.email || null,
       organizacja: p.club ?? "",
       stanowisko: "Poseł na Sejm RP",
+      dane: {
+        ...(p.districtName ? { okreg: p.districtName } : {}),
+        ...(p.districtNum ? { okregNr: p.districtNum } : {}),
+        ...(p.voivodeship ? { wojewodztwo: p.voivodeship } : {}),
+      },
     }));
 }
 

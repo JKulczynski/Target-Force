@@ -8,12 +8,14 @@ import { STATUSY, ZRODLA, type Kampania } from "@/lib/types";
 import { SkrzynkaKampanii } from "@/components/SkrzynkaKampanii";
 import { Wiadomosci } from "@/components/Wiadomosci";
 import { Wysylka } from "@/components/Wysylka";
+import { Odbiorcy } from "@/components/Odbiorcy";
 
 export default function SzczegolyKampanii() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [k, setK] = useState<Kampania | null | undefined>(undefined);
   const [zListy, setZListy] = useState<number | null>(null);
+  const [odswiezOdbiorcow, setOdswiezOdbiorcow] = useState(0);
 
   useEffect(() => {
     kampania(id)
@@ -135,7 +137,15 @@ export default function SzczegolyKampanii() {
         }}
       />
 
-      <Wysylka kampaniaId={k.id} kogoSzukamy={k.kogoSzukamy} maSkrzynke={!!k.skrzynkaId} zSejmu={k.zrodla.includes("sejm")} />
+      <Wysylka
+        kampaniaId={k.id}
+        kogoSzukamy={k.kogoSzukamy}
+        maSkrzynke={!!k.skrzynkaId}
+        zSejmu={k.zrodla.includes("sejm")}
+        onZmiana={() => setOdswiezOdbiorcow((n) => n + 1)}
+      />
+
+      <Odbiorcy kampaniaId={k.id} odswiez={odswiezOdbiorcow} />
 
       <div className="mt-10 flex flex-wrap items-center gap-4">
         <button

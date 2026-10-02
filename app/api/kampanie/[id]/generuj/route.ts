@@ -55,6 +55,11 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
     `Materiały: ${k.materialy || "(brak)"}`,
     "",
     `Napisz wiadomości w języku: ${jezyk}. Psychografię napisz po polsku.`,
+    ...(zrodla.includes("sejm")
+      ? [
+          "Lokalny argument: odbiorcami są posłowie na Sejm. W jednym zdaniu każdej wiadomości użyj pól {okreg} (miasto okręgu wyborczego posła, np. Kraków) i ewentualnie {nazwisko}, np. „Piszę do Pana/Pani jako posła z okręgu {okreg}, bo...”. Pola wstawimy automatycznie, nie wpisuj za nie żadnych nazw. Nie używaj zwrotów zależnych od płci poza formą „Pan/Pani”.",
+        ]
+      : []),
     `Przygotuj dokładnie ${liczbaWariantow} wariantów pierwszej wiadomości i ${liczbaPrzypomnien} przypomnień (po jednym na każde kolejne przypomnienie, w kolejności).`,
   ].join("\n");
 
