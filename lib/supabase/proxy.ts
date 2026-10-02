@@ -32,7 +32,8 @@ export async function updateSession(request: NextRequest) {
   const zalogowany = !!data?.claims;
 
   const sciezka = request.nextUrl.pathname;
-  const publiczna = sciezka.startsWith("/login") || sciezka.startsWith("/auth");
+  // /r/ to linki śledzące z maili: klika w nie odbiorca, który nie ma konta.
+  const publiczna = sciezka.startsWith("/login") || sciezka.startsWith("/auth") || sciezka.startsWith("/r/");
   if (!zalogowany && !publiczna) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

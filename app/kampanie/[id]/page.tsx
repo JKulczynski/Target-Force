@@ -135,7 +135,7 @@ export default function SzczegolyKampanii() {
         }}
       />
 
-      <Wysylka kampaniaId={k.id} kogoSzukamy={k.kogoSzukamy} maSkrzynke={!!k.skrzynkaId} />
+      <Wysylka kampaniaId={k.id} kogoSzukamy={k.kogoSzukamy} maSkrzynke={!!k.skrzynkaId} zSejmu={k.zrodla.includes("sejm")} />
 
       <div className="mt-10 flex flex-wrap items-center gap-4">
         <button

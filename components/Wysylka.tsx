@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-type Stan = { odbiorcy: number; wyslane: number; bledy: number; doWyslania: number; limit: number; dzis: number; zostaloDzis: number };
+type Filtr = { komisje?: string[]; kluby?: string[] };
+type Stan = { odbiorcy: number; wyslane: number; bledy: number; doWyslania: number; limit: number; dzis: number; zostaloDzis: number; kliknieci?: number; filtr?: Filtr };
+type Komisja = { kod: string; nazwa: string; czlonkow: number };
 
 const pole =
   "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10";
@@ -11,13 +13,17 @@ const pole =
  * Wysyłka partiami (Jan, 30.09: absolutny core do 02.10). Kolejność: odbiorcy -> test na własny adres -> partie.
  * Partia mieści się w dziennym limicie skrzynki; każdy odbiorca dostaje kolejny zatwierdzony wariant.
  */
-export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke }: { kampaniaId: string; kogoSzukamy: string; maSkrzynke: boolean }) {
+export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke, zSejmu }: { kampaniaId: string; kogoSzukamy: string; maSkrzynke: boolean; zSejmu: boolean }) {
   const [stan, setStan] = useState<Stan | null>(null);
   const [testDo, setTestDo] = useState("");
   const [ile, setIle] = useState(10);
   const [pracuje, setPracuje] = useState<null | "odbiorcy" | "test" | "partia">(null);
   const [info, setInfo] = useState<string | null>(null);
   const [blad, setBlad] = useState<string | null>(null);
+  const [komisje, setKomisje] = useState<Komisja[]>([]);
+  const [kluby, setKluby] = useState<string[]>([]);
+  const [wybraneKomisje, setWybraneKomisje] = useState<string[]>([]);
+  const [wybraneKluby, setWybraneKluby] = useState<string[]>([]);
 
   async function wczytaj() {
     const odp = await fetch(`/api/kampanie/${kampaniaId}/wysylka`);
@@ -27,9 +33,28 @@ export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke }: { kampaniaId: s
   useEffect(() => {
     fetch(`/api/kampanie/${kampaniaId}/wysylka`)
       .then((odp) => (odp.ok ? odp.json() : null))
-      .then((dane) => dane && setStan(dane))
+      .then((dane) => {
+        if (!dane) return;
+        setStan(dane);
+        setWybraneKomisje(dane.filtr?.komisje ?? []);
+        setWybraneKluby(dane.filtr?.kluby ?? []);
+      })
       .catch(() => {});
   }, [kampaniaId]);
+
+  useEffect(() => {
+    if (!zSejmu) return;
+    fetch("/api/komisje-sejmu")
+      .then((odp) => (odp.ok ? odp.json() : null))
+      .then((dane) => {
+        if (!dane) return;
+        setKomisje(dane.komisje);
+        setKluby(dane.kluby);
+      })
+      .catch(() => {});
+  }, [zSejmu]);
+
+  const przelacz = (lista: string[], ustaw: (l: string[]) => void, x: string) => ustaw(lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x]);
 
   async function wyslij(tryb: "odbiorcy" | "test" | "partia") {
     setPracuje(tryb);
@@ -39,11 +64,11 @@ export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke }: { kampaniaId: s
       const odp = await fetch(`/api/kampanie/${kampaniaId}/wysylka`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tryb, do: testDo, ile }),
+        body: JSON.stringify({ tryb, do: testDo, ile, filtr: { komisje: wybraneKomisje, kluby: wybraneKluby } }),
       });
       const dane = await odp.json().catch(() => ({}));
       if (!odp.ok) return setBlad(dane.blad ?? "Coś poszło nie tak.");
-      if (tryb === "odbiorcy") setInfo(`Lista odbiorców gotowa. Nowych osób: ${dane.dodane}.`);
+      if (tryb === "odbiorcy") setInfo(`Lista odbiorców gotowa: ${dane.odbiorcy} osób z e-mailem (nowych: ${dane.dodane}).`);
       if (tryb === "test") setInfo(`Wysłano ${dane.wyslane} ${dane.wyslane === 1 ? "wiadomość testową" : "wiadomości testowe"} na ${dane.do}. Sprawdź, czy są w odebranych, a nie w spamie.`);
       if (tryb === "partia")
         setInfo(`Wysłano ${dane.wyslanoTeraz}.${dane.bledyTeraz?.length ? ` Błędy: ${dane.bledyTeraz.join(" ")}` : ""}`);
@@ -64,21 +89,52 @@ export function Wysylka({ kampaniaId, kogoSzukamy, maSkrzynke }: { kampaniaId: s
       {!maSkrzynke && <p className="mt-4 text-sm text-amber-700">Najpierw wybierz skrzynkę nadawcy (sekcja niżej).</p>}
 
       {stan && (
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
           <Liczba etykieta="Odbiorcy z e-mailem" wartosc={stan.odbiorcy} />
           <Liczba etykieta="Wysłane" wartosc={stan.wyslane} />
           <Liczba etykieta="Do wysłania" wartosc={stan.doWyslania} />
           <Liczba etykieta="Dziś ze skrzynki" wartosc={`${stan.dzis} / ${stan.limit}`} />
+          {stan.wyslane > 0 && <Liczba etykieta="Kliknęło w link" wartosc={`${stan.kliknieci ?? 0} (${Math.round(((stan.kliknieci ?? 0) / stan.wyslane) * 100)}%)`} />}
         </div>
       )}
       {stan && stan.bledy > 0 && <p className="mt-2 text-xs text-red-600">Nieudane wysyłki: {stan.bledy}.</p>}
 
       <div className="mt-6 space-y-6">
-        <Krok nr={1} tytul="Lista odbiorców" opis="Pobiera osoby z e-mailem ze źródeł kampanii (Sejm, Tweede Kamer). Własna lista jest już w bazie.">
-          {kogoSzukamy && (
-            <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-amber-100">
-              Zawężenie „{kogoSzukamy}” nie jest jeszcze stosowane przy wysyłce: wiadomość pójdzie do wszystkich osób ze źródła. Jeśli to za szeroko, użyj własnej listy.
-            </p>
+        <Krok nr={1} tytul="Lista odbiorców" opis="Pobiera osoby z e-mailem ze źródeł kampanii (Sejm, Tweede Kamer). Własna lista jest już w bazie. Zmiana zawężenia i ponowne kliknięcie odświeża listę (osób, które już dostały maila, nie usuwamy).">
+          {zSejmu && (
+            <div className="mb-4 space-y-3">
+              {kogoSzukamy && <p className="text-xs text-slate-500">Zawężenie z kreatora: „{kogoSzukamy}”. Wybierz niżej komisje albo kluby, które mu odpowiadają.</p>}
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-slate-600">Komisje Sejmu {wybraneKomisje.length === 0 && <span className="font-normal text-slate-400">(nic nie wybrane = wszyscy posłowie)</span>}</p>
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 p-2">
+                  {komisje.length === 0 && <p className="p-1 text-xs text-slate-400">Wczytuję komisje...</p>}
+                  {komisje.map((k) => (
+                    <label key={k.kod} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm text-slate-700 hover:bg-slate-50">
+                      <input type="checkbox" checked={wybraneKomisje.includes(k.kod)} onChange={() => przelacz(wybraneKomisje, setWybraneKomisje, k.kod)} />
+                      <span className="flex-1">{k.nazwa}</span>
+                      <span className="text-xs text-slate-400">{k.czlonkow}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {kluby.length > 0 && (
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-slate-600">Kluby {wybraneKluby.length === 0 && <span className="font-normal text-slate-400">(nic nie wybrane = wszystkie)</span>}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {kluby.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => przelacz(wybraneKluby, setWybraneKluby, c)}
+                        className={`rounded-full px-3 py-1 text-xs ring-1 transition ${wybraneKluby.includes(c) ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-300 hover:ring-slate-900"}`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
           <button onClick={() => wyslij("odbiorcy")} disabled={!!pracuje} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50">
             {pracuje === "odbiorcy" ? "Pobieram..." : "Przygotuj listę odbiorców"}
