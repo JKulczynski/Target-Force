@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { POBIERACZE } from "@/lib/zrodla-serwer";
+import { createClient } from "@/lib/supabase/server";
 
 /** Licznik do kreatora: ile osób w źródle i ile z nich ma e-mail. Dostęp tylko po zalogowaniu (proxy). */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -7,7 +8,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const pobierz = POBIERACZE[id];
   if (!pobierz) return NextResponse.json({ blad: "Nieznane źródło" }, { status: 404 });
   try {
-    const kontakty = await pobierz();
+    const kontakty = await pobierz(await createClient());
     return NextResponse.json({
       razem: kontakty.length,
       zEmailem: kontakty.filter((k) => k.email).length,

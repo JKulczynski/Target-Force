@@ -2,8 +2,13 @@
  * Pobieranie kontaktów z otwartych API parlamentów. Używane tylko na serwerze (route handler)
  * (część API nie pozwala na zapytania z przeglądarki, a wynik i tak cache'ujemy).
  * Sprawdzone na żywo 28.09: Sejm 460 aktywnych / 460 z e-mailem, Tweede Kamer 150 / 149,
- * Parlament Europejski 718 osób bez e-maili w API.
+ * Parlament Europejski 718 osób bez e-maili w API: maile z profili na europarl.europa.eu trzymamy w tabeli
+ * `pe_emaile` (skrypt w Vault: 03_NARZEDZIA_I_SKILLE/skrypty_agenci/pe-emaile.js).
  */
+
+import type { createClient } from "@/lib/supabase/server";
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 export type KontaktZrodla = {
   zewnetrzneId: string;
@@ -94,7 +99,7 @@ async function tweedeKamer(): Promise<KontaktZrodla[]> {
   }));
 }
 
-async function parlamentUe(): Promise<KontaktZrodla[]> {
+async function parlamentUe(supabase?: Supabase): Promise<KontaktZrodla[]> {
   type Mep = {
     identifier: string;
     givenName: string;
@@ -106,18 +111,23 @@ async function parlamentUe(): Promise<KontaktZrodla[]> {
     "https://data.europarl.europa.eu/api/v2/meps/show-current?format=application%2Fld%2Bjson&offset=0&limit=1000",
     { Accept: "application/ld+json" },
   );
+  const maile = new Map<string, string>();
+  if (supabase) {
+    const { data } = await supabase.from("pe_emaile").select("identifier, email").not("email", "is", null);
+    (data ?? []).forEach((w) => maile.set(w.identifier, w.email as string));
+  }
   return odp.data.map((m) => ({
     zewnetrzneId: m.identifier,
     imie: m.givenName,
     nazwisko: m.familyName,
-    // API PE nie podaje adresów. Wzorzec imie.nazwisko@europarl.europa.eu nie zawsze działa, więc nie zgadujemy.
-    email: null,
+    // API PE nie podaje adresów; bierzemy oficjalny adres z profilu (tabela pe_emaile), nie zgadujemy wzorca.
+    email: maile.get(m.identifier) ?? null,
     organizacja: [m["api:political-group"], m["api:country-of-representation"]].filter(Boolean).join(", "),
     stanowisko: "Poseł do Parlamentu Europejskiego",
   }));
 }
 
-export const POBIERACZE: Record<string, () => Promise<KontaktZrodla[]>> = {
+export const POBIERACZE: Record<string, (supabase?: Supabase) => Promise<KontaktZrodla[]>> = {
   sejm,
   tweede_kamer: tweedeKamer,
   parlament_ue: parlamentUe,

@@ -127,7 +127,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       let kontakty;
       let wKomisjach: Set<string> | null = null;
       try {
-        kontakty = await POBIERACZE[z]();
+        kontakty = await POBIERACZE[z](supabase);
         if (z === "sejm") wKomisjach = await poslowieKomisji(filtr.komisje ?? []);
       } catch {
         return NextResponse.json({ blad: `Źródło ${z} chwilowo nie odpowiada. Spróbuj za chwilę.` }, { status: 502 });
