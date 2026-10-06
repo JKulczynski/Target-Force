@@ -86,9 +86,22 @@ export function Wiadomosci({
           )}
         </div>
         <button
-          onClick={generuj}
+          onClick={() => {
+            if (
+              aktywne.length &&
+              !window.confirm(
+                "Nowe wiadomości zastąpią obecne, także zatwierdzone. Wygenerować od nowa?",
+              )
+            )
+              return;
+            generuj();
+          }}
           disabled={generuje}
-          className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
+          className={
+            aktywne.length
+              ? "rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 disabled:opacity-50"
+              : "rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
+          }
         >
           {generuje
             ? "Piszę wiadomości (ok. 1-2 min)..."
@@ -142,6 +155,7 @@ function KartaWariantu({
   const [temat, setTemat] = useState(w.temat);
   const [tresc, setTresc] = useState(w.tresc);
   const [zapisuje, setZapisuje] = useState(false);
+  const [otwarta, setOtwarta] = useState(w.status !== "zatwierdzony");
   const zmieniony = temat !== w.temat || tresc !== w.tresc;
   const etykieta =
     w.krok === 0
@@ -158,6 +172,28 @@ function KartaWariantu({
     }
   }
 
+  if (!otwarta)
+    return (
+      <button
+        onClick={() => setOtwarta(true)}
+        className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50"
+      >
+        <span
+          className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-xs text-emerald-700"
+          aria-hidden
+        >
+          ✓
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs text-slate-500">{etykieta}</span>
+          <span className="block truncate text-sm font-medium text-slate-900">
+            {w.temat}
+          </span>
+        </span>
+        <span className="shrink-0 text-xs text-slate-500">Pokaż</span>
+      </button>
+    );
+
   return (
     <div
       className={`rounded-lg border p-4 ${w.status === "zatwierdzony" ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200"}`}
@@ -165,9 +201,12 @@ function KartaWariantu({
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-medium text-slate-500">{etykieta}</p>
         {w.status === "zatwierdzony" && (
-          <span className="text-xs font-medium text-emerald-700">
-            Zatwierdzona
-          </span>
+          <button
+            onClick={() => setOtwarta(false)}
+            className="text-xs font-medium text-emerald-700 hover:text-emerald-900"
+          >
+            Zatwierdzona · zwiń
+          </button>
         )}
       </div>
       <input
@@ -183,9 +222,12 @@ function KartaWariantu({
       <div className="mt-3 flex flex-wrap gap-3">
         {w.status !== "zatwierdzony" ? (
           <button
-            onClick={() => zapisz("zatwierdzony")}
+            onClick={async () => {
+              await zapisz("zatwierdzony");
+              setOtwarta(false);
+            }}
             disabled={zapisuje}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:bg-slate-300"
+            className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-800 disabled:bg-slate-300"
           >
             {zmieniony ? "Zapisz i zatwierdź" : "Zatwierdź"}
           </button>
@@ -212,7 +254,7 @@ function KartaWariantu({
         <button
           onClick={() => zapisz("odrzucony")}
           disabled={zapisuje}
-          className="text-sm text-slate-400 transition hover:text-red-600"
+          className="text-sm text-slate-500 transition-colors duration-150 hover:text-red-700"
         >
           Odrzuć
         </button>

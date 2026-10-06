@@ -132,7 +132,7 @@ function Podlaczona({ s, onOdlacz }: { s: Skrzynka; onOdlacz: () => void }) {
           onChange={(e) => setOdbiorca(e.target.value)}
           placeholder={`krótki mail techniczny na... (domyślnie ${s.email_nadawcy})`}
         />
-        <button onClick={test} disabled={trwa} className={przycisk}>
+        <button onClick={test} disabled={trwa} className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 disabled:opacity-50">
           {trwa ? "Sprawdzam..." : "Sprawdź skrzynkę"}
         </button>
       </div>
