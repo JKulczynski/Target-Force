@@ -2,7 +2,39 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Filtr = { komisje?: string[]; kluby?: string[] };
+type Filtr = {
+  komisje?: string[];
+  kluby?: string[];
+  wojewodztwa?: string[];
+  typy?: string[];
+};
+const WOJEWODZTWA = [
+  "dolnośląskie",
+  "kujawsko-pomorskie",
+  "lubelskie",
+  "lubuskie",
+  "łódzkie",
+  "małopolskie",
+  "mazowieckie",
+  "opolskie",
+  "podkarpackie",
+  "podlaskie",
+  "pomorskie",
+  "śląskie",
+  "świętokrzyskie",
+  "warmińsko-mazurskie",
+  "wielkopolskie",
+  "zachodniopomorskie",
+];
+const TYPY_JST = [
+  "Gmina wiejska",
+  "Gmina miejsko-wiejska",
+  "Gmina miejska",
+  "Miasto na prawach powiatu",
+  "Powiat",
+  "Województwo",
+  "dzielnica",
+];
 type Stan = {
   odbiorcy: number;
   wyslane: number;
@@ -40,12 +72,14 @@ export function Wysylka({
   kogoSzukamy,
   maSkrzynke,
   zSejmu,
+  zSamorzadow = false,
   onZmiana,
 }: {
   kampaniaId: string;
   kogoSzukamy: string;
   maSkrzynke: boolean;
   zSejmu: boolean;
+  zSamorzadow?: boolean;
   onZmiana?: () => void;
 }) {
   const [stan, setStan] = useState<Stan | null>(null);
@@ -61,6 +95,8 @@ export function Wysylka({
   const [kluby, setKluby] = useState<string[]>([]);
   const [wybraneKomisje, setWybraneKomisje] = useState<string[]>([]);
   const [wybraneKluby, setWybraneKluby] = useState<string[]>([]);
+  const [wybraneWoj, setWybraneWoj] = useState<string[]>([]);
+  const [wybraneTypy, setWybraneTypy] = useState<string[]>([]);
   const [startAuto, setStartAuto] = useState("");
   const [zapisujeAuto, setZapisujeAuto] = useState(false);
 
@@ -77,6 +113,8 @@ export function Wysylka({
         setStan(dane);
         setWybraneKomisje(dane.filtr?.komisje ?? []);
         setWybraneKluby(dane.filtr?.kluby ?? []);
+        setWybraneWoj(dane.filtr?.wojewodztwa ?? []);
+        setWybraneTypy(dane.filtr?.typy ?? []);
         setStartAuto(dane.start ?? "");
       })
       .catch(() => {});
@@ -112,7 +150,12 @@ export function Wysylka({
           tryb,
           do: testDo,
           ile,
-          filtr: { komisje: wybraneKomisje, kluby: wybraneKluby },
+          filtr: {
+            komisje: wybraneKomisje,
+            kluby: wybraneKluby,
+            wojewodztwa: wybraneWoj,
+            typy: wybraneTypy,
+          },
         }),
       });
       const dane = await odp.json().catch(() => ({}));
@@ -286,6 +329,49 @@ export function Wysylka({
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+            {zSamorzadow && (
+              <div className="mb-4 space-y-3">
+                {[
+                  {
+                    tytul: "Województwa",
+                    lista: WOJEWODZTWA,
+                    wybrane: wybraneWoj,
+                    ustaw: setWybraneWoj,
+                    pusto: "wszystkie",
+                  },
+                  {
+                    tytul: "Rodzaj samorządu",
+                    lista: TYPY_JST,
+                    wybrane: wybraneTypy,
+                    ustaw: setWybraneTypy,
+                    pusto: "wszystkie",
+                  },
+                ].map((g) => (
+                  <div key={g.tytul}>
+                    <p className="mb-1.5 text-xs font-medium text-slate-600">
+                      {g.tytul}{" "}
+                      {g.wybrane.length === 0 && (
+                        <span className="font-normal text-slate-400">
+                          (nic nie wybrane = {g.pusto})
+                        </span>
+                      )}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {g.lista.map((x) => (
+                        <button
+                          key={x}
+                          type="button"
+                          onClick={() => przelacz(g.wybrane, g.ustaw, x)}
+                          className={`rounded-full px-3 py-1 text-xs ring-1 transition ${g.wybrane.includes(x) ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-300 hover:ring-slate-900"}`}
+                        >
+                          {x}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             <button

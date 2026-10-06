@@ -118,7 +118,12 @@ async function wczytajKampanie(supabase: Supabase, id: string) {
   return data;
 }
 
-type Filtr = { komisje?: string[]; kluby?: string[] };
+type Filtr = {
+  komisje?: string[];
+  kluby?: string[];
+  wojewodztwa?: string[];
+  typy?: string[];
+};
 
 /** ID posłów z wybranych komisji Sejmu (puste = bez zawężenia po komisjach). */
 async function poslowieKomisji(kody: string[]): Promise<Set<string> | null> {
@@ -192,6 +197,10 @@ export async function POST(
       kluby: Array.isArray(body.filtr?.kluby)
         ? body.filtr.kluby.map(String)
         : [],
+      wojewodztwa: Array.isArray(body.filtr?.wojewodztwa)
+        ? body.filtr.wojewodztwa.map(String)
+        : [],
+      typy: Array.isArray(body.filtr?.typy) ? body.filtr.typy.map(String) : [],
     };
     await supabase
       .from("kampanie")
@@ -213,19 +222,29 @@ export async function POST(
           { status: 502 },
         );
       }
+      if (z === "samorzady") {
+        kontakty = kontakty.filter(
+          (c) =>
+            (!filtr.wojewodztwa?.length ||
+              filtr.wojewodztwa.includes(String(c.dane?.wojewodztwo ?? ""))) &&
+            (!filtr.typy?.length || filtr.typy.includes(c.organizacja)),
+        );
+      }
       if (z === "sejm") {
         kontakty = kontakty.filter(
           (c) =>
             (!wKomisjach || wKomisjach.has(c.zewnetrzneId)) &&
             (!filtr.kluby?.length || filtr.kluby.includes(c.organizacja)),
         );
+      }
+      if (z === "sejm" || z === "samorzady") {
         // Zmiana zawężenia: usuwamy posłów spoza nowego zakresu, o ile nic jeszcze do nich nie wysłaliśmy.
         const dozwolone = new Set(kontakty.map((c) => c.zewnetrzneId));
         const { data: obecni } = await supabase
           .from("kontakty")
           .select("id, zewnetrzne_id")
           .eq("kampania_id", id)
-          .eq("zrodlo", "sejm");
+          .eq("zrodlo", z);
         const { data: zWiadomoscia } = await supabase
           .from("wiadomosci")
           .select("kontakt_id")

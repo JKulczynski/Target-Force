@@ -11,7 +11,11 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const Wynik = z.object({
-  psychografia: z.string().describe("Profil grupy odbiorców: jak myślą, co ich przekonuje, czego unikać. 5-8 krótkich punktów."),
+  psychografia: z
+    .string()
+    .describe(
+      "Profil grupy odbiorców: jak myślą, co ich przekonuje, czego unikać. 5-8 krótkich punktów.",
+    ),
   warianty: z.array(z.object({ temat: z.string(), tresc: z.string() })),
   przypomnienia: z.array(z.object({ temat: z.string(), tresc: z.string() })),
 });
@@ -19,6 +23,7 @@ const Wynik = z.object({
 // Język wiadomości wynika ze źródła odbiorców.
 const JEZYK: Partial<Record<ZrodloId, string>> = {
   sejm: "polski",
+  samorzady: "polski",
   tweede_kamer: "niderlandzki",
   parlament_ue: "angielski",
 };
@@ -29,16 +34,25 @@ Trzymaj się poniższego warsztatu.
 
 ${WARSZTAT}`;
 
-export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function POST(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+) {
   const { id } = await ctx.params;
   const supabase = await createClient();
 
   const { data: k } = await supabase
     .from("kampanie")
-    .select("id, nazwa, zrodla, kogo_szukamy, cel, nadawca, link_film, materialy, liczba_wariantow, liczba_followupow")
+    .select(
+      "id, nazwa, zrodla, kogo_szukamy, cel, nadawca, link_film, materialy, liczba_wariantow, liczba_followupow",
+    )
     .eq("id", id)
     .maybeSingle();
-  if (!k) return NextResponse.json({ blad: "Nie znaleziono kampanii albo brak dostępu." }, { status: 404 });
+  if (!k)
+    return NextResponse.json(
+      { blad: "Nie znaleziono kampanii albo brak dostępu." },
+      { status: 404 },
+    );
 
   const zrodla = (k.zrodla as ZrodloId[]) ?? [];
   const jezyk = zrodla.map((z) => JEZYK[z]).find(Boolean) ?? "polski";
@@ -60,6 +74,11 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
           "Lokalny argument: odbiorcami są posłowie na Sejm. W jednym zdaniu każdej wiadomości użyj pól {okreg} (miasto okręgu wyborczego posła, np. Kraków) i ewentualnie {nazwisko}, np. „Piszę do Pana/Pani jako posła z okręgu {okreg}, bo...”. Pola wstawimy automatycznie, nie wpisuj za nie żadnych nazw. Nie używaj zwrotów zależnych od płci poza formą „Pan/Pani”.",
         ]
       : []),
+    ...(zrodla.includes("samorzady")
+      ? [
+          "Odbiorcami są urzędy samorządowe (gminy, powiaty, województwa), mail trafia na ogólny adres urzędu. Zwracaj się do urzędu, np. „Szanowni Państwo”, i poproś o przekazanie wiadomości wójtowi, burmistrzowi, prezydentowi miasta albo staroście. W jednym zdaniu użyj pola {okreg} (nazwa gminy, powiatu albo województwa), np. „Piszę do Państwa w sprawie, która dotyczy mieszkańców {okreg}”. Nie używaj pól {imie} ani {nazwisko}.",
+        ]
+      : []),
     `Przygotuj dokładnie ${liczbaWariantow} wariantów pierwszej wiadomości i ${liczbaPrzypomnien} przypomnień (po jednym na każde kolejne przypomnienie, w kolejności).`,
   ].join("\n");
 
@@ -72,39 +91,87 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: "medium", format: betaZodOutputFormat(Wynik) },
-      system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+      system: [
+        { type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } },
+      ],
       messages: [{ role: "user", content: brief }],
     });
     if (odp.stop_reason === "refusal") {
-      return NextResponse.json({ blad: "Model odmówił napisania tych wiadomości. Zmień cel albo materiały." }, { status: 422 });
+      return NextResponse.json(
+        {
+          blad: "Model odmówił napisania tych wiadomości. Zmień cel albo materiały.",
+        },
+        { status: 422 },
+      );
     }
     if (!odp.parsed_output) {
-      return NextResponse.json({ blad: "Nie udało się odczytać wygenerowanych wiadomości. Spróbuj ponownie." }, { status: 502 });
+      return NextResponse.json(
+        {
+          blad: "Nie udało się odczytać wygenerowanych wiadomości. Spróbuj ponownie.",
+        },
+        { status: 502 },
+      );
     }
     wynik = odp.parsed_output;
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) {
-      return NextResponse.json({ blad: "Brak albo zły klucz ANTHROPIC_API_KEY na serwerze." }, { status: 500 });
+      return NextResponse.json(
+        { blad: "Brak albo zły klucz ANTHROPIC_API_KEY na serwerze." },
+        { status: 500 },
+      );
     }
     if (e instanceof Anthropic.RateLimitError) {
-      return NextResponse.json({ blad: "Za dużo zapytań do AI. Spróbuj za chwilę." }, { status: 429 });
+      return NextResponse.json(
+        { blad: "Za dużo zapytań do AI. Spróbuj za chwilę." },
+        { status: 429 },
+      );
     }
     if (e instanceof Anthropic.APIError) {
-      return NextResponse.json({ blad: `Błąd AI (${e.status}). Spróbuj ponownie.` }, { status: 502 });
+      return NextResponse.json(
+        { blad: `Błąd AI (${e.status}). Spróbuj ponownie.` },
+        { status: 502 },
+      );
     }
     throw e;
   }
 
   // Nowe generowanie zastępuje szkice; zatwierdzone warianty zostają.
-  await supabase.from("warianty").delete().eq("kampania_id", id).neq("status", "zatwierdzony");
+  await supabase
+    .from("warianty")
+    .delete()
+    .eq("kampania_id", id)
+    .neq("status", "zatwierdzony");
 
   const wiersze = [
-    ...wynik.warianty.slice(0, liczbaWariantow).map((w, i) => ({ kampania_id: id, krok: 0, numer: i + 1, temat: w.temat, tresc: w.tresc })),
-    ...wynik.przypomnienia.slice(0, liczbaPrzypomnien).map((w, i) => ({ kampania_id: id, krok: i + 1, numer: 1, temat: w.temat, tresc: w.tresc })),
+    ...wynik.warianty
+      .slice(0, liczbaWariantow)
+      .map((w, i) => ({
+        kampania_id: id,
+        krok: 0,
+        numer: i + 1,
+        temat: w.temat,
+        tresc: w.tresc,
+      })),
+    ...wynik.przypomnienia
+      .slice(0, liczbaPrzypomnien)
+      .map((w, i) => ({
+        kampania_id: id,
+        krok: i + 1,
+        numer: 1,
+        temat: w.temat,
+        tresc: w.tresc,
+      })),
   ];
   const { error } = await supabase.from("warianty").insert(wiersze);
-  if (error) return NextResponse.json({ blad: "Nie udało się zapisać wiadomości." }, { status: 500 });
+  if (error)
+    return NextResponse.json(
+      { blad: "Nie udało się zapisać wiadomości." },
+      { status: 500 },
+    );
 
-  await supabase.from("kampanie").update({ psychografia_opis: wynik.psychografia, jezyk }).eq("id", id);
+  await supabase
+    .from("kampanie")
+    .update({ psychografia_opis: wynik.psychografia, jezyk })
+    .eq("id", id);
   return NextResponse.json({ ok: true, liczba: wiersze.length });
 }

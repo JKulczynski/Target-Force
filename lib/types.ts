@@ -20,6 +20,12 @@ export const ZRODLA = {
     api: "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0/Persoon",
     typ: "politycy",
   },
+  samorzady: {
+    nazwa: "Samorządy w Polsce",
+    opis: "Urzędy gmin, powiatów i województw (ok. 2 800). Oficjalne ogólne adresy e-mail z bazy teleadresowej MSWiA (16.04.2026).",
+    api: "https://www.gov.pl/web/mswia/baza-jst",
+    typ: "politycy",
+  },
   apollo: {
     nazwa: "Apollo",
     opis: "Kontakty B2B. Wymaga klucza API.",
@@ -44,11 +50,26 @@ export type ZrodloId = keyof typeof ZRODLA;
 
 export type StatusKampanii = "szkic" | "gotowa" | "uruchomiona" | "zakonczona";
 
-export const STATUSY: Record<StatusKampanii, { etykieta: string; klasa: string }> = {
-  szkic: { etykieta: "Szkic", klasa: "bg-slate-100 text-slate-600 ring-slate-200" },
-  gotowa: { etykieta: "Gotowa", klasa: "bg-amber-50 text-amber-700 ring-amber-200" },
-  uruchomiona: { etykieta: "Uruchomiona", klasa: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  zakonczona: { etykieta: "Zakończona", klasa: "bg-slate-100 text-slate-500 ring-slate-200" },
+export const STATUSY: Record<
+  StatusKampanii,
+  { etykieta: string; klasa: string }
+> = {
+  szkic: {
+    etykieta: "Szkic",
+    klasa: "bg-slate-100 text-slate-600 ring-slate-200",
+  },
+  gotowa: {
+    etykieta: "Gotowa",
+    klasa: "bg-amber-50 text-amber-700 ring-amber-200",
+  },
+  uruchomiona: {
+    etykieta: "Uruchomiona",
+    klasa: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  },
+  zakonczona: {
+    etykieta: "Zakończona",
+    klasa: "bg-slate-100 text-slate-500 ring-slate-200",
+  },
 };
 
 export type Kampania = {

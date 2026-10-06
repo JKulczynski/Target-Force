@@ -254,6 +254,7 @@ export default function SzczegolyKampanii() {
         kogoSzukamy={k.kogoSzukamy}
         maSkrzynke={!!k.skrzynkaId}
         zSejmu={k.zrodla.includes("sejm")}
+        zSamorzadow={k.zrodla.includes("samorzady")}
         onZmiana={() => {
           setOdswiezOdbiorcow((n) => n + 1);
           odswiezPostep();

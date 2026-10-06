@@ -23,8 +23,14 @@ export type KontaktZrodla = {
 
 const DOBA = 60 * 60 * 24;
 
-async function json<T>(url: string, naglowki: Record<string, string> = {}): Promise<T> {
-  const odp = await fetch(url, { headers: naglowki, next: { revalidate: DOBA } });
+async function json<T>(
+  url: string,
+  naglowki: Record<string, string> = {},
+): Promise<T> {
+  const odp = await fetch(url, {
+    headers: naglowki,
+    next: { revalidate: DOBA },
+  });
   if (!odp.ok) throw new Error(`${url} odpowiedział ${odp.status}`);
   return odp.json() as Promise<T>;
 }
@@ -41,7 +47,9 @@ async function sejm(): Promise<KontaktZrodla[]> {
     districtNum?: number;
     voivodeship?: string;
   };
-  const poslowie = await json<Posel[]>("https://api.sejm.gov.pl/sejm/term10/MP");
+  const poslowie = await json<Posel[]>(
+    "https://api.sejm.gov.pl/sejm/term10/MP",
+  );
   return poslowie
     .filter((p) => p.active)
     .map((p) => ({
@@ -63,8 +71,12 @@ async function tweedeKamer(): Promise<KontaktZrodla[]> {
   const BAZA = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0";
   type Strona<T> = { value: T[]; "@odata.nextLink"?: string };
 
-  async function wszystko<T>(sciezka: string, parametry: Record<string, string>) {
-    let url: string | undefined = `${BAZA}${sciezka}?${new URLSearchParams(parametry)}`;
+  async function wszystko<T>(
+    sciezka: string,
+    parametry: Record<string, string>,
+  ) {
+    let url: string | undefined =
+      `${BAZA}${sciezka}?${new URLSearchParams(parametry)}`;
     const wynik: T[] = [];
     while (url) {
       const strona: Strona<T> = await json<Strona<T>>(url);
@@ -74,7 +86,14 @@ async function tweedeKamer(): Promise<KontaktZrodla[]> {
     return wynik;
   }
 
-  type Osoba = { Id: string; Roepnaam: string | null; Voornamen: string | null; Tussenvoegsel: string | null; Achternaam: string | null; Fractielabel: string | null };
+  type Osoba = {
+    Id: string;
+    Roepnaam: string | null;
+    Voornamen: string | null;
+    Tussenvoegsel: string | null;
+    Achternaam: string | null;
+    Fractielabel: string | null;
+  };
   type Kontakt = { Persoon_Id: string; Waarde: string };
 
   const [osoby, maile] = await Promise.all([
@@ -113,7 +132,10 @@ async function parlamentUe(supabase?: Supabase): Promise<KontaktZrodla[]> {
   );
   const maile = new Map<string, string>();
   if (supabase) {
-    const { data } = await supabase.from("pe_emaile").select("identifier, email").not("email", "is", null);
+    const { data } = await supabase
+      .from("pe_emaile")
+      .select("identifier, email")
+      .not("email", "is", null);
     (data ?? []).forEach((w) => maile.set(w.identifier, w.email as string));
   }
   return odp.data.map((m) => ({
@@ -122,12 +144,47 @@ async function parlamentUe(supabase?: Supabase): Promise<KontaktZrodla[]> {
     nazwisko: m.familyName,
     // API PE nie podaje adresów; bierzemy oficjalny adres z profilu (tabela pe_emaile), nie zgadujemy wzorca.
     email: maile.get(m.identifier) ?? null,
-    organizacja: [m["api:political-group"], m["api:country-of-representation"]].filter(Boolean).join(", "),
+    organizacja: [m["api:political-group"], m["api:country-of-representation"]]
+      .filter(Boolean)
+      .join(", "),
     stanowisko: "Poseł do Parlamentu Europejskiego",
   }));
 }
 
-export const POBIERACZE: Record<string, (supabase?: Supabase) => Promise<KontaktZrodla[]>> = {
+/**
+ * Samorządy: baza teleadresowa JST z MSWiA (gov.pl/web/mswia/baza-jst, stan 16.04.2026), zapisana w lib/dane/jst.json.
+ * Ogólne adresy urzędów (nie prywatne), więc kampania trafia do urzędu wójta, burmistrza, prezydenta, starosty albo marszałka.
+ * Odświeżanie: pobrać nowy XLS z MSWiA i przebudować plik (skrypt w Vault).
+ */
+async function samorzady(): Promise<KontaktZrodla[]> {
+  const { default: jst } = await import("@/lib/dane/jst.json");
+  return (
+    jst as {
+      teryt: string;
+      nazwa: string;
+      woj: string;
+      powiat: string;
+      typ: string;
+      urzad: string;
+      miejscowosc: string;
+      email: string;
+    }[]
+  ).map((j) => ({
+    zewnetrzneId: j.teryt,
+    imie: "",
+    nazwisko: j.urzad,
+    email: j.email,
+    organizacja: j.typ,
+    stanowisko: j.nazwa,
+    dane: { okreg: j.nazwa, wojewodztwo: j.woj, powiat: j.powiat },
+  }));
+}
+
+export const POBIERACZE: Record<
+  string,
+  (supabase?: Supabase) => Promise<KontaktZrodla[]>
+> = {
+  samorzady,
   sejm,
   tweede_kamer: tweedeKamer,
   parlament_ue: parlamentUe,

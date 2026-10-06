@@ -10,7 +10,12 @@ import { ZRODLA, pustaKampania, type ZrodloId } from "@/lib/types";
 type Licznik = { razem: number; zEmailem: number } | "blad" | "laduje";
 
 /** Źródła z otwartym API, dla których liczymy odbiorców na żywo. */
-const Z_LICZNIKIEM: ZrodloId[] = ["sejm", "tweede_kamer", "parlament_ue"];
+const Z_LICZNIKIEM: ZrodloId[] = [
+  "sejm",
+  "tweede_kamer",
+  "parlament_ue",
+  "samorzady",
+];
 
 /**
  * Kreator w 3 krokach (ustalenie z 26.09): jeden długi formularz pytał o wszystko naraz.
@@ -36,7 +41,9 @@ export default function NowaKampania() {
   const [dane, setDane] = useState(pustaKampania());
   const [blad, setBlad] = useState<string | null>(null);
   const [zapisuje, setZapisuje] = useState(false);
-  const [liczniki, setLiczniki] = useState<Partial<Record<ZrodloId, Licznik>>>({});
+  const [liczniki, setLiczniki] = useState<Partial<Record<ZrodloId, Licznik>>>(
+    {},
+  );
   const [lista, setLista] = useState<WynikImportu | null>(null);
   const [tekstListy, setTekstListy] = useState("");
 
@@ -48,7 +55,9 @@ export default function NowaKampania() {
       setLiczniki((l) => ({ ...l, [id]: "laduje" }));
       fetch(`/api/zrodla/${id}`)
         .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .then((d: { razem: number; zEmailem: number }) => setLiczniki((l) => ({ ...l, [id]: d })))
+        .then((d: { razem: number; zEmailem: number }) =>
+          setLiczniki((l) => ({ ...l, [id]: d })),
+        )
         .catch(() => setLiczniki((l) => ({ ...l, [id]: "blad" })));
     }
   }, [krok, liczniki]);
@@ -61,7 +70,9 @@ export default function NowaKampania() {
     setDane((d) => ({
       ...d,
       zrodla: maListe
-        ? d.zrodla.includes("wlasna_lista") ? d.zrodla : [...d.zrodla, "wlasna_lista"]
+        ? d.zrodla.includes("wlasna_lista")
+          ? d.zrodla
+          : [...d.zrodla, "wlasna_lista"]
         : d.zrodla.filter((z) => z !== "wlasna_lista"),
     }));
   }
@@ -89,17 +100,22 @@ export default function NowaKampania() {
   function przelaczZrodlo(id: ZrodloId) {
     setDane((d) => ({
       ...d,
-      zrodla: d.zrodla.includes(id) ? d.zrodla.filter((z) => z !== id) : [...d.zrodla, id],
+      zrodla: d.zrodla.includes(id)
+        ? d.zrodla.filter((z) => z !== id)
+        : [...d.zrodla, id],
     }));
   }
 
   /** Zwraca komunikat błędu dla bieżącego kroku albo null, jeśli można iść dalej. */
   function sprawdz(k: number): string | null {
     if (k === 0) {
-      if (!dane.nazwa.trim()) return "Kampania potrzebuje nazwy, żeby dało się ją odróżnić.";
-      if (!dane.cel.trim()) return "Opisz w dwóch zdaniach, o co chodzi. Z tego powstaną wiadomości.";
+      if (!dane.nazwa.trim())
+        return "Kampania potrzebuje nazwy, żeby dało się ją odróżnić.";
+      if (!dane.cel.trim())
+        return "Opisz w dwóch zdaniach, o co chodzi. Z tego powstaną wiadomości.";
     }
-    if (k === 1 && dane.zrodla.length === 0) return "Wybierz co najmniej jedno źródło kontaktów.";
+    if (k === 1 && dane.zrodla.length === 0)
+      return "Wybierz co najmniej jedno źródło kontaktów.";
     return null;
   }
 
@@ -134,26 +150,41 @@ export default function NowaKampania() {
       router.push(`/kampanie/${nowa.id}`);
     } catch {
       setZapisuje(false);
-      setBlad("Nie udało się zapisać. Sprawdź, czy jesteś w zespole, albo spróbuj ponownie.");
+      setBlad(
+        "Nie udało się zapisać. Sprawdź, czy jesteś w zespole, albo spróbuj ponownie.",
+      );
     }
   }
 
-  const politycy = (Object.keys(ZRODLA) as ZrodloId[]).filter((z) => ZRODLA[z].typ === "politycy");
-  const b2b = (Object.keys(ZRODLA) as ZrodloId[]).filter((z) => ZRODLA[z].typ === "b2b");
+  const politycy = (Object.keys(ZRODLA) as ZrodloId[]).filter(
+    (z) => ZRODLA[z].typ === "politycy",
+  );
+  const b2b = (Object.keys(ZRODLA) as ZrodloId[]).filter(
+    (z) => ZRODLA[z].typ === "b2b",
+  );
   const ostatni = krok === KROKI.length - 1;
 
   return (
     <>
-      <Link href="/" className="text-sm text-slate-500 transition hover:text-slate-900">
+      <Link
+        href="/"
+        className="text-sm text-slate-500 transition hover:text-slate-900"
+      >
         &larr; Kampanie
       </Link>
-      <h1 className="mt-4 text-2xl font-semibold tracking-tight">Nowa kampania</h1>
+      <h1 className="mt-4 text-2xl font-semibold tracking-tight">
+        Nowa kampania
+      </h1>
 
       <ol className="mt-6 flex gap-2">
         {KROKI.map((nazwa, i) => (
           <li key={nazwa} className="flex-1">
-            <div className={`h-1 rounded-full ${i <= krok ? "bg-slate-900" : "bg-slate-200"}`} />
-            <p className={`mt-2 text-xs ${i === krok ? "font-medium text-slate-900" : "text-slate-400"}`}>
+            <div
+              className={`h-1 rounded-full ${i <= krok ? "bg-slate-900" : "bg-slate-200"}`}
+            />
+            <p
+              className={`mt-2 text-xs ${i === krok ? "font-medium text-slate-900" : "text-slate-400"}`}
+            >
               {i + 1}. {nazwa}
             </p>
           </li>
@@ -177,8 +208,8 @@ export default function NowaKampania() {
             <label className="block">
               <Etykieta>O co chodzi, w dwóch zdaniach</Etykieta>
               <Podpowiedz>
-                Co chcesz osiągnąć. Na tej podstawie powstaną wiadomości, więc im konkretniej, tym
-                mniej generyczne będą.
+                Co chcesz osiągnąć. Na tej podstawie powstaną wiadomości, więc
+                im konkretniej, tym mniej generyczne będą.
               </Podpowiedz>
               <textarea
                 className={`${pole} min-h-28 resize-y`}
@@ -203,19 +234,23 @@ export default function NowaKampania() {
             <label className="block">
               <Etykieta>Materiały</Etykieta>
               <Podpowiedz>
-                Opcjonalnie. Linki do artykułów, opis, fakty, które warto wpleść. Czytamy je przed
-                napisaniem wiadomości.
+                Opcjonalnie. Linki do artykułów, opis, fakty, które warto
+                wpleść. Czytamy je przed napisaniem wiadomości.
               </Podpowiedz>
               <textarea
                 className={`${pole} min-h-24 resize-y`}
                 value={dane.materialy}
-                onChange={(e) => setDane({ ...dane, materialy: e.target.value })}
+                onChange={(e) =>
+                  setDane({ ...dane, materialy: e.target.value })
+                }
               />
             </label>
 
             <label className="block">
               <Etykieta>W czyim imieniu piszemy</Etykieta>
-              <Podpowiedz>Kto jest nadawcą i dlaczego odbiorca miałby go słuchać.</Podpowiedz>
+              <Podpowiedz>
+                Kto jest nadawcą i dlaczego odbiorca miałby go słuchać.
+              </Podpowiedz>
               <input
                 className={pole}
                 value={dane.nadawca}
@@ -251,9 +286,12 @@ export default function NowaKampania() {
             </p>
             <div className="mt-2 rounded-lg border border-slate-200 p-3.5">
               <p className="text-sm text-slate-500">
-                Artyści, szefowie instytucji, dziennikarze: każdy, kogo nie ma w API. Wgraj plik
-                (Excel, CSV) z kolumną <span className="font-medium text-slate-700">email</span> (opcjonalnie
-                imię, nazwisko, organizacja, stanowisko) albo wklej listę, jedna osoba w linii. Możesz też skopiować komórki z Excela lub Arkuszy Google i wkleić.
+                Artyści, szefowie instytucji, dziennikarze: każdy, kogo nie ma w
+                API. Wgraj plik (Excel, CSV) z kolumną{" "}
+                <span className="font-medium text-slate-700">email</span>{" "}
+                (opcjonalnie imię, nazwisko, organizacja, stanowisko) albo wklej
+                listę, jedna osoba w linii. Możesz też skopiować komórki z
+                Excela lub Arkuszy Google i wkleić.
               </p>
               <input
                 type="file"
@@ -265,19 +303,27 @@ export default function NowaKampania() {
                 className={`${pole} min-h-24 resize-y font-mono text-xs`}
                 value={tekstListy}
                 onChange={(e) => wczytajListe(e.target.value)}
-                placeholder={"Jan Kowalski, jan.kowalski@teatr.pl\nanna.nowak@muzeum.pl"}
+                placeholder={
+                  "Jan Kowalski, jan.kowalski@teatr.pl\nanna.nowak@muzeum.pl"
+                }
               />
               {lista && (
                 <p className="mt-2 text-sm text-slate-600">
-                  <span className="font-medium text-slate-900">{lista.wiersze.length}</span>{" "}
-                  {lista.wiersze.length === 1 ? "osoba" : "osób"} z poprawnym e-mailem
-                  {lista.pominiete > 0 && `, pominięto ${lista.pominiete} bez adresu`}
+                  <span className="font-medium text-slate-900">
+                    {lista.wiersze.length}
+                  </span>{" "}
+                  {lista.wiersze.length === 1 ? "osoba" : "osób"} z poprawnym
+                  e-mailem
+                  {lista.pominiete > 0 &&
+                    `, pominięto ${lista.pominiete} bez adresu`}
                   {lista.duplikaty > 0 && `, ${lista.duplikaty} powtórzeń`}.
                 </p>
               )}
             </div>
 
-            <p className="mt-6 text-xs font-medium tracking-wide text-slate-400 uppercase">B2B</p>
+            <p className="mt-6 text-xs font-medium tracking-wide text-slate-400 uppercase">
+              B2B
+            </p>
             <div className="mt-2 space-y-2">
               {b2b.map((id) => (
                 <ZrodloPole
@@ -292,19 +338,22 @@ export default function NowaKampania() {
             <label className="mt-6 block">
               <Etykieta>Kogo dokładnie szukamy</Etykieta>
               <Podpowiedz>
-                Zawężenie wewnątrz wybranych źródeł, np. posłowie z komisji kultury, albo dyrektorzy
-                zakupów w firmach produkcyjnych.
+                Zawężenie wewnątrz wybranych źródeł, np. posłowie z komisji
+                kultury, albo dyrektorzy zakupów w firmach produkcyjnych.
               </Podpowiedz>
               <input
                 className={pole}
                 value={dane.kogoSzukamy}
-                onChange={(e) => setDane({ ...dane, kogoSzukamy: e.target.value })}
+                onChange={(e) =>
+                  setDane({ ...dane, kogoSzukamy: e.target.value })
+                }
                 placeholder="np. członkowie komisji spraw zagranicznych"
               />
             </label>
 
             <p className="mt-6 rounded-lg bg-slate-900 px-4 py-3 text-sm text-white">
-              Dotrzesz do <span className="font-semibold tabular-nums">{zasieg}</span>{" "}
+              Dotrzesz do{" "}
+              <span className="font-semibold tabular-nums">{zasieg}</span>{" "}
               {zasieg === 1 ? "osoby" : "osób"} z adresem e-mail
               {dane.kogoSzukamy.trim() && ", przed zawężeniem grupy"}.
             </p>
@@ -318,13 +367,16 @@ export default function NowaKampania() {
                 type="checkbox"
                 className="mt-0.5 h-4 w-4 rounded border-slate-300"
                 checked={dane.psychografia}
-                onChange={(e) => setDane({ ...dane, psychografia: e.target.checked })}
+                onChange={(e) =>
+                  setDane({ ...dane, psychografia: e.target.checked })
+                }
               />
               <span>
                 <Etykieta>Psychografia odbiorców</Etykieta>
                 <Podpowiedz>
-                  Przed napisaniem wiadomości zbieramy kontekst o każdym odbiorcy: czym się
-                  zajmuje, co mówił publicznie, na czym mu zależy.
+                  Przed napisaniem wiadomości zbieramy kontekst o każdym
+                  odbiorcy: czym się zajmuje, co mówił publicznie, na czym mu
+                  zależy.
                 </Podpowiedz>
               </span>
             </label>
@@ -364,7 +416,9 @@ export default function NowaKampania() {
                 type="date"
                 className={`${pole} w-auto`}
                 value={dane.start ?? ""}
-                onChange={(e) => setDane({ ...dane, start: e.target.value || null })}
+                onChange={(e) =>
+                  setDane({ ...dane, start: e.target.value || null })
+                }
               />
             </label>
 
@@ -399,7 +453,10 @@ export default function NowaKampania() {
           >
             {ostatni ? (zapisuje ? "Zapisuję..." : "Zapisz kampanię") : "Dalej"}
           </button>
-          <Link href="/" className="text-sm text-slate-500 transition hover:text-slate-900">
+          <Link
+            href="/"
+            className="text-sm text-slate-500 transition hover:text-slate-900"
+          >
             Anuluj
           </Link>
         </div>
@@ -457,7 +514,9 @@ function ZrodloPole({
   return (
     <label
       className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition ${
-        zaznaczone ? "border-slate-900 bg-slate-50" : "border-slate-200 hover:border-slate-300"
+        zaznaczone
+          ? "border-slate-900 bg-slate-50"
+          : "border-slate-200 hover:border-slate-300"
       }`}
     >
       <input
