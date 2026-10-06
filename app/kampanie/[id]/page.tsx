@@ -125,188 +125,222 @@ export default function SzczegolyKampanii() {
     router.push("/");
   }
 
+  const gotowych = kroki.filter((x) => x.gotowe).length;
+
   return (
     <>
       <Link
         href="/"
-        className="text-sm text-slate-500 transition hover:text-slate-900"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors duration-150 hover:text-slate-900"
       >
-        &larr; Kampanie
+        <svg
+          viewBox="0 0 16 16"
+          className="h-3.5 w-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden
+        >
+          <path
+            d="M10 3 5 8l5 5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Kampanie
       </Link>
 
-      <div className="mt-4 flex items-start justify-between gap-6">
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{k.nazwa}</h1>
           <p className="mt-1 text-sm text-slate-500">
             Utworzona {new Date(k.utworzona).toLocaleDateString("pl-PL")}
+            {k.kogoSzukamy && <> · {k.kogoSzukamy}</>}
           </p>
         </div>
-        <span
-          className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${status.klasa}`}
-        >
-          {status.etykieta}
-        </span>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/kampanie/${k.id}/raport`}
+            className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 hover:text-slate-900"
+          >
+            Raport
+          </Link>
+          <span
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${status.klasa}`}
+          >
+            {status.etykieta}
+          </span>
+        </div>
       </div>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <Karta tytul="Do kogo piszemy">
-          <div className="flex flex-wrap gap-1.5">
-            {k.zrodla.map((z) => (
-              <span
-                key={z}
-                className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600"
-              >
-                {ZRODLA[z].nazwa}
-              </span>
-            ))}
+      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <div className="min-w-0">
+          <section className="rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="text-base font-semibold tracking-tight text-slate-900">
+              Brief kampanii
+            </h2>
+            <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+              <Wiersz etykieta="Cel" wartosc={k.cel} szeroki />
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Do kogo piszemy
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {k.zrodla.map((z) => (
+                    <span
+                      key={z}
+                      className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
+                    >
+                      {ZRODLA[z]?.nazwa ?? z}
+                    </span>
+                  ))}
+                  {k.zrodla.includes("wlasna_lista") && (
+                    <span className="text-xs text-slate-500">
+                      {zListy === null
+                        ? "..."
+                        : `${zListy} ${zListy === 1 ? "osoba" : "osób"} na liście`}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Wiersz etykieta="Nadawca" wartosc={k.nadawca} />
+              <Wiersz etykieta="Film albo strona" wartosc={k.linkFilm} />
+              <Wiersz
+                etykieta="Wiadomości"
+                wartosc={`${k.liczbaWariantow} ${k.liczbaWariantow === 1 ? "wariant" : "wariantów"}${k.psychografia ? ", z psychografią odbiorców" : ""}`}
+              />
+              <Wiersz
+                etykieta="Przypomnienia"
+                wartosc={
+                  k.liczbaFollowupow === 0
+                    ? "Brak, tylko pierwsza wiadomość"
+                    : `${k.liczbaFollowupow}, co ${k.odstepDni} dni`
+                }
+              />
+              {k.materialy && (
+                <Wiersz etykieta="Materiały" wartosc={k.materialy} szeroki />
+              )}
+            </div>
+          </section>
+
+          <div id="wiadomosci" className="scroll-mt-20">
+            <Wiadomosci kampaniaId={k.id} onZmiana={odswiezPostep} />
           </div>
-          {k.zrodla.includes("wlasna_lista") && (
-            <Wiersz
-              etykieta="Własna lista"
-              wartosc={
-                zListy === null
-                  ? "..."
-                  : `${zListy} ${zListy === 1 ? "osoba" : "osób"} zapisanych`
-              }
+
+          <div id="skrzynka" className="scroll-mt-20">
+            <SkrzynkaKampanii
+              skrzynkaId={k.skrzynkaId}
+              onZmiana={async (skrzynkaId) => {
+                const zmieniona = await zmienKampanie(k.id, { skrzynkaId });
+                if (zmieniona) setK(zmieniona);
+                odswiezPostep();
+              }}
             />
-          )}
-          <Wiersz etykieta="Zawężenie" wartosc={k.kogoSzukamy} />
-        </Karta>
+          </div>
 
-        <Karta tytul="O co chodzi">
-          <Wiersz etykieta="Cel" wartosc={k.cel} />
-          <Wiersz etykieta="Nadawca" wartosc={k.nadawca} />
-          <Wiersz etykieta="Film albo strona" wartosc={k.linkFilm} />
-          <Wiersz etykieta="Materiały" wartosc={k.materialy} />
-        </Karta>
-
-        <Karta tytul="Jak piszemy">
-          <Wiersz
-            etykieta="Psychografia"
-            wartosc={
-              k.psychografia ? "Tak, przed napisaniem wiadomości" : "Nie"
-            }
-          />
-          <Wiersz
-            etykieta="Wariantów wiadomości"
-            wartosc={String(k.liczbaWariantow)}
-          />
-          <Wiersz
-            etykieta="Przypomnienia bez odpowiedzi"
-            wartosc={
-              k.liczbaFollowupow === 0
-                ? "Brak, tylko pierwsza wiadomość"
-                : `${k.liczbaFollowupow}, co ${k.odstepDni} dni`
-            }
-          />
-          <Wiersz
-            etykieta="Start wysyłki"
-            wartosc={
-              k.start ? new Date(k.start).toLocaleDateString("pl-PL") : ""
-            }
-          />
-        </Karta>
-
-        <Karta tytul="Co dalej">
-          {kroki.map((x, i) => (
-            <Krok
-              key={x.nazwa}
-              nazwa={x.nazwa}
-              gotowe={x.gotowe}
-              nastepny={i === nastepny}
-              href={x.href}
+          <div id="wysylka" className="scroll-mt-20">
+            <Wysylka
+              kampaniaId={k.id}
+              kogoSzukamy={k.kogoSzukamy}
+              maSkrzynke={!!k.skrzynkaId}
+              zSejmu={k.zrodla.includes("sejm")}
+              zSamorzadow={k.zrodla.includes("samorzady")}
+              onZmiana={() => {
+                setOdswiezOdbiorcow((n) => n + 1);
+                odswiezPostep();
+              }}
             />
-          ))}
-          {nastepny >= 0 ? (
-            <p className="pt-1 text-xs text-slate-500">
-              Następny krok:{" "}
+          </div>
+
+          <Odbiorcy kampaniaId={k.id} odswiez={odswiezOdbiorcow} />
+
+          <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-slate-200 pt-6">
+            <button
+              onClick={uruchom}
+              disabled={k.status === "uruchomiona"}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+            >
+              {k.status === "uruchomiona"
+                ? "Kampania uruchomiona"
+                : "Oznacz jako uruchomioną"}
+            </button>
+            <button
+              onClick={usun}
+              className="text-sm text-slate-500 transition-colors duration-150 hover:text-red-700"
+            >
+              Usuń kampanię
+            </button>
+          </div>
+        </div>
+
+        <aside className="lg:sticky lg:top-20">
+          <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-base font-semibold tracking-tight text-slate-900">
+                Co dalej
+              </h2>
+              <span className="tabular text-xs text-slate-500">
+                {gotowych}/{kroki.length}
+              </span>
+            </div>
+            <div
+              className="mt-3 h-1 overflow-hidden rounded-full bg-slate-100"
+              aria-hidden
+            >
+              <div
+                className="h-full rounded-full bg-brand-600 transition-[width] duration-300 ease-out-quart"
+                style={{ width: `${(gotowych / kroki.length) * 100}%` }}
+              />
+            </div>
+            <div className="mt-4 space-y-2.5">
+              {kroki.map((x, i) => (
+                <Krok
+                  key={x.nazwa}
+                  nazwa={x.nazwa}
+                  gotowe={x.gotowe}
+                  nastepny={i === nastepny}
+                  href={x.href}
+                />
+              ))}
+            </div>
+            {nastepny >= 0 ? (
               <a
                 href={kroki[nastepny].href}
-                className="font-medium text-slate-900 underline-offset-2 hover:underline"
+                className="mt-5 block rounded-lg bg-brand-50 px-3.5 py-3 text-sm text-brand-800 ring-1 ring-brand-100 transition-colors duration-150 hover:bg-brand-100"
               >
-                {kroki[nastepny].podpowiedz}
+                <span className="block text-xs font-medium text-brand-700">
+                  Następny krok
+                </span>
+                <span className="mt-0.5 block first-letter:uppercase">
+                  {kroki[nastepny].podpowiedz}
+                </span>
               </a>
-            </p>
-          ) : (
-            <p className="pt-1 text-xs text-emerald-700">
-              Kampania ruszyła. Zaglądaj do listy odbiorców i raportu.
-            </p>
-          )}
-        </Karta>
-      </div>
-
-      <div id="wiadomosci" className="scroll-mt-6">
-        <Wiadomosci kampaniaId={k.id} onZmiana={odswiezPostep} />
-      </div>
-
-      <div id="skrzynka" className="scroll-mt-6" />
-      <SkrzynkaKampanii
-        skrzynkaId={k.skrzynkaId}
-        onZmiana={async (skrzynkaId) => {
-          const zmieniona = await zmienKampanie(k.id, { skrzynkaId });
-          if (zmieniona) setK(zmieniona);
-        }}
-      />
-
-      <div id="wysylka" className="scroll-mt-6" />
-      <Wysylka
-        kampaniaId={k.id}
-        kogoSzukamy={k.kogoSzukamy}
-        maSkrzynke={!!k.skrzynkaId}
-        zSejmu={k.zrodla.includes("sejm")}
-        zSamorzadow={k.zrodla.includes("samorzady")}
-        onZmiana={() => {
-          setOdswiezOdbiorcow((n) => n + 1);
-          odswiezPostep();
-        }}
-      />
-
-      <Odbiorcy kampaniaId={k.id} odswiez={odswiezOdbiorcow} />
-
-      <div className="mt-10 flex flex-wrap items-center gap-4">
-        <button
-          onClick={uruchom}
-          disabled={k.status === "uruchomiona"}
-          className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-        >
-          {k.status === "uruchomiona"
-            ? "Kampania uruchomiona"
-            : "Uruchom kampanię"}
-        </button>
-        <button
-          onClick={usun}
-          className="text-sm text-slate-400 transition hover:text-red-600"
-        >
-          Usuń kampanię
-        </button>
+            ) : (
+              <p className="mt-5 rounded-lg bg-emerald-50 px-3.5 py-3 text-sm text-emerald-800 ring-1 ring-emerald-100">
+                Kampania ruszyła. Zaglądaj do listy odbiorców i raportu.
+              </p>
+            )}
+          </section>
+        </aside>
       </div>
     </>
   );
 }
 
-function Karta({
-  tytul,
-  children,
+function Wiersz({
+  etykieta,
+  wartosc,
+  szeroki = false,
 }: {
-  tytul: string;
-  children: React.ReactNode;
+  etykieta: string;
+  wartosc: string;
+  szeroki?: boolean;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">
-        {tytul}
-      </h2>
-      <div className="mt-4 space-y-3">{children}</div>
-    </section>
-  );
-}
-
-function Wiersz({ etykieta, wartosc }: { etykieta: string; wartosc: string }) {
-  return (
-    <div>
-      <p className="text-xs text-slate-400">{etykieta}</p>
-      <p className="mt-0.5 text-sm text-slate-700">
-        {wartosc || <span className="text-slate-300">nie podano</span>}
+    <div className={szeroki ? "sm:col-span-2" : ""}>
+      <p className="text-xs font-medium text-slate-500">{etykieta}</p>
+      <p className="mt-1 max-w-[70ch] text-sm break-words text-slate-800">
+        {wartosc || <span className="text-slate-400">nie podano</span>}
       </p>
     </div>
   );

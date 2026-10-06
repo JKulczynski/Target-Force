@@ -71,7 +71,7 @@ export function Wiadomosci({
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+          <h2 className="text-base font-semibold tracking-tight text-slate-900">
             Wiadomości
           </h2>
           {aktywne.length > 0 && (

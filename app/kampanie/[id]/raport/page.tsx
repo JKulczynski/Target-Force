@@ -130,7 +130,7 @@ export default function RaportKampanii() {
       </div>
 
       <header className="mt-6">
-        <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+        <p className="text-base font-semibold tracking-tight text-slate-900">
           Raport kampanii
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
@@ -167,7 +167,7 @@ export default function RaportKampanii() {
 
       {wierszeKlubow.length > 1 && (
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
-          <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+          <h2 className="text-base font-semibold tracking-tight text-slate-900">
             Według klubów
           </h2>
           <table className="mt-3 w-full text-left text-sm">
@@ -204,7 +204,7 @@ export default function RaportKampanii() {
       )}
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+        <h2 className="text-base font-semibold tracking-tight text-slate-900">
           Kto zareagował
         </h2>
         {zaangazowani.length === 0 ? (

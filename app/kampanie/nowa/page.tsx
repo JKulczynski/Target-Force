@@ -266,7 +266,7 @@ export default function NowaKampania() {
             <Etykieta>Skąd bierzemy kontakty</Etykieta>
             <Podpowiedz>Możesz połączyć kilka źródeł.</Podpowiedz>
 
-            <p className="mt-5 text-xs font-medium tracking-wide text-slate-400 uppercase">
+            <p className="mt-5 text-base font-semibold tracking-tight text-slate-900">
               Decydenci publiczni
             </p>
             <div className="mt-2 space-y-2">
@@ -281,7 +281,7 @@ export default function NowaKampania() {
               ))}
             </div>
 
-            <p className="mt-6 text-xs font-medium tracking-wide text-slate-400 uppercase">
+            <p className="mt-6 text-base font-semibold tracking-tight text-slate-900">
               Własna lista
             </p>
             <div className="mt-2 rounded-lg border border-slate-200 p-3.5">
@@ -321,7 +321,7 @@ export default function NowaKampania() {
               )}
             </div>
 
-            <p className="mt-6 text-xs font-medium tracking-wide text-slate-400 uppercase">
+            <p className="mt-6 text-base font-semibold tracking-tight text-slate-900">
               B2B
             </p>
             <div className="mt-2 space-y-2">
