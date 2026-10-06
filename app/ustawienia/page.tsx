@@ -37,14 +37,20 @@ export default function Ustawienia() {
   }
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Ustawienia</h1>
+      <p className="mt-1.5 text-sm text-slate-600">
+        Sprawdzenie domeny nadawcy przed pierwszą kampanią.
+      </p>
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="font-medium">Czy domena nadawcy jest gotowa do wysyłki</h2>
+        <h2 className="font-medium">
+          Czy domena nadawcy jest gotowa do wysyłki
+        </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Wpisz adres, z którego chcesz wysyłać kampanię. Sprawdzimy trzy ustawienia domeny, bez
-          których maile trafiają do spamu albo w ogóle nie dochodzą.
+          Wpisz adres, z którego chcesz wysyłać kampanię. Sprawdzimy trzy
+          ustawienia domeny, bez których maile trafiają do spamu albo w ogóle
+          nie dochodzą.
         </p>
 
         <form onSubmit={sprawdz} className="mt-5 flex gap-3">
@@ -68,17 +74,38 @@ export default function Ustawienia() {
           <div className="mt-6 space-y-3">
             <Werdykt wynik={wynik} />
             <p className="text-sm text-slate-500">
-              Domena: <span className="font-medium text-slate-900">{wynik.domena}</span>
+              Domena:{" "}
+              <span className="font-medium text-slate-900">{wynik.domena}</span>
             </p>
-            <Pozycja nazwa="SPF" opis="Kto może wysyłać z tej domeny" stan={wynik.spf.stan} uwaga={wynik.spf.uwaga} rekord={wynik.spf.rekord} />
-            <Pozycja nazwa="DKIM" opis="Podpis potwierdzający, że mail nie został podrobiony" stan={wynik.dkim.stan} uwaga={wynik.dkim.uwaga} />
-            <Pozycja nazwa="DMARC" opis="Co robić z mailami, które nie przejdą SPF ani DKIM" stan={wynik.dmarc.stan} uwaga={wynik.dmarc.uwaga} rekord={wynik.dmarc.rekord} />
+            <Pozycja
+              nazwa="SPF"
+              opis="Kto może wysyłać z tej domeny"
+              stan={wynik.spf.stan}
+              uwaga={wynik.spf.uwaga}
+              rekord={wynik.spf.rekord}
+            />
+            <Pozycja
+              nazwa="DKIM"
+              opis="Podpis potwierdzający, że mail nie został podrobiony"
+              stan={wynik.dkim.stan}
+              uwaga={wynik.dkim.uwaga}
+            />
+            <Pozycja
+              nazwa="DMARC"
+              opis="Co robić z mailami, które nie przejdą SPF ani DKIM"
+              stan={wynik.dmarc.stan}
+              uwaga={wynik.dmarc.uwaga}
+              rekord={wynik.dmarc.rekord}
+            />
           </div>
         )}
       </section>
 
-      <p className="mt-6 text-sm text-slate-500">Skrzynkę nadawcy podłączasz teraz w każdej kampanii osobno (strona kampanii, sekcja „Skrzynka nadawcy”).</p>
-    </>
+      <p className="mt-6 text-sm text-slate-500">
+        Skrzynkę nadawcy podłączasz teraz w każdej kampanii osobno (strona
+        kampanii, sekcja „Skrzynka nadawcy”).
+      </p>
+    </div>
   );
 }
 
@@ -103,7 +130,11 @@ function Pozycja({
           {nazwa} <span className="font-normal text-slate-400">· {opis}</span>
         </p>
         <p className="mt-1 text-sm text-slate-600">{uwaga}</p>
-        {rekord && <p className="mt-2 truncate font-mono text-xs text-slate-400">{rekord}</p>}
+        {rekord && (
+          <p className="mt-2 truncate font-mono text-xs text-slate-400">
+            {rekord}
+          </p>
+        )}
       </div>
     </div>
   );

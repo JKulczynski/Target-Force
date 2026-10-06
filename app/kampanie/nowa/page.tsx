@@ -165,14 +165,28 @@ export default function NowaKampania() {
   const ostatni = krok === KROKI.length - 1;
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl">
       <Link
         href="/"
-        className="text-sm text-slate-500 transition hover:text-slate-900"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors duration-150 hover:text-slate-900"
       >
-        &larr; Kampanie
+        <svg
+          viewBox="0 0 16 16"
+          className="h-3.5 w-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden
+        >
+          <path
+            d="M10 3 5 8l5 5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Kampanie
       </Link>
-      <h1 className="mt-4 text-2xl font-semibold tracking-tight">
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight">
         Nowa kampania
       </h1>
 
@@ -180,10 +194,10 @@ export default function NowaKampania() {
         {KROKI.map((nazwa, i) => (
           <li key={nazwa} className="flex-1">
             <div
-              className={`h-1 rounded-full ${i <= krok ? "bg-slate-900" : "bg-slate-200"}`}
+              className={`h-1 rounded-full transition-colors duration-300 ${i < krok ? "bg-brand-200" : i === krok ? "bg-brand-600" : "bg-slate-200"}`}
             />
             <p
-              className={`mt-2 text-xs ${i === krok ? "font-medium text-slate-900" : "text-slate-400"}`}
+              className={`mt-2 text-xs ${i === krok ? "font-medium text-slate-900" : "text-slate-500"}`}
             >
               {i + 1}. {nazwa}
             </p>
@@ -461,7 +475,7 @@ export default function NowaKampania() {
           </Link>
         </div>
       </form>
-    </>
+    </div>
   );
 }
 

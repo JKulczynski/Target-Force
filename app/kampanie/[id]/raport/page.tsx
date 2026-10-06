@@ -77,9 +77,9 @@ export default function RaportKampanii() {
     if (o.wyslanychKrokow > 0 && o.odpowiedzial) w.odpisali++;
     kluby.set(nazwa, w);
   }
-  const wierszeKlubow = [...kluby.entries()].sort(
-    (a, b) => b[1].wyslani - a[1].wyslani || a[0].localeCompare(b[0]),
-  );
+  const wierszeKlubow = [...kluby.entries()]
+    .filter(([, w]) => w.wyslani > 0)
+    .sort((a, b) => b[1].wyslani - a[1].wyslani || a[0].localeCompare(b[0]));
 
   const zaangazowani = wyslani
     .filter((o) => o.kliknal || o.odpowiedzial)
@@ -130,8 +130,9 @@ export default function RaportKampanii() {
       </div>
 
       <header className="mt-6">
-        <p className="text-base font-semibold tracking-tight text-slate-900">
-          Raport kampanii
+        <p className="flex items-center gap-2 text-sm font-medium text-brand-700">
+          <span aria-hidden className="h-2 w-2 rounded-full bg-brand-600" />
+          Target Force · raport kampanii
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           {k.nazwa}
