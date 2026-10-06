@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { ZRODLA, type ZrodloId } from "@/lib/types";
 import { WARSZTAT } from "@/lib/prompty/pisanie";
+import { psychografiaDla } from "@/lib/prompty/odbiorcy";
 
 export const runtime = "nodejs";
 // Generowanie kilku wariantów z myśleniem trwa zwykle 1-2 minuty.
@@ -14,7 +15,7 @@ const Wynik = z.object({
   psychografia: z
     .string()
     .describe(
-      "Profil grupy odbiorców: jak myślą, co ich przekonuje, czego unikać. 5-8 krótkich punktów.",
+      "Profil grupy odbiorców dopasowany do tej kampanii: co chcą osiągnąć, czego się boją, co ich przekonuje, czego unikać. 5-8 krótkich punktów, każdy ze źródłem w nawiasie ([profil bazowy], [materiały] albo [hipoteza]); hipotezy na końcu, najwyżej dwie.",
     ),
   warianty: z.array(z.object({ temat: z.string(), tresc: z.string() })),
   przypomnienia: z.array(z.object({ temat: z.string(), tresc: z.string() })),
@@ -30,7 +31,7 @@ const JEZYK: Partial<Record<ZrodloId, string>> = {
 
 const SYSTEM = `Piszesz wiadomości e-mail do decydentów w imieniu nadawcy kampanii w narzędziu Target Force.
 Psychografia dotyczy GRUPY odbiorców (np. posłowie komisji spraw zagranicznych), nigdy konkretnych nazwanych osób.
-Trzymaj się poniższego warsztatu.
+Najpierw ułóż psychografię grupy według metody i profilu bazowego (dostaniesz je osobno), potem pisz wiadomości tak, żeby wynikały z tej psychografii. Trzymaj się poniższego warsztatu.
 
 ${WARSZTAT}`;
 
@@ -93,6 +94,7 @@ export async function POST(
       output_config: { effort: "medium", format: betaZodOutputFormat(Wynik) },
       system: [
         { type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } },
+        { type: "text", text: psychografiaDla(zrodla) },
       ],
       messages: [{ role: "user", content: brief }],
     });
