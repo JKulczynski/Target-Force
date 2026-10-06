@@ -9,6 +9,7 @@ import {
   MAKS_PARTIA,
   wyslaneDzisZeSkrzynki,
   wyslijKolejke,
+  limitDzisSkrzynki,
 } from "@/lib/wysylka-serwer";
 
 export const runtime = "nodejs";
@@ -43,6 +44,7 @@ async function stan(
   const bledy = bledyN ?? 0;
 
   let limit = 0;
+  let rozgrzewka = false;
   let dzis = 0;
   if (skrzynkaId) {
     const { data: s } = await supabase
@@ -50,7 +52,13 @@ async function stan(
       .select("dzienny_limit")
       .eq("id", skrzynkaId)
       .maybeSingle();
-    limit = s?.dzienny_limit ?? 0;
+    const l = await limitDzisSkrzynki(
+      supabase,
+      skrzynkaId,
+      s?.dzienny_limit ?? 0,
+    );
+    limit = l.limit;
+    rozgrzewka = l.rozgrzewka;
     dzis = await wyslaneDzisZeSkrzynki(supabase, skrzynkaId);
   }
   const doWyslania = Math.max((odbiorcy ?? 0) - wyslane - bledy, 0);
@@ -84,6 +92,7 @@ async function stan(
     (w) => w.krok === 0 && w.status === "zatwierdzony",
   ).length;
   return {
+    rozgrzewka,
     wariantow,
     zatwierdzonePierwsze,
     odbiorcy: odbiorcy ?? 0,

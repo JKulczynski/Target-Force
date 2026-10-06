@@ -35,6 +35,45 @@ function poczatekDnia() {
 }
 
 /** Ile maili ta skrzynka wysłała dziś, we wszystkich kampaniach (dzienny limit dotyczy skrzynki, nie kampanii). */
+/**
+ * Rozgrzewanie skrzynki: nowa skrzynka nie wysyła od razu pełnego limitu (filtry antyspamowe karzą nagły skok).
+ * Start 10 maili dziennie, +5 każdego dnia od pierwszej wysyłki, aż do limitu ustawionego w skrzynce.
+ */
+export const ROZGRZEWKA_START = 10;
+export const ROZGRZEWKA_KROK = 5;
+
+export async function limitDzisSkrzynki(
+  supabase: SupabaseClient,
+  skrzynkaId: string,
+  dziennyLimit: number,
+) {
+  const { data: kampanie } = await supabase
+    .from("kampanie")
+    .select("id")
+    .eq("skrzynka_id", skrzynkaId);
+  const ids = (kampanie ?? []).map((k) => k.id);
+  let dni = 0;
+  if (ids.length) {
+    const { data: pierwsza } = await supabase
+      .from("wiadomosci")
+      .select("wyslana")
+      .in("kampania_id", ids)
+      .not("wyslana", "is", null)
+      .order("wyslana")
+      .limit(1)
+      .maybeSingle();
+    if (pierwsza?.wyslana)
+      dni = Math.floor(
+        (Date.now() - new Date(pierwsza.wyslana).getTime()) / 86_400_000,
+      );
+  }
+  const rozgrzewka = ROZGRZEWKA_START + ROZGRZEWKA_KROK * dni;
+  return {
+    limit: Math.min(dziennyLimit, rozgrzewka),
+    rozgrzewka: rozgrzewka < dziennyLimit,
+  };
+}
+
 export async function wyslaneDzisZeSkrzynki(
   supabase: SupabaseClient,
   skrzynkaId: string,
@@ -166,11 +205,18 @@ export async function wyslijKolejke(
     };
 
   const dzis = await wyslaneDzisZeSkrzynki(supabase, s.id);
-  const ile = Math.min(o.ile, s.dzienny_limit - dzis);
+  const { limit, rozgrzewka } = await limitDzisSkrzynki(
+    supabase,
+    s.id,
+    s.dzienny_limit,
+  );
+  const ile = Math.min(o.ile, limit - dzis);
   if (ile <= 0)
     return {
       ok: false,
-      blad: `Dzienny limit skrzynki wyczerpany (${s.dzienny_limit}). Kolejna partia jutro.`,
+      blad: rozgrzewka
+        ? `Dzisiejszy limit rozgrzewania skrzynki wyczerpany (${limit}). Limit rośnie codziennie o ${ROZGRZEWKA_KROK}, aż do ${s.dzienny_limit}.`
+        : `Dzienny limit skrzynki wyczerpany (${limit}). Kolejna partia jutro.`,
       status: 429,
     };
 

@@ -13,6 +13,7 @@ type Stan = {
   zostaloDzis: number;
   kliknieci?: number;
   doPrzypomnienia?: number;
+  rozgrzewka?: boolean;
   filtr?: Filtr;
   auto?: boolean;
   start?: string | null;
@@ -190,7 +191,9 @@ export function Wysylka({
           <Liczba etykieta="Wysłane" wartosc={stan.wyslane} />
           <Liczba etykieta="Do wysłania" wartosc={stan.doWyslania} />
           <Liczba
-            etykieta="Dziś ze skrzynki"
+            etykieta={
+              stan.rozgrzewka ? "Dziś (rozgrzewanie)" : "Dziś ze skrzynki"
+            }
             wartosc={`${stan.dzis} / ${stan.limit}`}
           />
           {stan.wyslane > 0 && (
