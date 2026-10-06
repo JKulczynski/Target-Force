@@ -75,7 +75,17 @@ async function stan(
   }
   const doPrzypomnienia = (await gotowiDoPrzypomnienia(supabase, kampaniaId))
     .length;
+  const { data: war } = await supabase
+    .from("warianty")
+    .select("krok, status")
+    .eq("kampania_id", kampaniaId);
+  const wariantow = (war ?? []).filter((w) => w.status !== "odrzucony").length;
+  const zatwierdzonePierwsze = (war ?? []).filter(
+    (w) => w.krok === 0 && w.status === "zatwierdzony",
+  ).length;
   return {
+    wariantow,
+    zatwierdzonePierwsze,
     odbiorcy: odbiorcy ?? 0,
     wyslane,
     bledy,

@@ -120,6 +120,11 @@ export function Wysylka({
         setInfo(
           `Lista odbiorców gotowa: ${dane.odbiorcy} osób z e-mailem (nowych: ${dane.dodane}).`,
         );
+      if (tryb === "test") {
+        try {
+          localStorage.setItem(`tf-test-${kampaniaId}`, "1");
+        } catch {}
+      }
       if (tryb === "test")
         setInfo(
           `Wysłano ${dane.wyslane} ${dane.wyslane === 1 ? "wiadomość testową" : "wiadomości testowe"} na ${dane.do}. Sprawdź, czy są w odebranych, a nie w spamie.`,
