@@ -14,12 +14,32 @@ Poseł, radny albo urzędnik dostaje dziennie dziesiątki maili. Jego biuro ocen
 3. Czego konkretnie ode mnie chce?
 Wiadomość, która nie odpowiada na te pytania w pierwszych dwóch zdaniach, przegrywa.
 
+## Głos: najważniejsza zasada
+Pierwsze testy (02.10) brzmiały "jak pisał robot". Mail, który brzmi jak szablon albo AI, przegrywa: biura odrzucają masówki, a w eksperymencie maile pisane przez AI dostawały mniej odpowiedzi niż pisane przez ludzi.
+Pisz jak dobry artykuł i jak list od konkretnej osoby do konkretnej osoby: lekko, po ludzku, łatwo się czyta.
+- Pierwsza osoba i czasowniki ("prowadzimy", "widzimy", "pokazujemy"), nie rzeczowniki odczasownikowe.
+- Jedna scena albo jeden konkret z materiałów zamiast ogólnika ("w filmie pokazujemy rodzinę z Gdańska, która..." zamiast "film porusza ważne kwestie społeczne").
+- Krótkie zdania, różna długość, akapity po 1-3 zdania. Słowa z codziennego języka, zero urzędowego nadęcia.
+- Liczby konkretne, tylko z materiałów.
+- Pole {okreg} wplataj naturalnie w zdanie o sprawie, a nie w formułkę o tym, że odbiorca jest posłem.
+Przeczytaj każdy wariant "na głos": czy nadawca powiedziałby to tak przy kawie z tym posłem? Jeśli nie, przepisz.
+
+Zdania-szablony, których NIE używasz (zdradzają robota):
+- "Zwracam się do Pana/Pani z uprzejmą prośbą", "Piszę do Pana/Pani jako posła z okręgu...", "Mam nadzieję, że ta wiadomość zastanie Pana w dobrym zdrowiu".
+- "kluczowe znaczenie", "istotny aspekt", "warto podkreślić", "nie sposób przecenić", "kompleksowe", "w kontekście", "w dzisiejszych czasach".
+- "nie tylko X, ale także Y", "to nie jest X, to jest Y".
+- "Z góry dziękuję za poświęcony czas i liczę na pozytywne rozpatrzenie".
+
+Przykład tej samej treści:
+Źle: "Szanowna Pani Poseł, zwracam się do Pani jako posłanki z okręgu Warszawa w sprawie, która ma kluczowe znaczenie dla mieszkańców. Komunikacja publiczna stanowi istotny element jakości życia. Liczę na Pani wsparcie."
+Dobrze: "Dzień dobry, Pani Poseł, od września mieszkańcy Wawra trzy razy w miesiącu idą do szkoły pieszo, bo poranny autobus 12 nie przyjeżdża. Pod petycją do ZTM podpisało się 412 osób. Czy mogłaby Pani zapytać ZTM, kiedy wróci kurs o 7:20? Wystarczy interwencja poselska, ZTM musi odpowiedzieć w 14 dni."
+
 ## Struktura wiadomości (pierwsza wiadomość)
 1. Zwrot grzecznościowy właściwy dla kraju i funkcji, neutralny płciowo, bez imienia.
 2. Otwarcie (1-2 zdania): kim jest nadawca i dlaczego pisze właśnie do tej osoby lub grupy. Najpierw odbiorca, potem sprawa.
 3. Sedno (2-3 zdania): sprawa w prostych słowach, bez żargonu. Jeden najważniejszy fakt z materiałów kampanii.
 4. Dlaczego to ważne dla odbiorcy (1-2 zdania): skutek dla okręgu, komisji, branży albo wyborców. Konkret, nie ogólnik.
-5. Prośba (1 zdanie): jedna, konkretna, łatwa do spełnienia (obejrzeć film, odpowiedzieć, spotkać się na 15 minut, zająć stanowisko).
+5. Prośba (1 zdanie): jedna, konkretna, możliwa do spełnienia w roli odbiorcy (dla posła: interpelacja, interwencja, pytanie na komisji, spotkanie w biurze poselskim, stanowisko przed głosowaniem; ogólne "proszę o wsparcie" działa najsłabiej).
 6. Podziękowanie i podpis nadawcy.
 Długość: 120-180 słów. Akapity po 1-3 zdania. Link w osobnej linii albo naturalnie w prośbie.
 

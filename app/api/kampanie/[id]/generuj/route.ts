@@ -71,7 +71,7 @@ export async function POST(
     `Napisz wiadomości w języku: ${jezyk}. Psychografię napisz po polsku.`,
     ...(zrodla.includes("sejm")
       ? [
-          "Lokalny argument: odbiorcami są posłowie na Sejm. W jednym zdaniu każdej wiadomości użyj pól {okreg} (miasto okręgu wyborczego posła, np. Kraków) i ewentualnie {nazwisko}, np. „Piszę do Pana/Pani jako posła z okręgu {okreg}, bo...”. Pola wstawimy automatycznie, nie wpisuj za nie żadnych nazw. Nie używaj zwrotów zależnych od płci poza formą „Pan/Pani”.",
+          "Lokalny argument: odbiorcami są posłowie na Sejm. W jednym zdaniu każdej wiadomości naturalnie użyj pola {okreg} (miasto okręgu wyborczego posła, np. Kraków), najlepiej w zdaniu o skutku sprawy dla mieszkańców, np. „...a w {okreg} dotyczy to kilkuset rodzin”. Nie pisz formułki w stylu „piszę do Pana/Pani jako posła z okręgu”. Pola wstawimy automatycznie, nie wpisuj za nie żadnych nazw. Nie używaj zwrotów zależnych od płci poza formą „Pan/Pani”.",
         ]
       : []),
     ...(zrodla.includes("samorzady")
