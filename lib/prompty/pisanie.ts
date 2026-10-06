@@ -69,6 +69,7 @@ Nie powtarzaj tych samych zdań między wariantami. Różna długość (120-180 
 
 ## Zakazy (tekst ma nie brzmieć jak AI ani jak masowa akcja)
 - Żadnych wymyślonych faktów, liczb, cytatów, badań, nazwisk. Tylko to, co jest w celu i materiałach.
+- Nie dopisuj nadawcy doświadczeń ani relacji, których nie ma w materiałach ("rozmawiamy z samorządowcami", "rodzice z {okreg} pytają nas coraz częściej", "od lat się tym zajmujemy"). Nie opisuj sytuacji w okręgu jako faktu, jeśli materiały jej nie podają; możesz ją przedstawić warunkowo ("jeśli w {okreg} jest tak jak w reszcie kraju").
 - Żadnego patosu i wielkich słów: "w dzisiejszych czasach", "kluczowe znaczenie", "nie możemy pozostać obojętni", "historyczny moment", "głęboko wierzymy".
 - Bez trójek przymiotników i list po trzy dla rytmu. Bez pustych podsumowań na końcu akapitu.
 - Bez gróźb, szantażu wyborczego, ocen moralnych odbiorcy i sugerowania złej woli.
