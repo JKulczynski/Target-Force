@@ -36,10 +36,10 @@ Dobrze: "Dzień dobry, Pani Poseł, od września mieszkańcy Wawra trzy razy w m
 
 ## Struktura wiadomości (pierwsza wiadomość)
 1. Zwrot grzecznościowy właściwy dla kraju i funkcji, neutralny płciowo, bez imienia.
-2. Otwarcie (1-2 zdania): kim jest nadawca i dlaczego pisze właśnie do tej osoby lub grupy. Najpierw odbiorca, potem sprawa.
+2. Otwarcie (1-2 zdania): konkret z materiałów, który dotyczy właśnie tego odbiorcy (fakt, liczba, termin, skutek w {okreg} albo w jego komisji), i dlaczego piszemy do niego. Najpierw odbiorca i konkret, potem nadawca. To nie może brzmieć jak sprzedaż ani jak akcja masowa już w pierwszym zdaniu.
 3. Sedno (2-3 zdania): sprawa w prostych słowach, bez żargonu. Jeden najważniejszy fakt z materiałów kampanii.
 4. Dlaczego to ważne dla odbiorcy (1-2 zdania): skutek dla okręgu, komisji, branży albo wyborców. Konkret, nie ogólnik.
-5. Prośba (1 zdanie): jedna, konkretna, możliwa do spełnienia w roli odbiorcy (dla posła: interpelacja, interwencja, pytanie na komisji, spotkanie w biurze poselskim, stanowisko przed głosowaniem; ogólne "proszę o wsparcie" działa najsłabiej).
+5. Prośba (1-2 zdania): jedna, konkretna, możliwa do spełnienia w roli odbiorcy (dla posła: interpelacja, interwencja, pytanie na komisji, spotkanie w biurze poselskim, stanowisko przed głosowaniem; ogólne "proszę o wsparcie" działa najsłabiej). Zawsze dopowiedz, co nadawca zrobi, żeby ułatwić odbiorcy krok, np. "Jeśli to pomoże, prześlemy projekt pytań do interpelacji." albo "Wystarczy krótka odpowiedź, resztę danych doślemy." Odbiorca, który wie, co się stanie po odpowiedzi, odpowiada chętniej.
 6. Podziękowanie i podpis nadawcy.
 Długość: 120-180 słów. Akapity po 1-3 zdania. Link w osobnej linii albo naturalnie w prośbie.
 
@@ -54,13 +54,18 @@ Nie powtarzaj tych samych zdań między wariantami. Różna długość (120-180 
 
 ## Tematy maili
 - 4-9 słów, konkretne: sprawa + kontekst odbiorcy (np. nazwa komisji, miejsca, terminu).
+- Temat mówi, o czym jest mail, jak w zwykłej korespondencji. Nie "Prośba o wsparcie", "Apel", "Ważna sprawa", "Propozycja współpracy".
 - Bez clickbaitu, wykrzykników, WIELKICH LITER, emotikon i słów typu "pilne", "ważne", "szokujące".
 - Temat ma brzmieć jak od człowieka do człowieka, np. "Film o [sprawa] przed premierą 5 października".
 
 ## Przypomnienia
-- 50-90 słów. Nawiązanie do poprzedniej wiadomości w jednym zdaniu.
-- Nowy, mały element (inny fakt, termin, pytanie), nie powtórka.
-- Zero presji i wyrzutów ("nie otrzymałem odpowiedzi"). Uprzejmie, krótko, ta sama prośba.
+Każde przypomnienie musi samo w sobie coś dawać. Puste "wracam do mojej wiadomości" to najsłabszy mail w całej sekwencji.
+- 50-90 słów. Zacznij od nowej rzeczy, nie od przypominania, że pisaliśmy. Najwyżej pół zdania kontekstu ("o programie doświetlania przejść").
+- Rodzaje nowej rzeczy (każde przypomnienie inny): gotowy materiał ułatwiający krok (projekt pytań do interpelacji, jednostronicowe podsumowanie), nowy fakt z materiałów, termin albo moment w procedurze (komisja, głosowanie, budżet), krótka odpowiedź na możliwą wątpliwość.
+- Ta sama prośba co w pierwszej wiadomości, prościej.
+- Ostatnie przypomnienie grzecznie zamyka temat, np. "Jeśli to teraz nie jest priorytet, rozumiem i nie będę więcej pisać w tej sprawie."
+- Zero presji i wyrzutów ("nie otrzymałem odpowiedzi", "ponawiam prośbę").
+Przykład: "Przygotowaliśmy projekt dwóch pytań do interpelacji: o tempo programu i o środki na 2027 rok. Łatwo dopisać do nich pytanie o przejścia w {okreg}. Czy mogę go przesłać?"
 
 ## Język i ton według kraju
 - Polski: "Szanowni Państwo" przy grupie; przy pojedynczej osobie neutralnie, np. "Szanowna Pani Posłanko / Szanowny Panie Pośle" tylko gdy znana płeć, inaczej "Dzień dobry". Forma grzecznościowa, rzeczowo, bez urzędniczego nadęcia.

@@ -224,7 +224,18 @@ export default function SzczegolyKampanii() {
           </section>
 
           <div id="wiadomosci" className="scroll-mt-20">
-            <Wiadomosci kampaniaId={k.id} onZmiana={odswiezPostep} />
+            <Wiadomosci
+              kampaniaId={k.id}
+              fakty={[
+                k.nazwa,
+                k.cel,
+                k.materialy,
+                k.nadawca,
+                k.kogoSzukamy,
+                k.linkFilm,
+              ].join(" ")}
+              onZmiana={odswiezPostep}
+            />
           </div>
 
           <div id="skrzynka" className="scroll-mt-20">

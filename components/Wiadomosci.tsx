@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { kontrolaWiadomosci } from "@/lib/kontrola";
 import {
   psychografiaKampanii,
   warianty,
@@ -17,9 +18,12 @@ const pole =
  */
 export function Wiadomosci({
   kampaniaId,
+  fakty,
   onZmiana,
 }: {
   kampaniaId: string;
+  /** Cel, materiały i dane kampanii: na ich tle sprawdzamy liczby w wiadomościach. */
+  fakty: string;
   onZmiana?: () => void;
 }) {
   const [lista, setLista] = useState<Wariant[] | null>(null);
@@ -138,7 +142,7 @@ export function Wiadomosci({
 
       <div className="mt-5 space-y-4">
         {aktywne.map((w) => (
-          <KartaWariantu key={w.id} w={w} onZmiana={wczytaj} />
+          <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} />
         ))}
       </div>
     </section>
@@ -147,9 +151,11 @@ export function Wiadomosci({
 
 function KartaWariantu({
   w,
+  fakty,
   onZmiana,
 }: {
   w: Wariant;
+  fakty: string;
   onZmiana: () => Promise<void>;
 }) {
   const [temat, setTemat] = useState(w.temat);
@@ -157,6 +163,10 @@ function KartaWariantu({
   const [zapisuje, setZapisuje] = useState(false);
   const [otwarta, setOtwarta] = useState(w.status !== "zatwierdzony");
   const zmieniony = temat !== w.temat || tresc !== w.tresc;
+  const uwagi = useMemo(
+    () => kontrolaWiadomosci({ temat, tresc, krok: w.krok }, fakty),
+    [temat, tresc, w.krok, fakty],
+  );
   const etykieta =
     w.krok === 0
       ? `Pierwsza wiadomość, wariant ${w.numer}`
@@ -190,6 +200,11 @@ function KartaWariantu({
             {w.temat}
           </span>
         </span>
+        {uwagi.length > 0 && (
+          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+            {uwagi.length} do sprawdzenia
+          </span>
+        )}
         <span className="shrink-0 text-xs text-slate-500">Pokaż</span>
       </button>
     );
@@ -219,6 +234,16 @@ function KartaWariantu({
         value={tresc}
         onChange={(e) => setTresc(e.target.value)}
       />
+      {uwagi.length > 0 && (
+        <div className="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-100">
+          <p className="font-medium">Do sprawdzenia przed zatwierdzeniem</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-5">
+            {uwagi.map((u) => (
+              <li key={u.opis}>{u.opis}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="mt-3 flex flex-wrap gap-3">
         {w.status !== "zatwierdzony" ? (
           <button
