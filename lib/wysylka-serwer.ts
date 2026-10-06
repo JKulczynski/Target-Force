@@ -15,11 +15,16 @@ const PRZERWA_MS = 3000;
 
 const czekaj = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Każdy link w treści przechodzi przez /r/{wiadomość}, żeby policzyć kliknięcia (główna miara kampanii). */
-function zLinkamiSledzacymi(tresc: string, baza: string, wiadomoscId: string) {
+/**
+ * Każdy link w treści przechodzi przez krótki adres /r/{kod}/{n}, żeby policzyć kliknięcia (główna miara kampanii).
+ * Krótki, bez adresu w parametrze, bo długi link z UUID wyglądał mało wiarygodnie (test Jana 02.10).
+ * Numeracja zgodna z bazą (zapisz_klikniecie_kod): n-ty adres w treści, ten sam wzorzec.
+ */
+function zLinkamiSledzacymi(tresc: string, baza: string, kod: string) {
+  let n = 0;
   return tresc.replace(
     /https?:\/\/[^\s<>()"']+[^\s<>()"'.,;:!?]/g,
-    (url) => `${baza}/r/${wiadomoscId}?u=${encodeURIComponent(url)}`,
+    () => `${baza}/r/${kod}/${++n}`,
   );
 }
 
@@ -274,7 +279,7 @@ export async function wyslijKolejke(
         status: "zaplanowana",
         zaplanowana_na: new Date().toISOString(),
       })
-      .select("id")
+      .select("id, kod")
       .single();
     if (error || !wiersz) continue; // już w kolejce (np. drugie kliknięcie naraz), pomijamy
     try {
@@ -282,7 +287,7 @@ export async function wyslijKolejke(
         from: od,
         to: p.kontakt.email!,
         subject: temat,
-        text: zLinkamiSledzacymi(tresc, o.baza, wiersz.id),
+        text: zLinkamiSledzacymi(tresc, o.baza, wiersz.kod),
         ...(p.inReplyTo
           ? { inReplyTo: p.inReplyTo, references: [p.inReplyTo] }
           : {}),
