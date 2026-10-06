@@ -60,7 +60,7 @@ Nie powtarzaj tych samych zdań między wariantami. Różna długość (120-180 
 
 ## Przypomnienia
 Każde przypomnienie musi samo w sobie coś dawać. Puste "wracam do mojej wiadomości" to najsłabszy mail w całej sekwencji.
-- 50-90 słów. Zacznij od nowej rzeczy, nie od przypominania, że pisaliśmy. Najwyżej pół zdania kontekstu ("o programie doświetlania przejść").
+- 50-90 słów. Pierwsze zdanie po powitaniu od razu podaje nową rzecz i zaczyna się np. od "Przygotowaliśmy...", "Mamy...", "Od przyszłego tygodnia...", "Jedna rzecz, której nie napisałam:". Pierwsze zdanie NIGDY nie zaczyna się od "wracam", "nawiązuję", "przypominam", "kilka dni temu pisałam". Kontekst poprzedniego maila najwyżej w kilku słowach w środku zdania ("projekt pytań o program doświetlania przejść").
 - Rodzaje nowej rzeczy (każde przypomnienie inny): gotowy materiał ułatwiający krok (projekt pytań do interpelacji, jednostronicowe podsumowanie), nowy fakt z materiałów, termin albo moment w procedurze (komisja, głosowanie, budżet), krótka odpowiedź na możliwą wątpliwość.
 - Ta sama prośba co w pierwszej wiadomości, prościej.
 - Ostatnie przypomnienie grzecznie zamyka temat, np. "Jeśli to teraz nie jest priorytet, rozumiem i nie będę więcej pisać w tej sprawie."
