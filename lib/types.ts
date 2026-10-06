@@ -60,11 +60,11 @@ export const STATUSY: Record<
   },
   gotowa: {
     etykieta: "Gotowa",
-    klasa: "bg-amber-50 text-amber-700 ring-amber-200",
+    klasa: "bg-amber-50 text-amber-800 ring-amber-200",
   },
   uruchomiona: {
     etykieta: "Uruchomiona",
-    klasa: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    klasa: "bg-brand-50 text-brand-700 ring-brand-200",
   },
   zakonczona: {
     etykieta: "Zakończona",

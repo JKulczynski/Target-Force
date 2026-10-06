@@ -9,7 +9,7 @@ import {
 } from "@/lib/store";
 
 const pole =
-  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10";
+  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
 
 /**
  * Generowanie wiadomości i etap zatwierdzania (Jan, 30.09: nadawca czyta, poprawia i zatwierdza treść,
@@ -88,7 +88,7 @@ export function Wiadomosci({
         <button
           onClick={generuj}
           disabled={generuje}
-          className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:bg-slate-300"
+          className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
         >
           {generuje
             ? "Piszę wiadomości (ok. 1-2 min)..."
@@ -194,7 +194,7 @@ function KartaWariantu({
             <button
               onClick={() => zapisz()}
               disabled={zapisuje}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:bg-slate-300"
+              className="rounded-lg bg-brand-600 hover:bg-brand-700 px-4 py-2 text-sm font-medium text-white disabled:bg-slate-300"
             >
               Zapisz zmiany
             </button>

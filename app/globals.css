@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
+/*
+ * Target Force: "sztab kampanii". Restrained: neutralne powierzchnie z lekkim odcieniem marki,
+ * jeden kolor marki (karmin) tylko dla akcji, stanu i "następnego kroku". Zob. PRODUCT.md / DESIGN.md.
+ * Paleta slate jest nadpisana centralnie, więc cała aplikacja (klasy slate-*) dostaje te same neutrale.
+ */
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Neutrale z odcieniem marki (hue 350, niska chroma). Tekst na bieli: 600 i ciemniej = AA. */
+  --color-slate-50: oklch(0.982 0.003 350);
+  --color-slate-100: oklch(0.962 0.005 350);
+  --color-slate-200: oklch(0.917 0.008 350);
+  --color-slate-300: oklch(0.858 0.011 350);
+  --color-slate-400: oklch(0.67 0.016 350);
+  --color-slate-500: oklch(0.52 0.018 350);
+  --color-slate-600: oklch(0.44 0.018 350);
+  --color-slate-700: oklch(0.36 0.018 350);
+  --color-slate-800: oklch(0.28 0.018 350);
+  --color-slate-900: oklch(0.21 0.02 350);
+  --color-slate-950: oklch(0.15 0.018 350);
+
+  /* Marka: karmin sztabu. 600 = akcja, 50/100 = tła stanu. */
+  --color-brand-50: oklch(0.97 0.018 355);
+  --color-brand-100: oklch(0.935 0.04 355);
+  --color-brand-200: oklch(0.87 0.08 355);
+  --color-brand-500: oklch(0.6 0.19 355);
+  --color-brand-600: oklch(0.52 0.19 355);
+  --color-brand-700: oklch(0.45 0.17 355);
+  --color-brand-800: oklch(0.37 0.14 355);
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-slate-50);
+  color: var(--color-slate-900);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Liczby w panelach i tabelach równo pod sobą. */
+.tabular,
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Widoczny fokus dla klawiatury (AA), w kolorze marki. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--color-brand-100);
+  color: var(--color-slate-900);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+  }
 }

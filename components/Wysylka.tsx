@@ -61,7 +61,7 @@ const KomunikatKroku = createContext<{
 const NR_KROKU = { odbiorcy: 1, test: 2, partia: 3, przypomnienia: 4 } as const;
 
 const pole =
-  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10";
+  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
 
 /**
  * Wysyłka partiami (Jan, 30.09: absolutny core do 02.10). Kolejność: odbiorcy -> test na własny adres -> partie.
@@ -432,7 +432,7 @@ export function Wysylka({
                     wyslij("partia");
                 }}
                 disabled={!!pracuje || !maSkrzynke || maxPartia < 1}
-                className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:bg-slate-300"
+                className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
               >
                 {pracuje === "partia"
                   ? "Wysyłam..."
@@ -511,7 +511,7 @@ export function Wysylka({
                       ustawAuto(true);
                   }}
                   disabled={zapisujeAuto || !maSkrzynke}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:bg-slate-300"
+                  className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
                 >
                   {zapisujeAuto ? "Zapisuję..." : "Włącz automat"}
                 </button>

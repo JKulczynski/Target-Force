@@ -64,7 +64,7 @@ export default function SzczegolyKampanii() {
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"
+          className="mt-6 inline-flex rounded-lg bg-brand-600 hover:bg-brand-700 px-4 py-2.5 text-sm font-medium text-white"
         >
           Wróć do kampanii
         </Link>
@@ -267,7 +267,7 @@ export default function SzczegolyKampanii() {
         <button
           onClick={uruchom}
           disabled={k.status === "uruchomiona"}
-          className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+          className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
         >
           {k.status === "uruchomiona"
             ? "Kampania uruchomiona"
