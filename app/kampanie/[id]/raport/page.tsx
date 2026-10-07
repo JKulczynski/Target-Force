@@ -66,6 +66,7 @@ export default function RaportKampanii() {
     razem: number;
     otworzyli: number;
     udostepnili: number;
+    zrodla: { nazwa: string; ile: number }[];
   } | null>(null);
 
   useEffect(() => {
@@ -76,7 +77,7 @@ export default function RaportKampanii() {
       .then(setWplyw)
       .catch(() => {});
     podpisyKampanii(id, 1)
-      .then((p) => setAkcja({ razem: p.razem, otworzyli: p.otworzyli, udostepnili: p.udostepnili }))
+      .then((p) => setAkcja({ razem: p.razem, otworzyli: p.otworzyli, udostepnili: p.udostepnili, zrodla: p.zrodla }))
       .catch(() => {});
     fetch(`/api/kampanie/${id}/odbiorcy`)
       .then((odp) => (odp.ok ? odp.json() : null))
@@ -254,6 +255,12 @@ export default function RaportKampanii() {
               </div>
             ))}
           </div>
+          {akcja.zrodla.length > 1 && (
+            <p className="mt-4 text-sm text-slate-600">
+              <span className="text-slate-400">Skąd przyszli: </span>
+              {akcja.zrodla.map((z) => `${z.nazwa} ${z.ile}`).join(" · ")}
+            </p>
+          )}
         </section>
       )}
 

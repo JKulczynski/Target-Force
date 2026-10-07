@@ -82,6 +82,12 @@ export async function POST(
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 400);
+  const zrodloSurowe = (body.zrodlo ?? {}) as Record<string, unknown>;
+  const zrodlo = Object.fromEntries(
+    ["utm_source", "utm_medium", "utm_campaign", "ref"]
+      .filter((k) => typeof zrodloSurowe[k] === "string" && (zrodloSurowe[k] as string).trim())
+      .map((k) => [k, (zrodloSurowe[k] as string).trim().slice(0, 80)]),
+  );
   if (imie.length < 2 || imie.length > 60)
     return NextResponse.json({ blad: "Podaj imię." }, { status: 400 });
   if (nazwisko.length > 80)
@@ -214,6 +220,7 @@ export async function POST(
       temat,
       tresc,
       dlaczego,
+      zrodlo,
       ip_hash: ipHash,
     })
     .select("id")

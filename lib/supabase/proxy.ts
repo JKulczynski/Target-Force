@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /** Odświeża sesję i odsyła niezalogowanych na /login. */
 export async function updateSession(request: NextRequest) {
@@ -12,6 +12,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request: { headers: naglowki } });
   }
 
+  // Ten nagłówek ustawia tylko proxy; gdyby przyszedł od klienta, layout pominąłby pasek i sprawdzenie zespołu.
+  if (request.headers.has("x-strona-publiczna")) {
+    const naglowki = new Headers(request.headers);
+    naglowki.delete("x-strona-publiczna");
+    request = new NextRequest(request.url, { headers: naglowki, method: request.method });
+  }
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -45,6 +51,7 @@ export async function updateSession(request: NextRequest) {
     sciezka.startsWith("/login") ||
     sciezka.startsWith("/auth") ||
     sciezka.startsWith("/r/") ||
+    sciezka.startsWith("/w/") ||
     sciezka.startsWith("/api/cron/");
   if (!zalogowany && !publiczna) {
     const url = request.nextUrl.clone();

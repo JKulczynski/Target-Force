@@ -334,6 +334,12 @@ export async function wyslijKolejke(
         to: p.kontakt.email!,
         subject: temat,
         text: zLinkamiSledzacymi(tresc, o.baza, wiersz.kod),
+        // Wypisanie jednym kliknięciem (RFC 8058): Gmail i Outlook pokazują "Wypisz się" przy nadawcy
+        // i nie karzą domeny za zgłoszenia spamu. W treści nie ma stopki, żeby mail wyglądał osobiście.
+        headers: {
+          "List-Unsubscribe": `<${o.baza}/w/${wiersz.kod}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
         ...(p.inReplyTo
           ? { inReplyTo: p.inReplyTo, references: [p.inReplyTo] }
           : {}),

@@ -188,6 +188,24 @@ export function StronaAkcji({
         ))}
       </ul>
 
+      {podpisy && podpisy.zrodla.length > 0 && (
+        <div className="mt-5 rounded-lg border border-slate-200 p-4">
+          <p className="text-xs font-medium text-slate-500">Skąd przyszli podpisujący</p>
+          <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+            {podpisy.zrodla.map((z) => (
+              <li key={z.nazwa}>
+                <span className="font-semibold tabular-nums text-slate-900">{z.ile}</span>{" "}
+                <span className="text-slate-600">{z.nazwa}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-slate-500">
+            W reklamach i postach używaj linku z parametrami, np. {adres ? `${adres}?utm_source=facebook&utm_medium=reklama` : "…?utm_source=facebook&utm_medium=reklama"}.
+            Bez nich liczymy domenę, z której ktoś przyszedł.
+          </p>
+        </div>
+      )}
+
       {podpisy && (podpisy.razem > 0 || k.akcjaWlaczona) && (
         <dl className="mt-5 grid grid-cols-3 gap-4 rounded-lg bg-slate-50 p-4">
           {[

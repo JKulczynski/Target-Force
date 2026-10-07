@@ -13,6 +13,25 @@ type Wiadomosc = {
   tresc: string;
 };
 
+/** Skąd przyszedł sympatyk: UTM z adresu strony i domena odsyłacza. Do raportu „podpisy według źródła”. */
+function zrodloWejscia(): Record<string, string> {
+  const wynik: Record<string, string> = {};
+  try {
+    const p = new URLSearchParams(window.location.search);
+    for (const k of ["utm_source", "utm_medium", "utm_campaign"]) {
+      const v = p.get(k)?.trim().slice(0, 80);
+      if (v) wynik[k] = v;
+    }
+    if (document.referrer) {
+      const host = new URL(document.referrer).hostname.replace(/^www\./, "");
+      if (host && host !== window.location.hostname) wynik.ref = host;
+    }
+  } catch {
+    /* brak dostępu do adresu, zostaje puste */
+  }
+  return wynik;
+}
+
 /** Bez polskich znaków i wielkości liter, żeby „lodz” znalazło „Łódź”. */
 function prosto(s: string) {
   return s
@@ -92,6 +111,7 @@ export function AkcjaFormularz({
           nazwisko,
           email,
           dlaczego,
+          zrodlo: zrodloWejscia(),
           zgoda,
           zgodaInformacje,
           gminaTeryt: gmina.t,

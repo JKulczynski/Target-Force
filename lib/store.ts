@@ -225,9 +225,12 @@ export type Podpis = {
 };
 
 /** Podpisy ze strony akcji (zespół czyta, zapisuje serwer). Najnowsze pierwsze. */
-export async function podpisyKampanii(kampaniaId: string, limit = 50): Promise<{ lista: Podpis[]; razem: number; otworzyli: number; udostepnili: number }> {
+export async function podpisyKampanii(
+  kampaniaId: string,
+  limit = 50,
+): Promise<{ lista: Podpis[]; razem: number; otworzyli: number; udostepnili: number; zrodla: { nazwa: string; ile: number }[] }> {
   const supabase = createClient();
-  const [{ data, error }, { count: razem }, { count: otworzyli }, { count: udostepnili }] = await Promise.all([
+  const [{ data, error }, { count: razem }, { count: otworzyli }, { count: udostepnili }, { data: zrodlaSurowe }] = await Promise.all([
     supabase
       .from("podpisy")
       .select("id, imie, nazwisko, gmina_nazwa, okreg_nr, odbiorca_nazwa, otworzyl_poczte, udostepnil, utworzony")
@@ -237,9 +240,19 @@ export async function podpisyKampanii(kampaniaId: string, limit = 50): Promise<{
     supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId),
     supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).not("otworzyl_poczte", "is", null),
     supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).not("udostepnil", "is", null),
+    supabase.from("podpisy").select("zrodlo").eq("kampania_id", kampaniaId),
   ]);
   if (error) throw error;
+  // Źródło wejścia: utm_source, w drugiej kolejności domena odsyłacza, reszta "bezpośrednio / nieznane".
+  const licz = new Map<string, number>();
+  for (const w of zrodlaSurowe ?? []) {
+    const z = (w.zrodlo ?? {}) as Record<string, string>;
+    const nazwa = z.utm_source ? `${z.utm_source}${z.utm_medium ? ` / ${z.utm_medium}` : ""}` : z.ref || "bezpośrednio / nieznane";
+    licz.set(nazwa, (licz.get(nazwa) ?? 0) + 1);
+  }
+  const zrodla = [...licz.entries()].map(([nazwa, ile]) => ({ nazwa, ile })).sort((a, b) => b.ile - a.ile);
   return {
+    zrodla,
     lista: (data ?? []).map((p) => ({
       id: p.id,
       imie: p.imie,
