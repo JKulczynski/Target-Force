@@ -58,18 +58,15 @@ export default function NowaKampania() {
   const [lista, setLista] = useState<WynikImportu | null>(null);
   const [tekstListy, setTekstListy] = useState("");
   const [szablon, setSzablon] = useState<string | null>(null);
+  const [przedSzablonem, setPrzedSzablonem] = useState<typeof dane | null>(null);
   const [propozycja, setPropozycja] = useState<Propozycja | null>(null);
   const [proponuje, setProponuje] = useState(false);
 
   function uzyjSzablonu(id: string) {
     const s = SZABLONY.find((x) => x.id === id);
     if (!s) return;
-    if (
-      dane.cel.trim() &&
-      szablon !== id &&
-      !window.confirm("Szablon podmieni opis celu i ustawienia wysyłki. Kontynuować?")
-    )
-      return;
+    // Bez okna potwierdzenia (Jan 07.10: "powiadomienie z Vercela" frustruje); zamiast tego "Cofnij".
+    if (!przedSzablonem) setPrzedSzablonem(dane);
     setSzablon(id);
     setDane((d) => ({ ...d, ...s.dane }));
   }
@@ -272,6 +269,22 @@ export default function NowaKampania() {
               <Podpowiedz>
                 Opcjonalnie. Szablon wstawia szkielet celu i ustawienia wysyłki,
                 wszystko możesz zmienić.
+                {przedSzablonem && (
+                  <>
+                    {" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDane(przedSzablonem);
+                        setPrzedSzablonem(null);
+                        setSzablon(null);
+                      }}
+                      className="font-medium text-brand-700 underline-offset-2 hover:underline"
+                    >
+                      Cofnij szablon
+                    </button>
+                  </>
+                )}
               </Podpowiedz>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {SZABLONY.map((s) => (
