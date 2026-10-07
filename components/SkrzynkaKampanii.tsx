@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Werdykt } from "@/components/Werdykt";
 import type { WynikDomeny } from "@/lib/dns-poczty";
+import { POLE } from "@/components/ui";
 
 type Skrzynka = {
   id: string;
@@ -13,8 +14,7 @@ type Skrzynka = {
   dzienny_limit: number;
 };
 
-const pole =
-  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
+const pole = POLE;
 const przycisk =
   "shrink-0 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300";
 
@@ -37,7 +37,14 @@ export function SkrzynkaKampanii({
   }
 
   useEffect(() => {
-    wczytaj();
+    let aktualny = true;
+    fetch("/api/skrzynka")
+      .then((odp) => (odp.ok ? odp.json() : []))
+      .then((d) => aktualny && setLista(d))
+      .catch(() => {});
+    return () => {
+      aktualny = false;
+    };
   }, []);
 
   const wybrana = lista.find((s) => s.id === skrzynkaId);

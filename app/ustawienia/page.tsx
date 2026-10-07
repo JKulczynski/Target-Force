@@ -4,9 +4,9 @@ import { useState } from "react";
 import type { Swiatlo, WynikDomeny } from "@/lib/dns-poczty";
 import { Werdykt } from "@/components/Werdykt";
 import { Zespol } from "@/components/Zespol";
+import { POLE } from "@/components/ui";
 
-const pole =
-  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
+const pole = POLE;
 
 const KOLOR: Record<Swiatlo, string> = {
   ok: "bg-emerald-500",

@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { POLE } from "@/components/ui";
 
-const pole =
-  "mt-2 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
+const pole = `mt-2 ${POLE}`;
 
 /**
  * Tu trafia link z zaproszenia do zespołu i link "zapomniałem hasła".

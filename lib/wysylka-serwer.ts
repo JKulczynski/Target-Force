@@ -20,7 +20,7 @@ const czekaj = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Krótki, bez adresu w parametrze, bo długi link z UUID wyglądał mało wiarygodnie (test Jana 02.10).
  * Numeracja zgodna z bazą (zapisz_klikniecie_kod): n-ty adres w treści, ten sam wzorzec.
  */
-function zLinkamiSledzacymi(tresc: string, baza: string, kod: string) {
+export function zLinkamiSledzacymi(tresc: string, baza: string, kod: string) {
   let n = 0;
   return tresc.replace(
     /https?:\/\/[^\s<>()"']+[^\s<>()"'.,;:!?]/g,

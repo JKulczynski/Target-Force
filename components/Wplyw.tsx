@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { POLE } from "@/components/ui";
 import {
   dodajWydarzenie,
   TYPY_WYDARZEN,
@@ -10,8 +11,7 @@ import {
   type Wydarzenie,
 } from "@/lib/store";
 
-const pole =
-  "mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
+const pole = `mt-1.5 ${POLE}`;
 
 /**
  * Raport wpływu (wizja pkt 6): co się wydarzyło dzięki kampanii. Odpowiedzi i spotkania dzieją się poza aplikacją

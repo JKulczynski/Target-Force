@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { kontrolaWiadomosci } from "@/lib/kontrola";
+import { POLE } from "@/components/ui";
 import {
   psychografiaKampanii,
   warianty,
@@ -9,8 +10,7 @@ import {
   type Wariant,
 } from "@/lib/store";
 
-const pole =
-  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
+const pole = POLE;
 
 /**
  * Generowanie wiadomości i etap zatwierdzania (Jan, 30.09: nadawca czyta, poprawia i zatwierdza treść,
@@ -44,7 +44,19 @@ export function Wiadomosci({
   }
 
   useEffect(() => {
-    wczytaj().catch(() => setLista([]));
+    let aktualny = true;
+    Promise.all([warianty(kampaniaId), psychografiaKampanii(kampaniaId)])
+      .then(([w, p]) => {
+        if (!aktualny) return;
+        setLista(w);
+        setPsychografia(p.opis);
+        setJezyk(p.jezyk);
+        onZmiana?.();
+      })
+      .catch(() => aktualny && setLista([]));
+    return () => {
+      aktualny = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kampaniaId]);
 

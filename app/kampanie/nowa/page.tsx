@@ -7,6 +7,7 @@ import { parsujListe, type WynikImportu } from "@/lib/csv";
 import { dodajKampanie, dodajKontakty } from "@/lib/store";
 import { ZRODLA, pustaKampania, type Kampania, type ZrodloId } from "@/lib/types";
 import { MomentSejmu } from "@/components/MomentSejmu";
+import { POLE } from "@/components/ui";
 
 type Licznik = { razem: number; zEmailem: number } | "blad" | "laduje";
 
@@ -113,8 +114,7 @@ const Podpowiedz = ({ children }: { children: React.ReactNode }) => (
   <span className="mt-1 block text-sm text-slate-500">{children}</span>
 );
 
-const pole =
-  "mt-2 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
+const pole = `mt-2 ${POLE}`;
 
 export default function NowaKampania() {
   const router = useRouter();
@@ -173,9 +173,15 @@ export default function NowaKampania() {
   // Liczniki pobieramy raz, przy pierwszym wejściu w krok 2. Serwer trzyma je w cache przez dobę.
   useEffect(() => {
     if (krok !== 1) return;
-    for (const id of Z_LICZNIKIEM) {
-      if (liczniki[id]) continue;
-      setLiczniki((l) => ({ ...l, [id]: "laduje" }));
+    const brakujace = Z_LICZNIKIEM.filter((id) => !liczniki[id]);
+    if (brakujace.length === 0) return;
+    Promise.resolve().then(() =>
+      setLiczniki((l) => ({
+        ...l,
+        ...Object.fromEntries(brakujace.map((id) => [id, "laduje"])),
+      })),
+    );
+    for (const id of brakujace) {
       fetch(`/api/zrodla/${id}`)
         .then((r) => (r.ok ? r.json() : Promise.reject()))
         .then((d: { razem: number; zEmailem: number }) =>

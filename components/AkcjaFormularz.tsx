@@ -2,9 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 import { etykietaGminy, type Gmina } from "@/lib/akcja";
+import { POLE } from "@/components/ui";
 
-const pole =
-  "mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
+const pole = `mt-1.5 text-[15px] ${POLE}`;
 
 type Wiadomosc = {
   podpisId: string;
