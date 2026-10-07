@@ -6,7 +6,7 @@ const KOMUNIKATY: Record<string, string> = {
   rejestracja:
     "Nie udało się założyć konta. Hasło musi mieć co najmniej 6 znaków.",
   potwierdz:
-    "Sprawdź skrzynkę i kliknij link potwierdzający. Potem daj znać Janowi, żeby dodał cię do zespołu.",
+    "Sprawdź skrzynkę i kliknij link potwierdzający. Potem poproś kogoś z zespołu, żeby dodał cię w Ustawieniach.",
 };
 
 const pole =

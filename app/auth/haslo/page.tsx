@@ -1,0 +1,107 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+const pole =
+  "mt-2 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
+
+/**
+ * Tu trafia link z zaproszenia do zespołu. Zaproszenie z panelu admina nie obsługuje PKCE,
+ * więc sesja przychodzi w hashu adresu i przejmuje ją klient w przeglądarce (nie serwer).
+ * Osoba ustawia hasło i od razu ma dostęp do kampanii (wpis w `zespol` zrobiono przy zaproszeniu).
+ */
+export default function UstawHaslo() {
+  const router = useRouter();
+  const [gotowa, setGotowa] = useState<boolean | null>(null);
+  const [haslo, setHaslo] = useState("");
+  const [blad, setBlad] = useState<string | null>(null);
+  const [zapisuje, setZapisuje] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    // Sesja z hasha jest zapisywana chwilę po starcie klienta, dlatego nasłuch, nie jednorazowy odczyt.
+    const { data } = supabase.auth.onAuthStateChange((_zdarzenie, sesja) => {
+      setGotowa(!!sesja);
+    });
+    supabase.auth.getSession().then(({ data: d }) => {
+      if (d.session) setGotowa(true);
+    });
+    const czas = setTimeout(() => setGotowa((g) => g ?? false), 4000);
+    return () => {
+      data.subscription.unsubscribe();
+      clearTimeout(czas);
+    };
+  }, []);
+
+  async function zapisz(e: React.FormEvent) {
+    e.preventDefault();
+    setZapisuje(true);
+    setBlad(null);
+    const { error } = await createClient().auth.updateUser({
+      password: haslo,
+      data: { zaproszenie: false },
+    });
+    if (error) {
+      setBlad("Nie udało się zapisać hasła. Hasło musi mieć co najmniej 6 znaków.");
+      setZapisuje(false);
+      return;
+    }
+    router.replace("/");
+    router.refresh();
+  }
+
+  return (
+    <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8">
+      <h1 className="text-2xl font-semibold tracking-tight">Ustaw hasło</h1>
+      <p className="mt-1.5 text-sm text-slate-600">
+        Zaproszono cię do zespołu Target Force. Ustaw hasło, którym będziesz się
+        logować.
+      </p>
+
+      {gotowa === null && (
+        <p className="mt-6 text-sm text-slate-400">Sprawdzam zaproszenie...</p>
+      )}
+      {gotowa === false && (
+        <p
+          role="alert"
+          className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100"
+        >
+          Link z zaproszenia wygasł albo został już użyty. Poproś zespół o nowe
+          zaproszenie.
+        </p>
+      )}
+      {gotowa && (
+        <form onSubmit={zapisz} className="mt-6 space-y-4">
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Nowe hasło</span>
+            <input
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              value={haslo}
+              onChange={(e) => setHaslo(e.target.value)}
+              className={pole}
+            />
+            <span className="mt-1.5 block text-xs text-slate-500">
+              Co najmniej 6 znaków.
+            </span>
+          </label>
+          {blad && (
+            <p role="alert" className="text-sm text-red-600">
+              {blad}
+            </p>
+          )}
+          <button
+            disabled={zapisuje}
+            className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
+          >
+            {zapisuje ? "Zapisuję..." : "Zapisz hasło i wejdź"}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}

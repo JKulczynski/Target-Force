@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Swiatlo, WynikDomeny } from "@/lib/dns-poczty";
 import { Werdykt } from "@/components/Werdykt";
+import { Zespol } from "@/components/Zespol";
 
 const pole =
   "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
@@ -40,8 +41,10 @@ export default function Ustawienia() {
     <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Ustawienia</h1>
       <p className="mt-1.5 text-sm text-slate-600">
-        Sprawdzenie domeny nadawcy przed pierwszą kampanią.
+        Zespół i sprawdzenie domeny nadawcy przed pierwszą kampanią.
       </p>
+
+      <Zespol />
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="font-medium">

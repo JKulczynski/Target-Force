@@ -96,8 +96,9 @@ export default async function RootLayout({
               <span className="font-semibold">
                 Nie masz jeszcze dostępu do danych zespołu.
               </span>{" "}
-              Jesteś zalogowany jako {dostep.email}. Poproś Jana o dodanie do
-              zespołu. Do tego czasu nie zobaczysz ani nie zapiszesz kampanii.
+              Jesteś zalogowany jako {dostep.email}. Poproś kogoś z zespołu, żeby
+              dodał cię w Ustawieniach (sekcja „Zespół”). Do tego czasu nie
+              zobaczysz ani nie zapiszesz kampanii.
             </p>
           </div>
         )}
