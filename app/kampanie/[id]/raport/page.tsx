@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { kampania } from "@/lib/store";
+import {
+  kampania,
+  podpisyKampanii,
+  TYPY_WYDARZEN,
+  wydarzenia,
+  type Wydarzenie,
+} from "@/lib/store";
 import type { Kampania } from "@/lib/types";
 
 type Odbiorca = {
@@ -55,11 +61,23 @@ export default function RaportKampanii() {
   const { id } = useParams<{ id: string }>();
   const [k, setK] = useState<Kampania | null | undefined>(undefined);
   const [lista, setLista] = useState<Odbiorca[] | null>(null);
+  const [wplyw, setWplyw] = useState<Wydarzenie[]>([]);
+  const [akcja, setAkcja] = useState<{
+    razem: number;
+    otworzyli: number;
+    udostepnili: number;
+  } | null>(null);
 
   useEffect(() => {
     kampania(id)
       .then((wynik) => setK(wynik ?? null))
       .catch(() => setK(null));
+    wydarzenia(id)
+      .then(setWplyw)
+      .catch(() => {});
+    podpisyKampanii(id, 1)
+      .then((p) => setAkcja({ razem: p.razem, otworzyli: p.otworzyli, udostepnili: p.udostepnili }))
+      .catch(() => {});
     fetch(`/api/kampanie/${id}/odbiorcy`)
       .then((odp) => (odp.ok ? odp.json() : null))
       .then((dane) => setLista(dane?.odbiorcy ?? []))
@@ -187,6 +205,57 @@ export default function RaportKampanii() {
           </div>
         ))}
       </section>
+
+      {wplyw.length > 0 && (
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
+          <h2 className="text-base font-semibold tracking-tight text-slate-900">
+            Co się wydarzyło
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Reakcje decydentów i skutki kampanii, w kolejności od najnowszych.
+          </p>
+          <ol className="mt-4 space-y-3">
+            {wplyw.map((w) => (
+              <li key={w.id} className="flex gap-4 text-sm">
+                <span className="w-20 shrink-0 tabular-nums text-slate-500">
+                  {new Date(w.data).toLocaleDateString("pl-PL")}
+                </span>
+                <span>
+                  <span className="mr-2 rounded-md bg-brand-50 px-1.5 py-0.5 text-xs font-medium text-brand-700 ring-1 ring-brand-100">
+                    {TYPY_WYDARZEN[w.typ]}
+                  </span>
+                  <span className="text-slate-800">{w.opis}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {k.akcjaSlug && akcja && (
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
+          <h2 className="text-base font-semibold tracking-tight text-slate-900">
+            Strona akcji: głos mieszkańców
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Mieszkańcy pisali do swoich posłów z własnej poczty. Liczymy podpisy
+            i kliknięcia „Otwórz w poczcie”, nie same maile, bo te wychodzą z ich
+            skrzynek.
+          </p>
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            {[
+              ["Podpisało", akcja.razem],
+              ["Otworzyło pocztę z gotowym mailem", akcja.otworzyli],
+              ["Udostępniło dalej", akcja.udostepnili],
+            ].map(([e, v]) => (
+              <div key={String(e)}>
+                <p className="text-3xl font-semibold tracking-tight">{v}</p>
+                <p className="mt-1 text-xs text-slate-500">{e}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
         <h2 className="text-base font-semibold tracking-tight text-slate-900">

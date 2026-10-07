@@ -119,6 +119,15 @@ export type Kampania = {
   akcjaOpis: string;
   /** Administrator danych sympatyków (nazwa i kontakt) do informacji RODO na stronie. */
   akcjaAdministrator: string;
+  /** Zawężenie odbiorców (Sejm: komisje, kluby; samorządy: województwa, typy). Kreator może je ustawić z propozycji AI. */
+  filtrOdbiorcow: FiltrOdbiorcow;
+};
+
+export type FiltrOdbiorcow = {
+  komisje?: string[];
+  kluby?: string[];
+  wojewodztwa?: string[];
+  typy?: string[];
 };
 
 export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
@@ -142,5 +151,6 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     akcjaTytul: "",
     akcjaOpis: "",
     akcjaAdministrator: "",
+    filtrOdbiorcow: {},
   };
 }

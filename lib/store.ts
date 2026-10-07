@@ -32,11 +32,12 @@ type Wiersz = {
   akcja_tytul: string;
   akcja_opis: string;
   akcja_administrator: string;
+  filtr_odbiorcow: Kampania["filtrOdbiorcow"];
 };
 
 // Jeden literał, bo klient Supabase wyprowadza typ wyniku z treści tego napisu.
 const KOLUMNY =
-  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator";
+  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator, filtr_odbiorcow";
 
 function zWiersza(w: Wiersz): Kampania {
   return {
@@ -61,6 +62,7 @@ function zWiersza(w: Wiersz): Kampania {
     akcjaTytul: w.akcja_tytul,
     akcjaOpis: w.akcja_opis,
     akcjaAdministrator: w.akcja_administrator,
+    filtrOdbiorcow: w.filtr_odbiorcow ?? {},
   };
 }
 
@@ -85,6 +87,7 @@ function doWiersza(k: Partial<Kampania>): Partial<Wiersz> {
   if (k.akcjaTytul !== undefined) w.akcja_tytul = k.akcjaTytul;
   if (k.akcjaOpis !== undefined) w.akcja_opis = k.akcjaOpis;
   if (k.akcjaAdministrator !== undefined) w.akcja_administrator = k.akcjaAdministrator;
+  if (k.filtrOdbiorcow !== undefined) w.filtr_odbiorcow = k.filtrOdbiorcow;
   return w;
 }
 
@@ -252,4 +255,46 @@ export async function podpisyKampanii(kampaniaId: string, limit = 50): Promise<{
     otworzyli: otworzyli ?? 0,
     udostepnili: udostepnili ?? 0,
   };
+}
+
+export const TYPY_WYDARZEN = {
+  odpowiedz: "Odpowiedź",
+  spotkanie: "Spotkanie",
+  interpelacja: "Interpelacja albo pytanie",
+  zmiana_decyzji: "Zmiana decyzji",
+  media: "Media",
+  inne: "Inne",
+} as const;
+export type TypWydarzenia = keyof typeof TYPY_WYDARZEN;
+
+export type Wydarzenie = {
+  id: string;
+  data: string;
+  typ: TypWydarzenia;
+  opis: string;
+  kontaktId: string | null;
+};
+
+/** Raport wpływu: wydarzenia dopisywane ręcznie (odpowiedzi przychodzą do skrzynki nadawcy, spotkania dzieją się poza aplikacją). */
+export async function wydarzenia(kampaniaId: string): Promise<Wydarzenie[]> {
+  const { data, error } = await createClient()
+    .from("wydarzenia_wplywu")
+    .select("id, data, typ, opis, kontakt_id")
+    .eq("kampania_id", kampaniaId)
+    .order("data", { ascending: false })
+    .order("utworzone", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((w) => ({ id: w.id, data: w.data, typ: w.typ as TypWydarzenia, opis: w.opis, kontaktId: w.kontakt_id }));
+}
+
+export async function dodajWydarzenie(kampaniaId: string, w: { data: string; typ: TypWydarzenia; opis: string; kontaktId?: string | null }) {
+  const { error } = await createClient()
+    .from("wydarzenia_wplywu")
+    .insert({ kampania_id: kampaniaId, data: w.data, typ: w.typ, opis: w.opis, kontakt_id: w.kontaktId ?? null });
+  if (error) throw error;
+}
+
+export async function usunWydarzenie(id: string) {
+  const { error } = await createClient().from("wydarzenia_wplywu").delete().eq("id", id);
+  if (error) throw error;
 }

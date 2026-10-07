@@ -5,9 +5,89 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { parsujListe, type WynikImportu } from "@/lib/csv";
 import { dodajKampanie, dodajKontakty } from "@/lib/store";
-import { ZRODLA, pustaKampania, type ZrodloId } from "@/lib/types";
+import { ZRODLA, pustaKampania, type Kampania, type ZrodloId } from "@/lib/types";
+import { MomentSejmu } from "@/components/MomentSejmu";
 
 type Licznik = { razem: number; zEmailem: number } | "blad" | "laduje";
+
+type Propozycja = {
+  zrodla: ZrodloId[];
+  komisje: { kod: string; nazwa: string; dlaczego: string }[];
+  kogoSzukamy: string;
+  uzasadnienie: string;
+};
+
+/**
+ * Szablony kampanii (samoobsługa, 07.10): zamiast pustego formularza klient dostaje szkielet celu
+ * i sensowne ustawienia wysyłki. Nawiasy kwadratowe to miejsca do uzupełnienia.
+ */
+const SZABLONY: {
+  id: string;
+  nazwa: string;
+  opis: string;
+  dane: Partial<Omit<Kampania, "id" | "utworzona">>;
+}[] = [
+  {
+    id: "petycja",
+    nazwa: "Petycja albo apel",
+    opis: "Prośba o jeden konkretny krok w sprawie, z faktami.",
+    dane: {
+      cel: "Chcemy, żeby [kto: posłowie komisji X / urzędy gmin] [zrobił co: złożył interpelację, zapytał na komisji, zajął stanowisko], bo [najważniejszy fakt z materiałów]. Termin: [data albo moment w procedurze].",
+      zrodla: ["sejm"],
+      liczbaWariantow: 5,
+      liczbaFollowupow: 2,
+      odstepDni: 5,
+    },
+  },
+  {
+    id: "zaproszenie",
+    nazwa: "Zaproszenie na wydarzenie",
+    opis: "Pokaz filmu, debata, konferencja, spotkanie w okręgu.",
+    dane: {
+      cel: "Zapraszamy na [wydarzenie] [data, godzina, miejsce]. Chcemy, żeby [kto] przyszedł i [zabrał głos / spotkał się z bohaterami / zobaczył materiał]. Dla odbiorcy to okazja, żeby [co zyskuje].",
+      zrodla: ["sejm"],
+      liczbaWariantow: 4,
+      liczbaFollowupow: 1,
+      odstepDni: 4,
+    },
+  },
+  {
+    id: "stanowisko",
+    nazwa: "Stanowisko w sprawie projektu",
+    opis: "Przed głosowaniem, konsultacjami albo posiedzeniem komisji.",
+    dane: {
+      cel: "Przed [głosowanie / konsultacje / posiedzenie komisji, data] przekazujemy stanowisko w sprawie [projekt, numer druku]. Prosimy o [poprawkę / pytanie / głos przeciw lub za], bo [skutek dla mieszkańców, branży, budżetu].",
+      zrodla: ["sejm"],
+      liczbaWariantow: 5,
+      liczbaFollowupow: 2,
+      odstepDni: 3,
+    },
+  },
+  {
+    id: "interwencja",
+    nazwa: "Interwencja lokalna",
+    opis: "Sprawa w gminie albo powiecie: droga, szkoła, komunikacja.",
+    dane: {
+      cel: "W [miejsce] [co się dzieje i od kiedy]. Prosimy [urząd / posła z okręgu] o [interwencję, pytanie do instytucji, spotkanie], bo [skutek dla mieszkańców, liczby z materiałów].",
+      zrodla: ["samorzady", "sejm"],
+      liczbaWariantow: 4,
+      liczbaFollowupow: 2,
+      odstepDni: 5,
+    },
+  },
+  {
+    id: "akcja",
+    nazwa: "Akcja mieszkańców ze stroną",
+    opis: "Mieszkańcy piszą do swoich posłów ze strony akcji, z własnej poczty.",
+    dane: {
+      cel: "Chcemy, żeby mieszkańcy [skąd] napisali do swoich posłów w sprawie [sprawa], z prośbą o [jeden krok]. Najważniejszy fakt: [fakt z materiałów]. Po zapisaniu włącz stronę w sekcji „Strona akcji”.",
+      zrodla: ["sejm"],
+      liczbaWariantow: 3,
+      liczbaFollowupow: 1,
+      odstepDni: 7,
+    },
+  },
+];
 
 /** Źródła z otwartym API, dla których liczymy odbiorców na żywo. */
 const Z_LICZNIKIEM: ZrodloId[] = [
@@ -47,6 +127,48 @@ export default function NowaKampania() {
   );
   const [lista, setLista] = useState<WynikImportu | null>(null);
   const [tekstListy, setTekstListy] = useState("");
+  const [szablon, setSzablon] = useState<string | null>(null);
+  const [propozycja, setPropozycja] = useState<Propozycja | null>(null);
+  const [proponuje, setProponuje] = useState(false);
+
+  function uzyjSzablonu(id: string) {
+    const s = SZABLONY.find((x) => x.id === id);
+    if (!s) return;
+    if (
+      dane.cel.trim() &&
+      szablon !== id &&
+      !window.confirm("Szablon podmieni opis celu i ustawienia wysyłki. Kontynuować?")
+    )
+      return;
+    setSzablon(id);
+    setDane((d) => ({ ...d, ...s.dane }));
+  }
+
+  async function zaproponuj() {
+    setProponuje(true);
+    setBlad(null);
+    try {
+      const odp = await fetch("/api/kampanie/propozycja", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cel: dane.cel, materialy: dane.materialy, nazwa: dane.nazwa }),
+      });
+      const d = await odp.json().catch(() => ({}));
+      if (!odp.ok) return setBlad(d.blad ?? "Nie udało się przygotować propozycji.");
+      const p = d as Propozycja;
+      setPropozycja(p);
+      setDane((x) => ({
+        ...x,
+        zrodla: [...new Set([...p.zrodla, ...x.zrodla.filter((z) => z === "wlasna_lista")])],
+        kogoSzukamy: p.kogoSzukamy,
+        filtrOdbiorcow: { ...x.filtrOdbiorcow, komisje: p.komisje.map((k) => k.kod) },
+      }));
+    } catch {
+      setBlad("Nie udało się przygotować propozycji.");
+    } finally {
+      setProponuje(false);
+    }
+  }
 
   // Liczniki pobieramy raz, przy pierwszym wejściu w krok 2. Serwer trzyma je w cache przez dobę.
   useEffect(() => {
@@ -209,6 +331,31 @@ export default function NowaKampania() {
       <form onSubmit={zapisz} className="mt-8 space-y-8">
         {krok === 0 && (
           <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6">
+            <div>
+              <Etykieta>Zacznij od szablonu</Etykieta>
+              <Podpowiedz>
+                Opcjonalnie. Szablon wstawia szkielet celu i ustawienia wysyłki,
+                wszystko możesz zmienić.
+              </Podpowiedz>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {SZABLONY.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => uzyjSzablonu(s.id)}
+                    className={`rounded-lg border p-3 text-left transition ${szablon === s.id ? "border-slate-900 bg-slate-50" : "border-slate-200 hover:border-slate-300"}`}
+                  >
+                    <span className="block text-sm font-medium text-slate-900">
+                      {s.nazwa}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      {s.opis}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <label className="block">
               <Etykieta>Nazwa kampanii</Etykieta>
               <Podpowiedz>Dla ciebie, żeby odróżnić ją od innych.</Podpowiedz>
@@ -278,8 +425,39 @@ export default function NowaKampania() {
 
         {krok === 1 && (
           <section className="rounded-xl border border-slate-200 bg-white p-6">
-            <Etykieta>Skąd bierzemy kontakty</Etykieta>
-            <Podpowiedz>Możesz połączyć kilka źródeł.</Podpowiedz>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <Etykieta>Skąd bierzemy kontakty</Etykieta>
+                <Podpowiedz>Możesz połączyć kilka źródeł.</Podpowiedz>
+              </div>
+              <button
+                type="button"
+                onClick={zaproponuj}
+                disabled={proponuje}
+                className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 disabled:opacity-50"
+              >
+                {proponuje ? "Sprawdzam, kto decyduje..." : "Zaproponuj na podstawie celu"}
+              </button>
+            </div>
+            {propozycja && (
+              <div className="mt-4 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-900 ring-1 ring-brand-100">
+                <p className="font-medium">Propozycja: {propozycja.kogoSzukamy}</p>
+                <p className="mt-1 text-brand-800">{propozycja.uzasadnienie}</p>
+                {propozycja.komisje.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-brand-800">
+                    {propozycja.komisje.map((k) => (
+                      <li key={k.kod}>
+                        <span className="font-medium">{k.nazwa}</span>: {k.dlaczego}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-2 text-xs text-brand-700">
+                  Źródła i komisje zaznaczone poniżej. Komisje trafią do zawężenia
+                  listy odbiorców w kampanii. Możesz wszystko zmienić.
+                </p>
+              </div>
+            )}
 
             <p className="mt-5 text-base font-semibold tracking-tight text-slate-900">
               Decydenci publiczni
@@ -436,6 +614,12 @@ export default function NowaKampania() {
                 }
               />
             </label>
+            {dane.zrodla.includes("sejm") && (
+              <MomentSejmu
+                start={dane.start}
+                onWybierz={(start) => setDane({ ...dane, start })}
+              />
+            )}
 
             <p className="text-sm text-slate-500">
               Każda osoba dostanie najwyżej {1 + dane.liczbaFollowupow}{" "}

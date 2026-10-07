@@ -15,6 +15,8 @@ import { Wiadomosci } from "@/components/Wiadomosci";
 import { Wysylka } from "@/components/Wysylka";
 import { Odbiorcy } from "@/components/Odbiorcy";
 import { StronaAkcji } from "@/components/StronaAkcji";
+import { Wplyw } from "@/components/Wplyw";
+import { MomentSejmu } from "@/components/MomentSejmu";
 
 export default function SzczegolyKampanii() {
   const { id } = useParams<{ id: string }>();
@@ -266,6 +268,10 @@ export default function SzczegolyKampanii() {
 
           <Odbiorcy kampaniaId={k.id} odswiez={odswiezOdbiorcow} />
 
+          <div id="wplyw" className="scroll-mt-20">
+            <Wplyw kampaniaId={k.id} />
+          </div>
+
           <div id="akcja" className="scroll-mt-20">
             <StronaAkcji
               k={k}
@@ -344,6 +350,11 @@ export default function SzczegolyKampanii() {
               </p>
             )}
           </section>
+          {k.zrodla.includes("sejm") && (
+            <div className="mt-4">
+              <MomentSejmu start={k.start} />
+            </div>
+          )}
         </aside>
       </div>
     </>
