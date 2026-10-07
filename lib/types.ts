@@ -111,6 +111,14 @@ export type Kampania = {
   start: string | null;
   /** Skrzynka, z której wysyłamy tę kampanię (każda kampania ma swoją). */
   skrzynkaId: string | null;
+
+  /** Strona akcji dla sympatyków (/a/{slug}): publiczna, sympatyk wysyła wiadomość z własnej poczty. */
+  akcjaWlaczona: boolean;
+  akcjaSlug: string | null;
+  akcjaTytul: string;
+  akcjaOpis: string;
+  /** Administrator danych sympatyków (nazwa i kontakt) do informacji RODO na stronie. */
+  akcjaAdministrator: string;
 };
 
 export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
@@ -129,5 +137,10 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     odstepDni: 4,
     start: null,
     skrzynkaId: null,
+    akcjaWlaczona: false,
+    akcjaSlug: null,
+    akcjaTytul: "",
+    akcjaOpis: "",
+    akcjaAdministrator: "",
   };
 }

@@ -1,13 +1,13 @@
 /**
- * Pola personalizacji w temacie i treści: {imie}, {nazwisko}, {okreg}, {wojewodztwo}.
+ * Pola personalizacji w temacie i treści: {imie}, {nazwisko}, {okreg}, {wojewodztwo}, {gmina} (gmina sympatyka ze strony akcji).
  * Lokalny argument z formuły Piotra (30.09): poseł czyta "jako poseł z okręgu Kraków", nie ogólnik.
  * Gdy dla danej osoby brakuje wartości (np. własna lista bez okręgu), całe zdanie z tym polem znika,
  * zamiast zostawiać dziurę w tekście.
  */
-export const POLA = ["imie", "nazwisko", "okreg", "wojewodztwo"] as const;
+export const POLA = ["imie", "nazwisko", "okreg", "wojewodztwo", "gmina"] as const;
 export type Pola = Partial<Record<(typeof POLA)[number], string>>;
 
-const WZOR = /\{(imie|nazwisko|okreg|wojewodztwo)\}/g;
+const WZOR = /\{(imie|nazwisko|okreg|wojewodztwo|gmina)\}/g;
 
 function wstaw(fragment: string, pola: Pola): string | null {
   let brak = false;

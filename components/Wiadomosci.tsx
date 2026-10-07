@@ -149,7 +149,7 @@ export function Wiadomosci({
   );
 }
 
-function KartaWariantu({
+export function KartaWariantu({
   w,
   fakty,
   onZmiana,

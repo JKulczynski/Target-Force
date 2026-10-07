@@ -33,8 +33,14 @@ export async function updateSession(request: NextRequest) {
 
   const sciezka = request.nextUrl.pathname;
   // /r/ to linki śledzące z maili: klika w nie odbiorca, który nie ma konta. /api/cron/ wywołuje Vercel (chroni go CRON_SECRET).
+  // /a/ i /api/akcja/ to strona akcji dla sympatyków (bez konta); dane bierze serwer klientem serwisowym.
   const publiczna =
-    sciezka.startsWith("/login") || sciezka.startsWith("/auth") || sciezka.startsWith("/r/") || sciezka.startsWith("/api/cron/");
+    sciezka.startsWith("/login") ||
+    sciezka.startsWith("/auth") ||
+    sciezka.startsWith("/r/") ||
+    sciezka.startsWith("/a/") ||
+    sciezka.startsWith("/api/akcja/") ||
+    sciezka.startsWith("/api/cron/");
   if (!zalogowany && !publiczna) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

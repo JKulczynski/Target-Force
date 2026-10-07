@@ -36,11 +36,19 @@ Najpierw ułóż psychografię grupy według metody i profilu bazowego (dostanie
 
 ${WARSZTAT}`;
 
+/**
+ * Generuje wiadomości kampanii. Body { rola: "sympatyk" } przełącza na warianty dla strony akcji:
+ * pisane jak od mieszkańca, który wyśle je sam ze swojej poczty (5 wariantów, bez przypomnień),
+ * trzymane osobno w `warianty.rola`, z tym samym etapem zatwierdzania przez nadawcę.
+ */
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
+  const body = await req.json().catch(() => ({}));
+  const rola: "nadawca" | "sympatyk" =
+    body?.rola === "sympatyk" ? "sympatyk" : "nadawca";
   const supabase = await createClient();
 
   const { data: k } = await supabase
@@ -58,8 +66,14 @@ export async function POST(
 
   const zrodla = (k.zrodla as ZrodloId[]) ?? [];
   const jezyk = zrodla.map((z) => JEZYK[z]).find(Boolean) ?? "polski";
-  const liczbaWariantow = Math.min(Math.max(k.liczba_wariantow ?? 3, 1), 10);
-  const liczbaPrzypomnien = Math.min(Math.max(k.liczba_followupow ?? 0, 0), 5);
+  const liczbaWariantow =
+    rola === "sympatyk"
+      ? 5
+      : Math.min(Math.max(k.liczba_wariantow ?? 3, 1), 10);
+  const liczbaPrzypomnien =
+    rola === "sympatyk"
+      ? 0
+      : Math.min(Math.max(k.liczba_followupow ?? 0, 0), 5);
 
   const brief = [
     `Kampania: ${k.nazwa}`,
@@ -84,6 +98,13 @@ export async function POST(
     ...(zrodla.includes("ministerstwa")
       ? [
           "Odbiorcami są ministerstwa, mail trafia na ogólny adres kancelarii. Zwracaj się do urzędu, np. „Szanowni Państwo”, i poproś o przekazanie wiadomości właściwemu departamentowi (nazwij go tylko, jeśli wynika z materiałów). W tekście nie używaj pól {imie}, {nazwisko} ani {okreg}; nazwę ministerstwa możesz wstawić polem {nazwisko} wyłącznie w zdaniu typu „Piszę do {nazwisko} w sprawie...”.",
+        ]
+      : []),
+    ...(rola === "sympatyk"
+      ? [
+          "",
+          `TRYB STRONY AKCJI. Piszesz w imieniu SYMPATYKA kampanii: zwykłego mieszkańca, który na publicznej stronie akcji podał imię i gminę i wyśle tę wiadomość sam, ze swojej prywatnej poczty, do swojego posła albo urzędu. Nadawca kampanii (${k.nadawca || "organizacja"}) nie jest autorem maila; może pojawić się tylko jako źródło, z którego mieszkaniec dowiedział się o sprawie (film, strona, kampania). Pisz w pierwszej osobie liczby pojedynczej, prostym codziennym językiem, jak człowiek, który pierwszy raz pisze do posła. Nie wymyślaj mieszkańcowi życiorysu, zawodu, rodziny ani zdarzeń; może napisać tylko to, co wynika z materiałów i z tego, że mieszka w swojej gminie. W jednym zdaniu naturalnie użyj pola {gmina} w formie „z gminy {gmina}” (np. „Piszę z gminy {gmina}, bo...”); pola {okreg} możesz użyć w zdaniu o okręgu posła, jeśli pasuje. Nie używaj pól {imie} ani {nazwisko}. Zwrot na początku: „Dzień dobry,” (do posła, bez znanej płci) albo „Szanowni Państwo,” (do urzędu). Długość 80-140 słów. Jedna konkretna prośba, ta sama co w kampanii, w roli odbiorcy. Nie dodawaj podpisu, imienia ani miejscowości na końcu; dopiszemy je automatycznie. Warianty muszą mocno różnić się od siebie (inne otwarcie, inny kąt, inna długość, inny temat), bo setki mieszkańców wysyłają je równolegle i identyczne teksty trafiają do spamu. Tematy zwykłe, jak od mieszkańca, bez słów „akcja” i „kampania”.`,
+          "Psychografię napisz w jednym zdaniu (nie będzie użyta). Przypomnienia: pusta lista.",
         ]
       : []),
     `Przygotuj dokładnie ${liczbaWariantow} wariantów pierwszej wiadomości i ${liczbaPrzypomnien} przypomnień (po jednym na każde kolejne przypomnienie, w kolejności).`,
@@ -148,6 +169,7 @@ export async function POST(
     .from("warianty")
     .delete()
     .eq("kampania_id", id)
+    .eq("rola", rola)
     .neq("status", "zatwierdzony");
 
   const wiersze = [
@@ -155,6 +177,7 @@ export async function POST(
       .slice(0, liczbaWariantow)
       .map((w, i) => ({
         kampania_id: id,
+        rola,
         krok: 0,
         numer: i + 1,
         temat: w.temat,
@@ -164,6 +187,7 @@ export async function POST(
       .slice(0, liczbaPrzypomnien)
       .map((w, i) => ({
         kampania_id: id,
+        rola,
         krok: i + 1,
         numer: 1,
         temat: w.temat,
@@ -177,9 +201,10 @@ export async function POST(
       { status: 500 },
     );
 
-  await supabase
-    .from("kampanie")
-    .update({ psychografia_opis: wynik.psychografia, jezyk })
-    .eq("id", id);
+  if (rola === "nadawca")
+    await supabase
+      .from("kampanie")
+      .update({ psychografia_opis: wynik.psychografia, jezyk })
+      .eq("id", id);
   return NextResponse.json({ ok: true, liczba: wiersze.length });
 }

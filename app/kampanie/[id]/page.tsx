@@ -14,6 +14,7 @@ import { SkrzynkaKampanii } from "@/components/SkrzynkaKampanii";
 import { Wiadomosci } from "@/components/Wiadomosci";
 import { Wysylka } from "@/components/Wysylka";
 import { Odbiorcy } from "@/components/Odbiorcy";
+import { StronaAkcji } from "@/components/StronaAkcji";
 
 export default function SzczegolyKampanii() {
   const { id } = useParams<{ id: string }>();
@@ -264,6 +265,17 @@ export default function SzczegolyKampanii() {
           </div>
 
           <Odbiorcy kampaniaId={k.id} odswiez={odswiezOdbiorcow} />
+
+          <div id="akcja" className="scroll-mt-20">
+            <StronaAkcji
+              k={k}
+              odbiorcy={postep?.odbiorcy ?? 0}
+              fakty={[k.nazwa, k.cel, k.materialy, k.nadawca, k.linkFilm].join(
+                " ",
+              )}
+              onZmiana={setK}
+            />
+          </div>
 
           <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-slate-200 pt-6">
             <button

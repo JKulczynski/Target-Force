@@ -27,11 +27,16 @@ type Wiersz = {
   odstep_dni: number;
   start: string | null;
   skrzynka_id: string | null;
+  akcja_wlaczona: boolean;
+  akcja_slug: string | null;
+  akcja_tytul: string;
+  akcja_opis: string;
+  akcja_administrator: string;
 };
 
 // Jeden literał, bo klient Supabase wyprowadza typ wyniku z treści tego napisu.
 const KOLUMNY =
-  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id";
+  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator";
 
 function zWiersza(w: Wiersz): Kampania {
   return {
@@ -51,6 +56,11 @@ function zWiersza(w: Wiersz): Kampania {
     odstepDni: w.odstep_dni,
     start: w.start,
     skrzynkaId: w.skrzynka_id,
+    akcjaWlaczona: w.akcja_wlaczona,
+    akcjaSlug: w.akcja_slug,
+    akcjaTytul: w.akcja_tytul,
+    akcjaOpis: w.akcja_opis,
+    akcjaAdministrator: w.akcja_administrator,
   };
 }
 
@@ -70,6 +80,11 @@ function doWiersza(k: Partial<Kampania>): Partial<Wiersz> {
   if (k.odstepDni !== undefined) w.odstep_dni = k.odstepDni;
   if (k.start !== undefined) w.start = k.start;
   if (k.skrzynkaId !== undefined) w.skrzynka_id = k.skrzynkaId;
+  if (k.akcjaWlaczona !== undefined) w.akcja_wlaczona = k.akcjaWlaczona;
+  if (k.akcjaSlug !== undefined) w.akcja_slug = k.akcjaSlug;
+  if (k.akcjaTytul !== undefined) w.akcja_tytul = k.akcjaTytul;
+  if (k.akcjaOpis !== undefined) w.akcja_opis = k.akcjaOpis;
+  if (k.akcjaAdministrator !== undefined) w.akcja_administrator = k.akcjaAdministrator;
   return w;
 }
 
@@ -157,14 +172,19 @@ export type Wariant = {
   temat: string;
   tresc: string;
   status: "szkic" | "zatwierdzony" | "odrzucony";
+  /** nadawca = wiadomości kampanii, sympatyk = wiadomości dla strony akcji (pisane jak od mieszkańca). */
+  rola: RolaWariantu;
 };
 
+export type RolaWariantu = "nadawca" | "sympatyk";
+
 /** Warianty wiadomości kampanii: krok 0 = pierwsza wiadomość, 1..n = przypomnienia. */
-export async function warianty(kampaniaId: string): Promise<Wariant[]> {
+export async function warianty(kampaniaId: string, rola: RolaWariantu = "nadawca"): Promise<Wariant[]> {
   const { data, error } = await createClient()
     .from("warianty")
-    .select("id, krok, numer, temat, tresc, status")
+    .select("id, krok, numer, temat, tresc, status, rola")
     .eq("kampania_id", kampaniaId)
+    .eq("rola", rola)
     .order("krok")
     .order("numer");
   if (error) throw error;
@@ -187,4 +207,49 @@ export async function psychografiaKampanii(kampaniaId: string): Promise<{ opis: 
     .maybeSingle();
   if (error) throw error;
   return { opis: data?.psychografia_opis ?? null, jezyk: data?.jezyk ?? null };
+}
+
+export type Podpis = {
+  id: string;
+  imie: string;
+  nazwisko: string;
+  gminaNazwa: string | null;
+  okregNr: number | null;
+  odbiorcaNazwa: string | null;
+  otworzylPoczte: string | null;
+  udostepnil: string | null;
+  utworzony: string;
+};
+
+/** Podpisy ze strony akcji (zespół czyta, zapisuje serwer). Najnowsze pierwsze. */
+export async function podpisyKampanii(kampaniaId: string, limit = 50): Promise<{ lista: Podpis[]; razem: number; otworzyli: number; udostepnili: number }> {
+  const supabase = createClient();
+  const [{ data, error }, { count: razem }, { count: otworzyli }, { count: udostepnili }] = await Promise.all([
+    supabase
+      .from("podpisy")
+      .select("id, imie, nazwisko, gmina_nazwa, okreg_nr, odbiorca_nazwa, otworzyl_poczte, udostepnil, utworzony")
+      .eq("kampania_id", kampaniaId)
+      .order("utworzony", { ascending: false })
+      .limit(limit),
+    supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId),
+    supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).not("otworzyl_poczte", "is", null),
+    supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).not("udostepnil", "is", null),
+  ]);
+  if (error) throw error;
+  return {
+    lista: (data ?? []).map((p) => ({
+      id: p.id,
+      imie: p.imie,
+      nazwisko: p.nazwisko,
+      gminaNazwa: p.gmina_nazwa,
+      okregNr: p.okreg_nr,
+      odbiorcaNazwa: p.odbiorca_nazwa,
+      otworzylPoczte: p.otworzyl_poczte,
+      udostepnil: p.udostepnil,
+      utworzony: p.utworzony,
+    })),
+    razem: razem ?? 0,
+    otworzyli: otworzyli ?? 0,
+    udostepnili: udostepnili ?? 0,
+  };
 }
