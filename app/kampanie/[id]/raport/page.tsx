@@ -22,6 +22,28 @@ type Odbiorca = {
 
 const procent = (a: number, b: number) =>
   b ? `${Math.round((a / b) * 100)}%` : "-";
+
+/**
+ * Liczby odniesienia z badań (research TF, Vault: wiedza/research-tf-skille, 06.10.2026).
+ * Tylko wartości, które są w wynikach researchu, z nazwą źródła. Orientacyjne: inne kraje, inne tematy, inne lata.
+ */
+const BENCHMARK = [
+  {
+    wartosc: "ok. 28%",
+    opis: "europosłów odpowiedziało merytorycznie na krótki mail obywatela z własnego kraju",
+    zrodlo: "De Vries, Dinas, Solaz 2016, wszyscy posłowie PE",
+  },
+  {
+    wartosc: "15-17%",
+    opis: "odpowiedzi na niezamawiane maile rzecznicze do parlamentarzystów stanowych w USA",
+    zrodlo: "Kreps i Kriner 2023, 32 tys. maili",
+  },
+  {
+    wartosc: "94%",
+    opis: "gmin w Polsce odpowiedziało na formalny wniosek o informację publiczną",
+    zrodlo: "Fundacja Batorego 2024, próba 200 gmin",
+  },
+];
 const osoba = (o: Odbiorca) =>
   [o.imie, o.nazwisko].filter(Boolean).join(" ") || o.email || "";
 
@@ -164,6 +186,27 @@ export default function RaportKampanii() {
             <p className="mt-1 text-xs text-slate-500">{l.opis}</p>
           </div>
         ))}
+      </section>
+
+      <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
+        <h2 className="text-base font-semibold tracking-tight text-slate-900">
+          Dla porównania
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Odsetek odpowiedzi w badaniach kontaktu z decydentami. Liczby
+          orientacyjne: inne kraje, tematy i lata, nie ta kampania.
+        </p>
+        <ul className="mt-4 grid gap-4 md:grid-cols-3">
+          {BENCHMARK.map((b) => (
+            <li key={b.zrodlo}>
+              <p className="text-2xl font-semibold tracking-tight">
+                {b.wartosc}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">{b.opis}</p>
+              <p className="mt-1 text-xs text-slate-400">({b.zrodlo})</p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {wierszeKlubow.length > 1 && (
