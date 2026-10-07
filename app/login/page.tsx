@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { zaloguj, zalozKonto } from "./actions";
+import { przypomnijHaslo, zaloguj, zalozKonto } from "./actions";
 
 const KOMUNIKATY: Record<string, string> = {
   logowanie: "Zły e-mail albo hasło.",
@@ -7,6 +7,8 @@ const KOMUNIKATY: Record<string, string> = {
     "Nie udało się założyć konta. Hasło musi mieć co najmniej 6 znaków.",
   potwierdz:
     "Sprawdź skrzynkę i kliknij link potwierdzający. Potem poproś kogoś z zespołu, żeby dodał cię w Ustawieniach.",
+  link: "Jeśli konto istnieje, wysłaliśmy link do ustawienia nowego hasła. Sprawdź skrzynkę (także spam).",
+  haslo: "Podaj adres e-mail konta.",
 };
 
 const pole =
@@ -20,15 +22,22 @@ export default async function Logowanie({
   const { blad, info, tryb } = await searchParams;
   const komunikat = KOMUNIKATY[blad ?? info ?? ""];
   const rejestracja = tryb === "rejestracja" || blad === "rejestracja";
+  const odzyskiwanie = tryb === "haslo";
 
   return (
     <div className="mx-auto grid max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white md:grid-cols-[1fr_1.05fr]">
       <div className="p-8 sm:p-10">
         <h1 className="text-2xl font-semibold tracking-tight">
-          {rejestracja ? "Załóż konto" : "Zaloguj się"}
+          {odzyskiwanie
+            ? "Nowe hasło"
+            : rejestracja
+              ? "Załóż konto"
+              : "Zaloguj się"}
         </h1>
         <p className="mt-1.5 text-sm text-slate-600">
-          Dostęp ma tylko zespół Target Force.
+          {odzyskiwanie
+            ? "Wyślemy link, pod którym ustawisz nowe hasło."
+            : "Dostęp ma tylko zespół Target Force."}
         </p>
 
         <div className="mt-7 grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-sm font-medium">
@@ -67,6 +76,29 @@ export default async function Logowanie({
           </p>
         )}
 
+        {odzyskiwanie ? (
+          <form action={przypomnijHaslo} className="mt-6 space-y-4">
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">E-mail</span>
+              <input
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                className={pole}
+              />
+            </label>
+            <button className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 active:bg-brand-800">
+              Wyślij link
+            </button>
+            <Link
+              href="/login"
+              className="block text-center text-sm text-slate-500 transition hover:text-slate-900"
+            >
+              Wróć do logowania
+            </Link>
+          </form>
+        ) : (
         <form
           action={rejestracja ? zalozKonto : zaloguj}
           className="mt-6 space-y-4"
@@ -100,7 +132,16 @@ export default async function Logowanie({
           <button className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 active:bg-brand-800">
             {rejestracja ? "Załóż konto" : "Zaloguj"}
           </button>
+          {!rejestracja && (
+            <Link
+              href="/login?tryb=haslo"
+              className="block text-center text-sm text-slate-500 transition hover:text-slate-900"
+            >
+              Nie pamiętasz hasła?
+            </Link>
+          )}
         </form>
+        )}
       </div>
 
       <aside className="relative hidden bg-slate-950 p-10 text-white md:block">

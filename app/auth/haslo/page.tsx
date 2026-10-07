@@ -8,9 +8,9 @@ const pole =
   "mt-2 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15";
 
 /**
- * Tu trafia link z zaproszenia do zespołu. Zaproszenie z panelu admina nie obsługuje PKCE,
- * więc sesja przychodzi w hashu adresu i przejmuje ją klient w przeglądarce (nie serwer).
- * Osoba ustawia hasło i od razu ma dostęp do kampanii (wpis w `zespol` zrobiono przy zaproszeniu).
+ * Tu trafia link z zaproszenia do zespołu i link "zapomniałem hasła".
+ * Zaproszenie z panelu admina nie obsługuje PKCE, więc sesja przychodzi w hashu adresu; link odzyskiwania
+ * wraca z ?code= (PKCE). Oba przejmuje klient w przeglądarce (nie serwer), potem osoba ustawia hasło.
  */
 export default function UstawHaslo() {
   const router = useRouter();
@@ -25,9 +25,15 @@ export default function UstawHaslo() {
     const { data } = supabase.auth.onAuthStateChange((_zdarzenie, sesja) => {
       setGotowa(!!sesja);
     });
-    supabase.auth.getSession().then(({ data: d }) => {
-      if (d.session) setGotowa(true);
-    });
+    const kod = new URLSearchParams(window.location.search).get("code");
+    const start = kod
+      ? supabase.auth.exchangeCodeForSession(kod).catch(() => null)
+      : Promise.resolve(null);
+    start.then(() =>
+      supabase.auth.getSession().then(({ data: d }) => {
+        if (d.session) setGotowa(true);
+      }),
+    );
     const czas = setTimeout(() => setGotowa((g) => g ?? false), 4000);
     return () => {
       data.subscription.unsubscribe();
@@ -56,20 +62,20 @@ export default function UstawHaslo() {
     <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8">
       <h1 className="text-2xl font-semibold tracking-tight">Ustaw hasło</h1>
       <p className="mt-1.5 text-sm text-slate-600">
-        Zaproszono cię do zespołu Target Force. Ustaw hasło, którym będziesz się
+        Ustaw hasło do Target Force, którym będziesz się
         logować.
       </p>
 
       {gotowa === null && (
-        <p className="mt-6 text-sm text-slate-400">Sprawdzam zaproszenie...</p>
+        <p className="mt-6 text-sm text-slate-400">Sprawdzam link...</p>
       )}
       {gotowa === false && (
         <p
           role="alert"
           className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100"
         >
-          Link z zaproszenia wygasł albo został już użyty. Poproś zespół o nowe
-          zaproszenie.
+          Link wygasł albo został już użyty. Poproś o nowe zaproszenie albo
+          wyślij sobie nowy link przez „Nie pamiętasz hasła?” na stronie logowania.
         </p>
       )}
       {gotowa && (

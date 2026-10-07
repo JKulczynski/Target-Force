@@ -31,6 +31,21 @@ export async function zalozKonto(formData: FormData) {
   redirect("/login?info=potwierdz");
 }
 
+/**
+ * Zapomniane hasło: Supabase wysyła link, który wraca na /auth/haslo (ta sama strona co przy zaproszeniu).
+ * Odpowiedź jest taka sama niezależnie od tego, czy konto istnieje, żeby nie zdradzać listy adresów.
+ */
+export async function przypomnijHaslo(formData: FormData) {
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin") ?? "";
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) redirect("/login?tryb=haslo&blad=haslo");
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/haslo`,
+  });
+  redirect("/login?tryb=haslo&info=link");
+}
+
 export async function wyloguj() {
   const supabase = await createClient();
   await supabase.auth.signOut();
