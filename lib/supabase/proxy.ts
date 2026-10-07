@@ -3,6 +3,15 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /** Odświeża sesję i odsyła niezalogowanych na /login. */
 export async function updateSession(request: NextRequest) {
+  const sciezka = request.nextUrl.pathname;
+  // Strona akcji i jej API: bez sesji i bez cookies Supabase (czyta je mieszkaniec bez konta).
+  // Nagłówek mówi layoutowi, żeby nie rysował paska aplikacji.
+  if (sciezka.startsWith("/a/") || sciezka.startsWith("/api/akcja/")) {
+    const naglowki = new Headers(request.headers);
+    naglowki.set("x-strona-publiczna", "1");
+    return NextResponse.next({ request: { headers: naglowki } });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -31,15 +40,11 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const zalogowany = !!data?.claims;
 
-  const sciezka = request.nextUrl.pathname;
   // /r/ to linki śledzące z maili: klika w nie odbiorca, który nie ma konta. /api/cron/ wywołuje Vercel (chroni go CRON_SECRET).
-  // /a/ i /api/akcja/ to strona akcji dla sympatyków (bez konta); dane bierze serwer klientem serwisowym.
   const publiczna =
     sciezka.startsWith("/login") ||
     sciezka.startsWith("/auth") ||
     sciezka.startsWith("/r/") ||
-    sciezka.startsWith("/a/") ||
-    sciezka.startsWith("/api/akcja/") ||
     sciezka.startsWith("/api/cron/");
   if (!zalogowany && !publiczna) {
     const url = request.nextUrl.clone();

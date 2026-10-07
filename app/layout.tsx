@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import { NavLink } from "@/components/NavLink";
 import { wyloguj } from "./login/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -39,6 +40,19 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Strona akcji (/a/{slug}) dla mieszkańców: bez paska aplikacji i bez sprawdzania sesji (nagłówek z proxy).
+  if ((await headers()).get("x-strona-publiczna") === "1") {
+    return (
+      <html lang="pl" className={`${geist.variable} ${geistMono.variable}`}>
+        <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+          <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">{children}</main>
+          <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-slate-400 sm:px-6">
+            Strona działa w Target Force. Wiadomość wysyłasz ze swojej poczty; nie wysyłamy nic w Twoim imieniu.
+          </footer>
+        </body>
+      </html>
+    );
+  }
   const dostep = await statusDostepu();
   return (
     <html lang="pl" className={`${geist.variable} ${geistMono.variable}`}>

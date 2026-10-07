@@ -42,6 +42,7 @@ export function AkcjaFormularz({
   const [imie, setImie] = useState("");
   const [nazwisko, setNazwisko] = useState("");
   const [email, setEmail] = useState("");
+  const [dlaczego, setDlaczego] = useState("");
   const [zgodaInformacje, setZgodaInformacje] = useState(false);
   const [zgoda, setZgoda] = useState(false);
   const [www, setWww] = useState("");
@@ -90,6 +91,7 @@ export function AkcjaFormularz({
           imie,
           nazwisko,
           email,
+          dlaczego,
           zgoda,
           zgodaInformacje,
           gminaTeryt: gmina.t,
@@ -274,6 +276,23 @@ export function AkcjaFormularz({
               Po gminie dobieramy posła z Twojego okręgu wyborczego.
             </span>
           </div>
+
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">
+              Dlaczego to dla Ciebie ważne{" "}
+              <span className="font-normal text-slate-500">(opcjonalnie, 1-2 zdania)</span>
+            </span>
+            <textarea
+              className={`${pole} min-h-20 resize-y`}
+              maxLength={400}
+              value={dlaczego}
+              onChange={(e) => setDlaczego(e.target.value)}
+              placeholder="np. Codziennie przeprowadzam tędy dwójkę dzieci do szkoły."
+            />
+            <span className="mt-1.5 block text-xs text-slate-500">
+              Własne zdanie trafi do wiadomości. Poseł czyta takie maile uważniej niż identyczne.
+            </span>
+          </label>
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">

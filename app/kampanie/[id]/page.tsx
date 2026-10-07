@@ -269,7 +269,7 @@ export default function SzczegolyKampanii() {
           <Odbiorcy kampaniaId={k.id} odswiez={odswiezOdbiorcow} />
 
           <div id="wplyw" className="scroll-mt-20">
-            <Wplyw kampaniaId={k.id} />
+            <Wplyw kampaniaId={k.id} zSejmu={k.zrodla.includes("sejm")} />
           </div>
 
           <div id="akcja" className="scroll-mt-20">

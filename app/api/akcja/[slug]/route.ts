@@ -76,6 +76,12 @@ export async function POST(
     .trim()
     .toLowerCase();
   const gminaTeryt = String(body.gminaTeryt ?? "");
+  // Własne zdanie sympatyka: autentyczność i różnorodność tekstów. Bez linków, krótko.
+  const dlaczego = String(body.dlaczego ?? "")
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 400);
   if (imie.length < 2 || imie.length > 60)
     return NextResponse.json({ blad: "Podaj imię." }, { status: 400 });
   if (nazwisko.length > 80)
@@ -184,7 +190,10 @@ export async function POST(
   };
   const temat = personalizuj(wariant.temat, pola);
   const podpis = [imie, nazwisko].filter(Boolean).join(" ");
-  const tresc = `${personalizuj(wariant.tresc, pola).trim()}\n\n${podpis}\n${pola.gmina}`;
+  // Zdanie sympatyka wchodzi przed ostatni akapit (prośbę albo pożegnanie), żeby prośba została na końcu.
+  const akapity = personalizuj(wariant.tresc, pola).trim().split(/\n\s*\n/);
+  if (dlaczego) akapity.splice(Math.max(akapity.length - 1, 1), 0, dlaczego);
+  const tresc = `${akapity.join("\n\n")}\n\n${podpis}\n${pola.gmina}`;
 
   const { data: zapis, error } = await admin
     .from("podpisy")
@@ -204,6 +213,7 @@ export async function POST(
       wariant_id: wariant.id,
       temat,
       tresc,
+      dlaczego,
       ip_hash: ipHash,
     })
     .select("id")
