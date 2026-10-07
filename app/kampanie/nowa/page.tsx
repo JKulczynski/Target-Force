@@ -15,6 +15,7 @@ const Z_LICZNIKIEM: ZrodloId[] = [
   "tweede_kamer",
   "parlament_ue",
   "samorzady",
+  "ministerstwa",
 ];
 
 /**

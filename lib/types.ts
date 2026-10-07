@@ -26,6 +26,12 @@ export const ZRODLA = {
     api: "https://www.gov.pl/web/mswia/baza-jst",
     typ: "politycy",
   },
+  ministerstwa: {
+    nazwa: "Ministerstwa",
+    opis: "18 ministerstw ze składu Rady Ministrów. Ogólne adresy kancelarii ze stron gov.pl (07.10.2026); 4 resorty nie podają takiego adresu.",
+    api: "https://www.gov.pl/web/premier/sklad-rady-ministrow",
+    typ: "politycy",
+  },
   apollo: {
     nazwa: "Apollo",
     opis: "Kontakty B2B. Wymaga klucza API.",

@@ -25,6 +25,7 @@ const Wynik = z.object({
 const JEZYK: Partial<Record<ZrodloId, string>> = {
   sejm: "polski",
   samorzady: "polski",
+  ministerstwa: "polski",
   tweede_kamer: "niderlandzki",
   parlament_ue: "angielski",
 };
@@ -78,6 +79,11 @@ export async function POST(
     ...(zrodla.includes("samorzady")
       ? [
           "Odbiorcami są urzędy samorządowe (gminy, powiaty, województwa), mail trafia na ogólny adres urzędu. Zwracaj się do urzędu, np. „Szanowni Państwo”, i poproś o przekazanie wiadomości wójtowi, burmistrzowi, prezydentowi miasta albo staroście. W jednym zdaniu użyj pola {okreg} (nazwa gminy, powiatu albo województwa), np. „Piszę do Państwa w sprawie, która dotyczy mieszkańców {okreg}”. Nie używaj pól {imie} ani {nazwisko}.",
+        ]
+      : []),
+    ...(zrodla.includes("ministerstwa")
+      ? [
+          "Odbiorcami są ministerstwa, mail trafia na ogólny adres kancelarii. Zwracaj się do urzędu, np. „Szanowni Państwo”, i poproś o przekazanie wiadomości właściwemu departamentowi (nazwij go tylko, jeśli wynika z materiałów). W tekście nie używaj pól {imie}, {nazwisko} ani {okreg}; nazwę ministerstwa możesz wstawić polem {nazwisko} wyłącznie w zdaniu typu „Piszę do {nazwisko} w sprawie...”.",
         ]
       : []),
     `Przygotuj dokładnie ${liczbaWariantow} wariantów pierwszej wiadomości i ${liczbaPrzypomnien} przypomnień (po jednym na każde kolejne przypomnienie, w kolejności).`,

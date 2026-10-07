@@ -18,6 +18,10 @@ const STAN: Record<ZrodloId, { etykieta: string; klasa: string }> = {
     etykieta: "Gotowe",
     klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   },
+  ministerstwa: {
+    etykieta: "Gotowe",
+    klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+  },
   wlasna_lista: {
     etykieta: "Import CSV",
     klasa: "bg-slate-100 text-slate-700 ring-slate-200",

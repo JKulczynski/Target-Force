@@ -258,7 +258,7 @@ export function Wysylka({
           <Krok
             nr={1}
             tytul="Lista odbiorców"
-            opis="Pobiera osoby z e-mailem ze źródeł kampanii (Sejm, Tweede Kamer). Własna lista jest już w bazie. Zmiana zawężenia i ponowne kliknięcie odświeża listę (osób, które już dostały maila, nie usuwamy)."
+            opis="Pobiera osoby z e-mailem ze źródeł kampanii (Sejm, Parlament Europejski, samorządy, ministerstwa, Tweede Kamer). Własna lista jest już w bazie. Zmiana zawężenia i ponowne kliknięcie odświeża listę (osób, które już dostały maila, nie usuwamy)."
           >
             {zSejmu && (
               <div className="mb-4 space-y-3">

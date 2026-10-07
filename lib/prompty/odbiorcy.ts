@@ -70,6 +70,21 @@ Co działa:
 - Terminy ustawowe wyłącznie rzeczowo (14 dni informacja publiczna, miesiąc wniosek, 3 miesiące petycja), bez gróźb i zawstydzania.
 - Pełny podpis: imię i nazwisko albo nazwa organizacji, adres, e-mail. Bez tego pismo formalne zostaje bez rozpatrzenia [PL].`;
 
+const MINISTERSTWA = `## Profil bazowy: ministerstwa (kancelaria ogólna)
+Zadanie odbiorcy: "Gdy pismo wpływa do kancelarii, chcę je zarejestrować, przekazać właściwemu departamentowi i załatwić w trybie, który nie obciąży mnie osobistą odpowiedzialnością."
+Kto czyta: kancelaria ogólna ministerstwa (adres z gov.pl), potem departament merytoryczny; minister ani wiceminister nie czytają pierwsi. Odpowiedź przychodzi z departamentu, zwykle jako pismo urzędowe.
+Motywy i lęki:
+- Logika urzędu jak w samorządach: procedura, podstawa prawna, termin; osobista odpowiedzialność urzędnika i "administracja defensywna" [PL, przeniesione: patrz profil samorządów].
+- Pismo nazwane formalnie (wniosek, petycja z ustawy o petycjach, informacja publiczna, uwagi do projektu w konsultacjach) wchodzi do rejestru z terminem; zwykły mail bez trybu łatwo zostaje bez odpowiedzi [PL: Fundacja Batorego 94% odpowiedzi na wnioski o informację publiczną w gminach; przeniesione: Kohler i in. 2023 o zwykłych mailach].
+- Decydenci cenią neutralne, sprawdzalne informacje; nieneutralny przekaz był najczęściej wskazywaną wadą lobbingu przez polskich respondentów [PL: Burson-Marsteller 2013, źródło branżowe].
+Co działa:
+- W pierwszych dwóch zdaniach: kto pisze (organizacja z adresem, firma, grupa mieszkańców), czego dotyczy sprawa i do którego departamentu albo projektu (jeśli jest w materiałach) należy ją przekazać.
+- Podstawa prawna albo tryb, jeśli pasuje; odwołanie do dokumentu ministerstwa (projekt, strategia, konsultacje), tylko gdy jest w materiałach.
+- Jeden mały krok w kompetencji ministerstwa: przekazanie właściwemu departamentowi, stanowisko na piśmie, spotkanie, uwzględnienie uwagi w konsultacjach.
+- Fakty i liczby zamiast apeli; terminy ustawowe rzeczowo, bez gróźb.
+- Pełny podpis z adresem; bez tego pismo formalne zostaje bez rozpatrzenia [PL].
+Realne oczekiwania: pierwsza odpowiedź to potwierdzenie wpływu albo pismo z departamentu, nie decyzja ministra.`;
+
 const TWEEDE_KAMER = `## Profil bazowy: posłowie Tweede Kamer (Holandia)
 Zadanie odbiorcy: "Gdy temat jest w mojej specjalizacji frakcji, chcę konkretnych faktów i jasnej prośby, żeby szybko zdecydować, czy coś z tym zrobić."
 - System proporcjonalny, jeden okręg krajowy, silne frakcje; każdy poseł ma swoje teczki tematyczne (woordvoerder) [przeniesione: zasady ogólne, brak danych o mailach].
@@ -80,6 +95,7 @@ const PROFILE: Partial<Record<ZrodloId, string>> = {
   sejm: SEJM,
   parlament_ue: PARLAMENT_UE,
   samorzady: SAMORZADY,
+  ministerstwa: MINISTERSTWA,
   tweede_kamer: TWEEDE_KAMER,
 };
 

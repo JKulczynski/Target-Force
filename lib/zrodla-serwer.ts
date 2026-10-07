@@ -180,11 +180,40 @@ async function samorzady(): Promise<KontaktZrodla[]> {
   }));
 }
 
+/**
+ * Ministerstwa: skład Rady Ministrów i adresy kancelarii ze stron gov.pl (zebrane ręcznie 07.10.2026),
+ * zapisane w lib/dane/ministerstwa.json. Mail idzie na ogólny adres kancelarii, nie do ministra.
+ * Resorty bez ogólnego adresu na gov.pl mają pusty e-mail (pole `uwaga` mówi dlaczego) i nie trafiają do wysyłki.
+ * Odświeżanie: po zmianie składu rządu sprawdzić gov.pl/web/premier/sklad-rady-ministrow i strony /kontakt resortów.
+ */
+async function ministerstwa(): Promise<KontaktZrodla[]> {
+  const { default: lista } = await import("@/lib/dane/ministerstwa.json");
+  return (
+    lista as {
+      id: string;
+      nazwa: string;
+      email: string;
+      www: string;
+      adres: string;
+      uwaga?: string;
+    }[]
+  ).map((m) => ({
+    zewnetrzneId: m.id,
+    imie: "",
+    nazwisko: m.nazwa,
+    email: m.email || null,
+    organizacja: "ministerstwo",
+    stanowisko: "Kancelaria",
+    dane: { www: m.www, adres: m.adres },
+  }));
+}
+
 export const POBIERACZE: Record<
   string,
   (supabase?: Supabase) => Promise<KontaktZrodla[]>
 > = {
   samorzady,
+  ministerstwa,
   sejm,
   tweede_kamer: tweedeKamer,
   parlament_ue: parlamentUe,
