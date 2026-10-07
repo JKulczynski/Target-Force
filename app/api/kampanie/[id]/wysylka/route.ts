@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { FiltrOdbiorcow as Filtr } from "@/lib/types";
 import { odszyfruj } from "@/lib/szyfr";
 import { opiszBladSmtp, transport } from "@/lib/smtp";
-import { POBIERACZE } from "@/lib/zrodla-serwer";
+import { przygotujOdbiorcow } from "@/lib/odbiorcy-serwer";
 import { personalizuj, POLA_TESTOWE } from "@/lib/personalizacja";
 import {
   gotowiDoPrzypomnienia,
@@ -22,26 +23,14 @@ async function stan(
   kampaniaId: string,
   skrzynkaId: string | null,
 ) {
-  const pierwsze = (status: string) =>
-    supabase
-      .from("wiadomosci")
-      .select("id", { count: "exact", head: true })
-      .eq("kampania_id", kampaniaId)
-      .eq("krok", 0)
-      .eq("status", status);
-  const [{ count: odbiorcy }, { count: wyslaneN }, { count: bledyN }] =
-    await Promise.all([
-      supabase
-        .from("kontakty")
-        .select("id", { count: "exact", head: true })
-        .eq("kampania_id", kampaniaId)
-        .eq("wypisany", false)
-        .not("email", "is", null),
-      pierwsze("wyslana"),
-      pierwsze("blad"),
-    ]);
-  const wyslane = wyslaneN ?? 0;
-  const bledy = bledyN ?? 0;
+  // Liczniki w jednym zapytaniu (funkcja stan_kampanii, migracja 20261007130000).
+  const { data: liczby } = await supabase.rpc("stan_kampanii", {
+    p_kampania: kampaniaId,
+  });
+  const l = (liczby ?? {}) as Record<string, number>;
+  const odbiorcy = l.odbiorcy ?? 0;
+  const wyslane = l.wyslane ?? 0;
+  const bledy = l.bledy ?? 0;
 
   let limit = 0;
   let rozgrzewka = false;
@@ -61,48 +50,21 @@ async function stan(
     rozgrzewka = l.rozgrzewka;
     dzis = await wyslaneDzisZeSkrzynki(supabase, skrzynkaId);
   }
-  const doWyslania = Math.max((odbiorcy ?? 0) - wyslane - bledy, 0);
-
-  // Ile osób kliknęło link (unikalne wiadomości z co najmniej jednym kliknięciem).
-  const { data: wysylkaIds } = await supabase
-    .from("wiadomosci")
-    .select("id")
-    .eq("kampania_id", kampaniaId)
-    .eq("status", "wyslana");
-  let kliknieci = 0;
-  if (wysylkaIds && wysylkaIds.length > 0) {
-    const { data: klik } = await supabase
-      .from("zdarzenia")
-      .select("wiadomosc_id")
-      .eq("typ", "klikniecie")
-      .in(
-        "wiadomosc_id",
-        wysylkaIds.map((w) => w.id),
-      );
-    kliknieci = new Set((klik ?? []).map((z) => z.wiadomosc_id)).size;
-  }
+  const doWyslania = Math.max(odbiorcy - wyslane - bledy, 0);
   const doPrzypomnienia = (await gotowiDoPrzypomnienia(supabase, kampaniaId))
     .length;
-  const { data: war } = await supabase
-    .from("warianty")
-    .select("krok, status")
-    .eq("kampania_id", kampaniaId);
-  const wariantow = (war ?? []).filter((w) => w.status !== "odrzucony").length;
-  const zatwierdzonePierwsze = (war ?? []).filter(
-    (w) => w.krok === 0 && w.status === "zatwierdzony",
-  ).length;
   return {
     rozgrzewka,
-    wariantow,
-    zatwierdzonePierwsze,
-    odbiorcy: odbiorcy ?? 0,
+    wariantow: l.wariantow ?? 0,
+    zatwierdzonePierwsze: l.zatwierdzonePierwsze ?? 0,
+    odbiorcy,
     wyslane,
     bledy,
     doWyslania,
     limit,
     dzis,
     zostaloDzis: Math.max(limit - dzis, 0),
-    kliknieci,
+    kliknieci: l.kliknieci ?? 0,
     doPrzypomnienia,
   };
 }
@@ -118,30 +80,6 @@ async function wczytajKampanie(supabase: Supabase, id: string) {
   return data;
 }
 
-type Filtr = {
-  komisje?: string[];
-  kluby?: string[];
-  wojewodztwa?: string[];
-  typy?: string[];
-};
-
-/** ID posłów z wybranych komisji Sejmu (puste = bez zawężenia po komisjach). */
-async function poslowieKomisji(kody: string[]): Promise<Set<string> | null> {
-  if (kody.length === 0) return null;
-  const odp = await fetch("https://api.sejm.gov.pl/sejm/term10/committees", {
-    next: { revalidate: 60 * 60 * 24 },
-  });
-  if (!odp.ok) throw new Error("komisje");
-  const komisje = (await odp.json()) as {
-    code: string;
-    members?: { id: number }[];
-  }[];
-  return new Set(
-    komisje
-      .filter((k) => kody.includes(k.code))
-      .flatMap((k) => (k.members ?? []).map((m) => String(m.id))),
-  );
-}
 
 /** Stan wysyłki: odbiorcy, wysłane, błędy, dzienny limit skrzynki. */
 export async function GET(
@@ -189,116 +127,14 @@ export async function POST(
     );
 
   if (tryb === "odbiorcy") {
-    // Zawężenie (Sejm: komisje i kluby). Zapisujemy je w kampanii, żeby było widać, do kogo idzie wysyłka.
-    const filtr: Filtr = {
-      komisje: Array.isArray(body.filtr?.komisje)
-        ? body.filtr.komisje.map(String)
-        : [],
-      kluby: Array.isArray(body.filtr?.kluby)
-        ? body.filtr.kluby.map(String)
-        : [],
-      wojewodztwa: Array.isArray(body.filtr?.wojewodztwa)
-        ? body.filtr.wojewodztwa.map(String)
-        : [],
-      typy: Array.isArray(body.filtr?.typy) ? body.filtr.typy.map(String) : [],
-    };
-    await supabase
-      .from("kampanie")
-      .update({ filtr_odbiorcow: filtr })
-      .eq("id", id);
-
-    const zrodla = ((k.zrodla as string[]) ?? []).filter((z) => POBIERACZE[z]);
-    let dodane = 0;
-    for (const z of zrodla) {
-      let kontakty;
-      let wKomisjach: Set<string> | null = null;
-      try {
-        kontakty = await POBIERACZE[z](supabase);
-        if (z === "sejm")
-          wKomisjach = await poslowieKomisji(filtr.komisje ?? []);
-      } catch {
-        return NextResponse.json(
-          { blad: `Źródło ${z} chwilowo nie odpowiada. Spróbuj za chwilę.` },
-          { status: 502 },
-        );
-      }
-      if (z === "samorzady") {
-        kontakty = kontakty.filter(
-          (c) =>
-            (!filtr.wojewodztwa?.length ||
-              filtr.wojewodztwa.includes(String(c.dane?.wojewodztwo ?? ""))) &&
-            (!filtr.typy?.length || filtr.typy.includes(c.organizacja)),
-        );
-      }
-      if (z === "sejm") {
-        kontakty = kontakty.filter(
-          (c) =>
-            (!wKomisjach || wKomisjach.has(c.zewnetrzneId)) &&
-            (!filtr.kluby?.length || filtr.kluby.includes(c.organizacja)),
-        );
-      }
-      if (z === "sejm" || z === "samorzady") {
-        // Zmiana zawężenia: usuwamy posłów spoza nowego zakresu, o ile nic jeszcze do nich nie wysłaliśmy.
-        const dozwolone = new Set(kontakty.map((c) => c.zewnetrzneId));
-        const { data: obecni } = await supabase
-          .from("kontakty")
-          .select("id, zewnetrzne_id")
-          .eq("kampania_id", id)
-          .eq("zrodlo", z);
-        const { data: zWiadomoscia } = await supabase
-          .from("wiadomosci")
-          .select("kontakt_id")
-          .eq("kampania_id", id);
-        const chronieni = new Set(
-          (zWiadomoscia ?? []).map((w) => w.kontakt_id),
-        );
-        const doUsuniecia = (obecni ?? [])
-          .filter(
-            (o) =>
-              !dozwolone.has(o.zewnetrzne_id ?? "") && !chronieni.has(o.id),
-          )
-          .map((o) => o.id);
-        if (doUsuniecia.length)
-          await supabase.from("kontakty").delete().in("id", doUsuniecia);
-      }
-      const wiersze = kontakty
-        .filter((c) => c.email)
-        .map((c) => ({
-          kampania_id: id,
-          zrodlo: z,
-          zewnetrzne_id: c.zewnetrzneId,
-          imie: c.imie,
-          nazwisko: c.nazwisko,
-          email: c.email!.trim().toLowerCase(),
-          organizacja: c.organizacja,
-          stanowisko: c.stanowisko,
-          dane: c.dane ?? {},
-        }));
-      if (wiersze.length === 0) continue;
-      const { count: przed } = await supabase
-        .from("kontakty")
-        .select("id", { count: "exact", head: true })
-        .eq("kampania_id", id);
-      // Bez ignoreDuplicates: odświeża dane istniejących osób (np. okręg do personalizacji).
-      const { error } = await supabase
-        .from("kontakty")
-        .upsert(wiersze, { onConflict: "kampania_id,email" });
-      if (error)
-        return NextResponse.json(
-          { blad: "Nie udało się zapisać odbiorców." },
-          { status: 500 },
-        );
-      const { count: po } = await supabase
-        .from("kontakty")
-        .select("id", { count: "exact", head: true })
-        .eq("kampania_id", id);
-      dodane += Math.max((po ?? 0) - (przed ?? 0), 0);
-    }
+    const wynik = await przygotujOdbiorcow(supabase, id, k.zrodla as string[], body.filtr);
+    if ("blad" in wynik)
+      return NextResponse.json({ blad: wynik.blad }, { status: wynik.status });
     return NextResponse.json({
       ...(await stan(supabase, id, k.skrzynka_id)),
       ok: true,
-      dodane,
-      filtr,
+      dodane: wynik.dodane,
+      filtr: wynik.filtr,
     });
   }
 

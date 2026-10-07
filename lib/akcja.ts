@@ -1,10 +1,12 @@
-import gminy from "@/lib/dane/gminy.json";
+import jst from "@/lib/dane/jst.json";
+import okregi from "@/lib/dane/okregi.json";
 
 /**
  * Strona akcji (wariant A, decyzja Jana 07.10.2026): sympatyk podaje imię i gminę, my dobieramy decydenta
  * z listy odbiorców kampanii i składamy wiadomość, a on wysyła ją sam ze swojej poczty.
- * Gmina -> okręg wyborczy do Sejmu: dane PKW z wyborów 2023 (wyniki po gminach), zapisane w lib/dane/gminy.json.
- * Trzy gminy bez wpisu w PKW (nowe albo z brakiem w danych) dostały okręg po powiecie.
+ * Gmina -> okręg wyborczy do Sejmu: dane PKW z wyborów 2023 (wyniki po gminach, wybory.gov.pl/sejmsenat2023/data/csv),
+ * mapa TERYT (6 znaków) -> numer okręgu w lib/dane/okregi.json. Lista gmin bierze się z lib/dane/jst.json (ta sama
+ * baza, co źródło "Samorządy"), więc nie ma drugiej kopii nazw. Gmina bez wpisu w PKW (nowa) dostaje okręg po powiecie.
  */
 export type Gmina = {
   /** TERYT tak, jak w lib/dane/jst.json (klucz zewnetrzne_id kontaktów z samorządów). */
@@ -17,7 +19,32 @@ export type Gmina = {
   o: number;
 };
 
-export const GMINY = gminy as Gmina[];
+const OKREGI = okregi as Record<string, number>;
+const TYPY_GMIN = new Set([
+  "Gmina wiejska",
+  "Gmina miejsko-wiejska",
+  "Gmina miejska",
+  "Miasto na prawach powiatu",
+  "dzielnica",
+]);
+
+function okregDlaTeryt(teryt: string): number | undefined {
+  const t = teryt.replace(/\.0$/, "").padStart(7, "0");
+  const wprost = OKREGI[t.slice(0, 6)];
+  if (wprost) return wprost;
+  if (t.startsWith("1465")) return 19; // Warszawa jako całość
+  // Powiat leży w jednym okręgu, więc nowa gmina dziedziczy okręg po sąsiadach z powiatu.
+  const zPowiatu = Object.entries(OKREGI).find(([k]) => k.startsWith(t.slice(0, 4)));
+  return zPowiatu?.[1];
+}
+
+export const GMINY: Gmina[] = (
+  jst as { teryt: string; nazwa: string; typ: string; powiat: string; woj: string }[]
+).flatMap((j) => {
+  if (!TYPY_GMIN.has(j.typ)) return [];
+  const o = okregDlaTeryt(j.teryt);
+  return o ? [{ t: j.teryt, n: j.nazwa, typ: j.typ, p: j.powiat, w: j.woj, o }] : [];
+});
 
 export function gminaPoTeryt(teryt: string): Gmina | undefined {
   return GMINY.find((g) => g.t === teryt);

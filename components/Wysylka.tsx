@@ -2,13 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { POLE } from "@/components/ui";
+import type { FiltrOdbiorcow } from "@/lib/types";
 
-type Filtr = {
-  komisje?: string[];
-  kluby?: string[];
-  wojewodztwa?: string[];
-  typy?: string[];
-};
 const WOJEWODZTWA = [
   "dolnośląskie",
   "kujawsko-pomorskie",
@@ -47,7 +42,7 @@ type Stan = {
   kliknieci?: number;
   doPrzypomnienia?: number;
   rozgrzewka?: boolean;
-  filtr?: Filtr;
+  filtr?: FiltrOdbiorcow;
   auto?: boolean;
   start?: string | null;
 };
