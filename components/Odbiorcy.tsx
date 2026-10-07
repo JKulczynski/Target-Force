@@ -34,6 +34,30 @@ export function Odbiorcy({
   const [lista, setLista] = useState<Odbiorca[] | null>(null);
   const [widok, setWidok] = useState<Widok>("wszyscy");
   const [szukaj, setSzukaj] = useState("");
+  const [sprawdza, setSprawdza] = useState(false);
+  const [infoOdpowiedzi, setInfoOdpowiedzi] = useState<string | null>(null);
+
+  /** IMAP skrzynki kampanii: kto odpisał na nasze maile (In-Reply-To), bez ręcznego klikania. */
+  async function sprawdzOdpowiedzi() {
+    setSprawdza(true);
+    setInfoOdpowiedzi(null);
+    try {
+      const odp = await fetch(`/api/kampanie/${kampaniaId}/odpowiedzi`, { method: "POST" });
+      const d = await odp.json().catch(() => ({}));
+      if (!odp.ok) return setInfoOdpowiedzi(d.blad ?? "Nie udało się sprawdzić skrzynki.");
+      setInfoOdpowiedzi(
+        d.nowe?.length
+          ? `Nowe odpowiedzi: ${d.nowe.length} (sprawdzono ${d.sprawdzono} maili).`
+          : `Bez nowych odpowiedzi (sprawdzono ${d.sprawdzono} maili).`,
+      );
+      const odsw = await fetch(`/api/kampanie/${kampaniaId}/odbiorcy`);
+      if (odsw.ok) setLista((await odsw.json()).odbiorcy);
+    } catch {
+      setInfoOdpowiedzi("Nie udało się sprawdzić skrzynki.");
+    } finally {
+      setSprawdza(false);
+    }
+  }
 
   useEffect(() => {
     fetch(`/api/kampanie/${kampaniaId}/odbiorcy`)
@@ -100,6 +124,14 @@ export function Odbiorcy({
           Odbiorcy
         </h2>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={sprawdzOdpowiedzi}
+            disabled={sprawdza}
+            className="text-sm text-slate-500 underline-offset-2 transition hover:text-slate-900 hover:underline disabled:opacity-50"
+          >
+            {sprawdza ? "Sprawdzam skrzynkę..." : "Sprawdź odpowiedzi w skrzynce"}
+          </button>
           <Link
             href={`/kampanie/${kampaniaId}/raport`}
             className="text-sm text-slate-500 underline-offset-2 transition hover:text-slate-900 hover:underline"
@@ -126,9 +158,13 @@ export function Odbiorcy({
         ))}
       </div>
       <p className="mt-2 text-xs text-slate-400">
-        Odpowiedzi przychodzą do skrzynki nadawcy. Zaznacz „Odpisał”, żeby
-        liczyć wynik i nie wysyłać tej osobie przypomnień.
+        Odpowiedzi przychodzą do skrzynki nadawcy. Automat sprawdza ją w dni
+        robocze rano (IMAP), możesz też sprawdzić teraz albo zaznaczyć „Odpisał”
+        ręcznie. Odpisani nie dostają przypomnień.
       </p>
+      {infoOdpowiedzi && (
+        <p className="mt-2 text-sm text-slate-700">{infoOdpowiedzi}</p>
+      )}
 
       <div className="mt-4 max-h-[28rem] overflow-y-auto">
         <table className="w-full text-left text-sm">
