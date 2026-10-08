@@ -1,6 +1,9 @@
 /** Model danych. Kampania jest pojemnikiem na wszystko, zgodnie z ustaleniem z 24.09. */
 
-/** Źródła kontaktów. Wszystkie trzy parlamentarne mają otwarte API, sprawdzone 24.09. */
+/**
+ * Źródła kontaktów. Wszystkie trzy parlamentarne mają otwarte API, sprawdzone 24.09.
+ * `nazwa` i `opis` po polsku idą do promptów AI (generuj, propozycja); interfejs bierze t(`zrodlo.${id}.nazwa`).
+ */
 export const ZRODLA = {
   sejm: {
     nazwa: "Sejm RP",
@@ -56,26 +59,12 @@ export type ZrodloId = keyof typeof ZRODLA;
 
 export type StatusKampanii = "szkic" | "gotowa" | "uruchomiona" | "zakonczona";
 
-export const STATUSY: Record<
-  StatusKampanii,
-  { etykieta: string; klasa: string }
-> = {
-  szkic: {
-    etykieta: "Szkic",
-    klasa: "bg-slate-100 text-slate-600 ring-slate-200",
-  },
-  gotowa: {
-    etykieta: "Gotowa",
-    klasa: "bg-amber-50 text-amber-800 ring-amber-200",
-  },
-  uruchomiona: {
-    etykieta: "Uruchomiona",
-    klasa: "bg-brand-50 text-brand-700 ring-brand-200",
-  },
-  zakonczona: {
-    etykieta: "Zakończona",
-    klasa: "bg-slate-100 text-slate-500 ring-slate-200",
-  },
+/** Statusy kampanii: wartość w bazie zostaje po polsku, etykietę daje t(`status.${status}`) (lib/i18n). */
+export const STATUSY: Record<StatusKampanii, { klasa: string }> = {
+  szkic: { klasa: "bg-slate-100 text-slate-600 ring-slate-200" },
+  gotowa: { klasa: "bg-amber-50 text-amber-800 ring-amber-200" },
+  uruchomiona: { klasa: "bg-brand-50 text-brand-700 ring-brand-200" },
+  zakonczona: { klasa: "bg-slate-100 text-slate-500 ring-slate-200" },
 };
 
 export type Kampania = {

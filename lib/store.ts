@@ -274,15 +274,9 @@ export async function podpisyKampanii(
   };
 }
 
-export const TYPY_WYDARZEN = {
-  odpowiedz: "Odpowiedź",
-  spotkanie: "Spotkanie",
-  interpelacja: "Interpelacja albo pytanie",
-  zmiana_decyzji: "Zmiana decyzji",
-  media: "Media",
-  inne: "Inne",
-} as const;
-export type TypWydarzenia = keyof typeof TYPY_WYDARZEN;
+/** Rodzaje wydarzeń w raporcie wpływu (wartości w bazie). Etykieta: t(`typWydarzenia.${typ}`). */
+export const TYPY_WYDARZEN = ["odpowiedz", "spotkanie", "interpelacja", "zmiana_decyzji", "media", "inne"] as const;
+export type TypWydarzenia = (typeof TYPY_WYDARZEN)[number];
 
 export type Wydarzenie = {
   id: string;

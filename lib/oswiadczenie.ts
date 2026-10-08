@@ -3,6 +3,8 @@
  * Treść oświadczeń jest wersjonowana: zmiana tekstu = podbij WERSJA, stare wiersze w bazie zachowują swoją.
  * Teksty a-e do potwierdzenia przez prawnika, nie przez nas.
  */
+import { tlumacz, type Tlumacz } from "@/lib/i18n";
+
 export const WERSJA_OSWIADCZENIA = 1;
 
 export const FORMY_PRAWNE = [
@@ -14,6 +16,7 @@ export const FORMY_PRAWNE = [
   "inna",
 ] as const;
 
+/** Klucze w bazie; etykieta w interfejsie: t(`zrodloFin.${klucz}`). Polski tekst to wartość odniesienia. */
 export const ZRODLA_FINANSOWANIA = {
   wlasne: "Środki własne organizacji",
   darowizny: "Darowizny albo składki członków",
@@ -27,6 +30,7 @@ export type ZrodloFinansowania = keyof typeof ZRODLA_FINANSOWANIA;
 /** Źródła, przy których opis jest obowiązkowy. */
 export const ZRODLA_Z_OPISEM: ZrodloFinansowania[] = ["grant", "komercyjny", "inne"];
 
+/** Treści oświadczeń a-e (wersja WERSJA_OSWIADCZENIA). Interfejs pokazuje t(`osw.tekst.${klucz}`). */
 export const OSWIADCZENIA = {
   prawdziwe:
     "Informacje w kampanii są prawdziwe i nie wprowadzają w błąd. Nadawca jest tym, za kogo się podaje.",
@@ -72,24 +76,28 @@ export function pusteOswiadczenie(): TrescOswiadczenia {
   };
 }
 
-/** Jedna wspólna walidacja dla formularza i serwera. Zwraca pierwszy błąd albo null. */
-export function sprawdzOswiadczenie(t: TrescOswiadczenia): string | null {
-  if (!t.zleceniodawca.trim()) return "Podaj nazwę zleceniodawcy.";
-  if (!FORMY_PRAWNE.includes(t.formaPrawna)) return "Wybierz formę prawną.";
-  if (!t.osoba.trim()) return "Podaj osobę odpowiedzialną.";
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t.email)) return "Podaj poprawny e-mail osoby odpowiedzialnej.";
-  if (t.rola === "zlecenie" && !t.naZlecenieKogo.trim()) return "Napisz, na czyje zlecenie działasz.";
-  if (!(t.zrodlo in ZRODLA_FINANSOWANIA)) return "Wybierz źródło finansowania.";
+/**
+ * Jedna wspólna walidacja dla formularza i serwera. Zwraca pierwszy błąd (po polsku, domyślnie) albo null.
+ * Z `t` z lib/i18n komunikat wychodzi w języku użytkownika.
+ */
+export function sprawdzOswiadczenie(t: TrescOswiadczenia, tl: Tlumacz = tlumacz("pl")): string | null {
+  if (!t.zleceniodawca.trim()) return tl("osw.walidacja.nazwa");
+  if (!FORMY_PRAWNE.includes(t.formaPrawna)) return tl("osw.walidacja.forma");
+  if (!t.osoba.trim()) return tl("osw.walidacja.osoba");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t.email)) return tl("osw.walidacja.email");
+  if (t.rola === "zlecenie" && !t.naZlecenieKogo.trim()) return tl("osw.walidacja.naZlecenie");
+  if (!(t.zrodlo in ZRODLA_FINANSOWANIA)) return tl("osw.walidacja.zrodlo");
   if ((ZRODLA_Z_OPISEM.includes(t.zrodlo) || t.rola === "zlecenie") && !t.zrodloOpis.trim())
-    return "Opisz źródło finansowania.";
+    return tl("osw.walidacja.opis");
   for (const k of Object.keys(OSWIADCZENIA) as KluczOswiadczenia[])
-    if (!t.potwierdzenia?.[k]) return "Zaznacz wszystkie oświadczenia.";
+    if (!t.potwierdzenia?.[k]) return tl("osw.walidacja.zaznacz");
   return null;
 }
 
+/** Decyzja zespołu: wartość w bazie zostaje, etykietę daje t(`zgoda.${zgoda}`). */
 export const ZGODA = {
-  czeka: { etykieta: "Czeka na weryfikację", klasa: "bg-amber-50 text-amber-800 ring-amber-200" },
-  zaakceptowana: { etykieta: "Zaakceptowana", klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200" },
-  odrzucona: { etykieta: "Odrzucona", klasa: "bg-red-50 text-red-800 ring-red-200" },
+  czeka: { klasa: "bg-amber-50 text-amber-800 ring-amber-200" },
+  zaakceptowana: { klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200" },
+  odrzucona: { klasa: "bg-red-50 text-red-800 ring-red-200" },
 } as const;
 export type ZgodaZespolu = keyof typeof ZGODA;

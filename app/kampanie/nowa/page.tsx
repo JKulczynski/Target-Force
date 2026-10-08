@@ -6,9 +6,11 @@ import { useEffect, useState } from "react";
 import { parsujListe, type WynikImportu } from "@/lib/csv";
 import { dodajKampanie, dodajKontakty } from "@/lib/store";
 import { ZRODLA, pustaKampania, type ZrodloId } from "@/lib/types";
-import { SZABLONY } from "@/lib/szablony";
+import { SZABLONY, daneSzablonu, type SzablonId } from "@/lib/szablony";
 import { MomentSejmu } from "@/components/MomentSejmu";
 import { POLE } from "@/components/ui";
+import { useT } from "@/lib/i18n/klient";
+import type { Klucz } from "@/lib/i18n";
 
 type Licznik = { razem: number; zEmailem: number } | "blad" | "laduje";
 
@@ -34,7 +36,7 @@ const Z_LICZNIKIEM: ZrodloId[] = [
  * Każdy krok odpowiada na jedno pytanie: o co chodzi, do kogo, jak i kiedy.
  */
 
-const KROKI = ["O co chodzi", "Do kogo", "Jak i kiedy"] as const;
+const KROKI: Klucz[] = ["kreator.krok.1", "kreator.krok.2", "kreator.krok.3"];
 
 const Etykieta = ({ children }: { children: React.ReactNode }) => (
   <span className="block text-sm font-medium text-slate-700">{children}</span>
@@ -47,6 +49,7 @@ const Podpowiedz = ({ children }: { children: React.ReactNode }) => (
 const pole = `mt-2 ${POLE}`;
 
 export default function NowaKampania() {
+  const { t } = useT();
   const router = useRouter();
   const [krok, setKrok] = useState(0);
   const [dane, setDane] = useState(pustaKampania());
@@ -62,13 +65,13 @@ export default function NowaKampania() {
   const [propozycja, setPropozycja] = useState<Propozycja | null>(null);
   const [proponuje, setProponuje] = useState(false);
 
-  function uzyjSzablonu(id: string) {
-    const s = SZABLONY.find((x) => x.id === id);
+  function uzyjSzablonu(id: SzablonId) {
+    const s = daneSzablonu(id, t);
     if (!s) return;
     // Bez okna potwierdzenia (Jan 07.10: "powiadomienie z Vercela" frustruje); zamiast tego "Cofnij".
     if (!przedSzablonem) setPrzedSzablonem(dane);
     setSzablon(id);
-    setDane((d) => ({ ...d, ...s.dane }));
+    setDane((d) => ({ ...d, ...s }));
   }
 
   async function zaproponuj() {
@@ -81,7 +84,7 @@ export default function NowaKampania() {
         body: JSON.stringify({ cel: dane.cel, materialy: dane.materialy, nazwa: dane.nazwa }),
       });
       const d = await odp.json().catch(() => ({}));
-      if (!odp.ok) return setBlad(d.blad ?? "Nie udało się przygotować propozycji.");
+      if (!odp.ok) return setBlad(d.blad ?? t("kreator.bladPropozycji"));
       const p = d as Propozycja;
       setPropozycja(p);
       setDane((x) => ({
@@ -91,7 +94,7 @@ export default function NowaKampania() {
         filtrOdbiorcow: { ...x.filtrOdbiorcow, komisje: p.komisje.map((k) => k.kod) },
       }));
     } catch {
-      setBlad("Nie udało się przygotować propozycji.");
+      setBlad(t("kreator.bladPropozycji"));
     } finally {
       setProponuje(false);
     }
@@ -165,13 +168,10 @@ export default function NowaKampania() {
   /** Zwraca komunikat błędu dla bieżącego kroku albo null, jeśli można iść dalej. */
   function sprawdz(k: number): string | null {
     if (k === 0) {
-      if (!dane.nazwa.trim())
-        return "Kampania potrzebuje nazwy, żeby dało się ją odróżnić.";
-      if (!dane.cel.trim())
-        return "Opisz w dwóch zdaniach, o co chodzi. Z tego powstaną wiadomości.";
+      if (!dane.nazwa.trim()) return t("kreator.blad.nazwa");
+      if (!dane.cel.trim()) return t("kreator.blad.cel");
     }
-    if (k === 1 && dane.zrodla.length === 0)
-      return "Wybierz co najmniej jedno źródło kontaktów.";
+    if (k === 1 && dane.zrodla.length === 0) return t("kreator.blad.zrodla");
     return null;
   }
 
@@ -206,9 +206,7 @@ export default function NowaKampania() {
       router.push(`/kampanie/${nowa.id}`);
     } catch {
       setZapisuje(false);
-      setBlad(
-        "Nie udało się zapisać. Sprawdź, czy jesteś w zespole, albo spróbuj ponownie.",
-      );
+      setBlad(t("kreator.blad.zapis"));
     }
   }
 
@@ -240,22 +238,20 @@ export default function NowaKampania() {
             strokeLinejoin="round"
           />
         </svg>
-        Kampanie
+        {t("nav.kampanie")}
       </Link>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-        Nowa kampania
-      </h1>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight">{t("kreator.tytul")}</h1>
 
       <ol className="mt-6 flex gap-2">
-        {KROKI.map((nazwa, i) => (
-          <li key={nazwa} className="flex-1">
+        {KROKI.map((klucz, i) => (
+          <li key={klucz} className="flex-1">
             <div
               className={`h-1 rounded-full transition-colors duration-300 ${i < krok ? "bg-brand-200" : i === krok ? "bg-brand-600" : "bg-slate-200"}`}
             />
             <p
               className={`mt-2 text-xs ${i === krok ? "font-medium text-slate-900" : "text-slate-500"}`}
             >
-              {i + 1}. {nazwa}
+              {i + 1}. {t(klucz)}
             </p>
           </li>
         ))}
@@ -265,10 +261,9 @@ export default function NowaKampania() {
         {krok === 0 && (
           <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6">
             <div>
-              <Etykieta>Zacznij od szablonu</Etykieta>
+              <Etykieta>{t("kreator.szablon.etykieta")}</Etykieta>
               <Podpowiedz>
-                Opcjonalnie. Szablon wstawia szkielet celu i ustawienia wysyłki,
-                wszystko możesz zmienić.
+                {t("kreator.szablon.opis")}
                 {przedSzablonem && (
                   <>
                     {" "}
@@ -281,7 +276,7 @@ export default function NowaKampania() {
                       }}
                       className="font-medium text-brand-700 underline-offset-2 hover:underline"
                     >
-                      Cofnij szablon
+                      {t("kreator.szablon.cofnij")}
                     </button>
                   </>
                 )}
@@ -295,10 +290,10 @@ export default function NowaKampania() {
                     className={`rounded-lg border p-3 text-left transition ${szablon === s.id ? "border-slate-900 bg-slate-50" : "border-slate-200 hover:border-slate-300"}`}
                   >
                     <span className="block text-sm font-medium text-slate-900">
-                      {s.nazwa}
+                      {t(`szablon.${s.id}.nazwa`)}
                     </span>
                     <span className="mt-0.5 block text-xs text-slate-500">
-                      {s.opis}
+                      {t(`szablon.${s.id}.opis`)}
                     </span>
                   </button>
                 ))}
@@ -306,33 +301,30 @@ export default function NowaKampania() {
             </div>
 
             <label className="block">
-              <Etykieta>Nazwa kampanii</Etykieta>
-              <Podpowiedz>Dla ciebie, żeby odróżnić ją od innych.</Podpowiedz>
+              <Etykieta>{t("kreator.nazwa.etykieta")}</Etykieta>
+              <Podpowiedz>{t("kreator.nazwa.opis")}</Podpowiedz>
               <input
                 className={pole}
                 value={dane.nazwa}
                 onChange={(e) => setDane({ ...dane, nazwa: e.target.value })}
-                placeholder="np. Pokaz filmu, Holandia, październik"
+                placeholder={t("kreator.nazwa.ph")}
               />
             </label>
 
             <label className="block">
-              <Etykieta>O co chodzi, w dwóch zdaniach</Etykieta>
-              <Podpowiedz>
-                Co chcesz osiągnąć. Na tej podstawie powstaną wiadomości, więc
-                im konkretniej, tym mniej generyczne będą.
-              </Podpowiedz>
+              <Etykieta>{t("kreator.cel.etykieta")}</Etykieta>
+              <Podpowiedz>{t("kreator.cel.opis")}</Podpowiedz>
               <textarea
                 className={`${pole} min-h-28 resize-y`}
                 value={dane.cel}
                 onChange={(e) => setDane({ ...dane, cel: e.target.value })}
-                placeholder="np. zaprosić na pokaz filmu i rozmowę po seansie, 12 października w Hadze"
+                placeholder={t("kreator.cel.ph")}
               />
             </label>
 
             <label className="block">
-              <Etykieta>Link do filmu albo strony</Etykieta>
-              <Podpowiedz>Opcjonalnie. Trafi do treści wiadomości.</Podpowiedz>
+              <Etykieta>{t("kreator.link.etykieta")}</Etykieta>
+              <Podpowiedz>{t("kreator.link.opis")}</Podpowiedz>
               <input
                 type="url"
                 className={pole}
@@ -343,11 +335,8 @@ export default function NowaKampania() {
             </label>
 
             <label className="block">
-              <Etykieta>Materiały</Etykieta>
-              <Podpowiedz>
-                Opcjonalnie. Linki do artykułów, opis, fakty, które warto
-                wpleść. Czytamy je przed napisaniem wiadomości.
-              </Podpowiedz>
+              <Etykieta>{t("kreator.materialy.etykieta")}</Etykieta>
+              <Podpowiedz>{t("kreator.materialy.opis")}</Podpowiedz>
               <textarea
                 className={`${pole} min-h-24 resize-y`}
                 value={dane.materialy}
@@ -358,15 +347,13 @@ export default function NowaKampania() {
             </label>
 
             <label className="block">
-              <Etykieta>W czyim imieniu piszemy</Etykieta>
-              <Podpowiedz>
-                Kto jest nadawcą i dlaczego odbiorca miałby go słuchać.
-              </Podpowiedz>
+              <Etykieta>{t("kreator.nadawca.etykieta")}</Etykieta>
+              <Podpowiedz>{t("kreator.nadawca.opis")}</Podpowiedz>
               <input
                 className={pole}
                 value={dane.nadawca}
                 onChange={(e) => setDane({ ...dane, nadawca: e.target.value })}
-                placeholder="np. reżyser filmu, fundacja X"
+                placeholder={t("kreator.nadawca.ph")}
               />
             </label>
           </section>
@@ -376,8 +363,8 @@ export default function NowaKampania() {
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <Etykieta>Skąd bierzemy kontakty</Etykieta>
-                <Podpowiedz>Możesz połączyć kilka źródeł.</Podpowiedz>
+                <Etykieta>{t("kreator.zrodla.etykieta")}</Etykieta>
+                <Podpowiedz>{t("kreator.zrodla.opis")}</Podpowiedz>
               </div>
               <button
                 type="button"
@@ -385,12 +372,12 @@ export default function NowaKampania() {
                 disabled={proponuje}
                 className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 disabled:opacity-50"
               >
-                {proponuje ? "Sprawdzam, kto decyduje..." : "Zaproponuj na podstawie celu"}
+                {proponuje ? t("kreator.sprawdzam") : t("kreator.zaproponuj")}
               </button>
             </div>
             {propozycja && (
               <div className="mt-4 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-900 ring-1 ring-brand-100">
-                <p className="font-medium">Propozycja: {propozycja.kogoSzukamy}</p>
+                <p className="font-medium">{t("kreator.propozycja", { kogo: propozycja.kogoSzukamy })}</p>
                 <p className="mt-1 text-brand-800">{propozycja.uzasadnienie}</p>
                 {propozycja.komisje.length > 0 && (
                   <ul className="mt-2 space-y-1 text-brand-800">
@@ -401,15 +388,12 @@ export default function NowaKampania() {
                     ))}
                   </ul>
                 )}
-                <p className="mt-2 text-xs text-brand-700">
-                  Źródła i komisje zaznaczone poniżej. Komisje trafią do zawężenia
-                  listy odbiorców w kampanii. Możesz wszystko zmienić.
-                </p>
+                <p className="mt-2 text-xs text-brand-700">{t("kreator.propozycjaUwaga")}</p>
               </div>
             )}
 
             <p className="mt-5 text-base font-semibold tracking-tight text-slate-900">
-              Decydenci publiczni
+              {t("kreator.decydenci")}
             </p>
             <div className="mt-2 space-y-2">
               {politycy.map((id) => (
@@ -424,16 +408,13 @@ export default function NowaKampania() {
             </div>
 
             <p className="mt-6 text-base font-semibold tracking-tight text-slate-900">
-              Własna lista
+              {t("kreator.wlasnaLista")}
             </p>
             <div className="mt-2 rounded-lg border border-slate-200 p-3.5">
               <p className="text-sm text-slate-500">
-                Artyści, szefowie instytucji, dziennikarze: każdy, kogo nie ma w
-                API. Wgraj plik (Excel, CSV) z kolumną{" "}
+                {t("kreator.wlasnaLista.opis1")}{" "}
                 <span className="font-medium text-slate-700">email</span>{" "}
-                (opcjonalnie imię, nazwisko, organizacja, stanowisko) albo wklej
-                listę, jedna osoba w linii. Możesz też skopiować komórki z
-                Excela lub Arkuszy Google i wkleić.
+                {t("kreator.wlasnaLista.opis2")}
               </p>
               <input
                 type="file"
@@ -445,26 +426,22 @@ export default function NowaKampania() {
                 className={`${pole} min-h-24 resize-y font-mono text-xs`}
                 value={tekstListy}
                 onChange={(e) => wczytajListe(e.target.value)}
-                placeholder={
-                  "Jan Kowalski, jan.kowalski@teatr.pl\nanna.nowak@muzeum.pl"
-                }
+                placeholder={t("kreator.lista.ph")}
               />
               {lista && (
                 <p className="mt-2 text-sm text-slate-600">
                   <span className="font-medium text-slate-900">
                     {lista.wiersze.length}
                   </span>{" "}
-                  {lista.wiersze.length === 1 ? "osoba" : "osób"} z poprawnym
-                  e-mailem
-                  {lista.pominiete > 0 &&
-                    `, pominięto ${lista.pominiete} bez adresu`}
-                  {lista.duplikaty > 0 && `, ${lista.duplikaty} powtórzeń`}.
+                  {t.n("kreator.lista.osoba", lista.wiersze.length)}
+                  {lista.pominiete > 0 && t("kreator.lista.pominieto", { n: lista.pominiete })}
+                  {lista.duplikaty > 0 && t("kreator.lista.powtorzen", { n: lista.duplikaty })}.
                 </p>
               )}
             </div>
 
             <p className="mt-6 text-base font-semibold tracking-tight text-slate-900">
-              B2B
+              {t("kreator.b2b")}
             </p>
             <div className="mt-2 space-y-2">
               {b2b.map((id) => (
@@ -478,26 +455,21 @@ export default function NowaKampania() {
             </div>
 
             <label className="mt-6 block">
-              <Etykieta>Kogo dokładnie szukamy</Etykieta>
-              <Podpowiedz>
-                Zawężenie wewnątrz wybranych źródeł, np. posłowie z komisji
-                kultury, albo dyrektorzy zakupów w firmach produkcyjnych.
-              </Podpowiedz>
+              <Etykieta>{t("kreator.kogo.etykieta")}</Etykieta>
+              <Podpowiedz>{t("kreator.kogo.opis")}</Podpowiedz>
               <input
                 className={pole}
                 value={dane.kogoSzukamy}
                 onChange={(e) =>
                   setDane({ ...dane, kogoSzukamy: e.target.value })
                 }
-                placeholder="np. członkowie komisji spraw zagranicznych"
+                placeholder={t("kreator.kogo.ph")}
               />
             </label>
 
             <p className="mt-6 rounded-lg bg-slate-900 px-4 py-3 text-sm text-white">
-              Dotrzesz do{" "}
-              <span className="font-semibold tabular-nums">{zasieg}</span>{" "}
-              {zasieg === 1 ? "osoby" : "osób"} z adresem e-mail
-              {dane.kogoSzukamy.trim() && ", przed zawężeniem grupy"}.
+              {t.n("kreator.zasieg", zasieg)}
+              {dane.kogoSzukamy.trim() && t("kreator.zasieg.zawezenie")}.
             </p>
           </section>
         )}
@@ -514,18 +486,14 @@ export default function NowaKampania() {
                 }
               />
               <span>
-                <Etykieta>Psychografia odbiorców</Etykieta>
-                <Podpowiedz>
-                  Przed napisaniem wiadomości zbieramy kontekst o każdym
-                  odbiorcy: czym się zajmuje, co mówił publicznie, na czym mu
-                  zależy.
-                </Podpowiedz>
+                <Etykieta>{t("kreator.psychografia.etykieta")}</Etykieta>
+                <Podpowiedz>{t("kreator.psychografia.opis")}</Podpowiedz>
               </span>
             </label>
 
             <Suwak
-              etykieta="Liczba wariantów wiadomości"
-              podpowiedz="Różne tytuły i treści zamiast jednego szablonu do wszystkich. Mniejsze ryzyko oznaczenia jako spam."
+              etykieta={t("kreator.warianty.etykieta")}
+              podpowiedz={t("kreator.warianty.opis")}
               min={1}
               max={7}
               wartosc={dane.liczbaWariantow}
@@ -533,8 +501,8 @@ export default function NowaKampania() {
             />
 
             <Suwak
-              etykieta="Przypomnienia bez odpowiedzi"
-              podpowiedz="Ile kolejnych wiadomości wysyłamy osobom, które nie odpisały. Odpowiedź zatrzymuje kolejkę."
+              etykieta={t("kreator.przypomnienia.etykieta")}
+              podpowiedz={t("kreator.przypomnienia.opis")}
               min={0}
               max={5}
               wartosc={dane.liczbaFollowupow}
@@ -543,7 +511,7 @@ export default function NowaKampania() {
 
             {dane.liczbaFollowupow > 0 && (
               <Suwak
-                etykieta="Odstęp między wiadomościami (dni)"
+                etykieta={t("kreator.odstep.etykieta")}
                 min={1}
                 max={14}
                 wartosc={dane.odstepDni}
@@ -552,8 +520,8 @@ export default function NowaKampania() {
             )}
 
             <label className="block">
-              <Etykieta>Start wysyłki</Etykieta>
-              <Podpowiedz>Opcjonalnie. Możesz ustalić później.</Podpowiedz>
+              <Etykieta>{t("kreator.start.etykieta")}</Etykieta>
+              <Podpowiedz>{t("kreator.start.opis")}</Podpowiedz>
               <input
                 type="date"
                 className={`${pole} w-auto`}
@@ -571,9 +539,8 @@ export default function NowaKampania() {
             )}
 
             <p className="text-sm text-slate-500">
-              Każda osoba dostanie najwyżej {1 + dane.liczbaFollowupow}{" "}
-              {1 + dane.liczbaFollowupow === 1 ? "wiadomość" : "wiadomości"}
-              {dane.liczbaFollowupow > 0 && `, co ${dane.odstepDni} dni`}.
+              {t.n("kreator.najwyzej", 1 + dane.liczbaFollowupow)}
+              {dane.liczbaFollowupow > 0 && t("kreator.coDni", { n: dane.odstepDni })}.
             </p>
           </section>
         )}
@@ -591,7 +558,7 @@ export default function NowaKampania() {
               onClick={wstecz}
               className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 ring-1 ring-slate-300 transition hover:bg-slate-50"
             >
-              Wstecz
+              {t("kreator.wstecz")}
             </button>
           )}
           <button
@@ -599,13 +566,13 @@ export default function NowaKampania() {
             disabled={zapisuje}
             className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-400"
           >
-            {ostatni ? (zapisuje ? "Zapisuję..." : "Zapisz kampanię") : "Dalej"}
+            {ostatni ? (zapisuje ? t("kreator.zapisuje") : t("kreator.zapisz")) : t("kreator.dalej")}
           </button>
           <Link
             href="/"
             className="text-sm text-slate-500 transition hover:text-slate-900"
           >
-            Anuluj
+            {t("wspolne.anuluj")}
           </Link>
         </div>
       </form>
@@ -658,7 +625,7 @@ function ZrodloPole({
   onChange: () => void;
   licznik?: Licznik;
 }) {
-  const z = ZRODLA[id];
+  const { t } = useT();
   return (
     <label
       className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition ${
@@ -674,15 +641,15 @@ function ZrodloPole({
         onChange={onChange}
       />
       <span className="min-w-0">
-        <span className="block text-sm font-medium">{z.nazwa}</span>
-        <span className="mt-0.5 block text-sm text-slate-500">{z.opis}</span>
+        <span className="block text-sm font-medium">{t(`zrodlo.${id}.nazwa`)}</span>
+        <span className="mt-0.5 block text-sm text-slate-500">{t(`zrodlo.${id}.opis`)}</span>
         {licznik && (
           <span className="mt-1.5 block text-xs text-slate-600">
             {licznik === "laduje"
-              ? "Liczę odbiorców..."
+              ? t("kreator.licze")
               : licznik === "blad"
-                ? "Źródło chwilowo nie odpowiada"
-                : `${licznik.razem} osób, ${licznik.zEmailem} z e-mailem`}
+                ? t("kreator.zrodloNieOdpowiada")
+                : t("kreator.licznik", { razem: licznik.razem, zEmailem: licznik.zEmailem })}
           </span>
         )}
       </span>

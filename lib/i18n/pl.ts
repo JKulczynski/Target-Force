@@ -142,9 +142,9 @@ export const pl = {
   "kreator.wlasnaLista.opis2":
     "(opcjonalnie imię, nazwisko, organizacja, stanowisko) albo wklej listę, jedna osoba w linii. Możesz też skopiować komórki z Excela lub Arkuszy Google i wkleić.",
   "kreator.lista.ph": "Jan Kowalski, jan.kowalski@teatr.pl\nanna.nowak@muzeum.pl",
-  "kreator.lista.osoba.1": "{n} osoba z poprawnym e-mailem",
-  "kreator.lista.osoba.few": "{n} osoby z poprawnym e-mailem",
-  "kreator.lista.osoba.many": "{n} osób z poprawnym e-mailem",
+  "kreator.lista.osoba.1": "osoba z poprawnym e-mailem",
+  "kreator.lista.osoba.few": "osoby z poprawnym e-mailem",
+  "kreator.lista.osoba.many": "osób z poprawnym e-mailem",
   "kreator.lista.pominieto": ", pominięto {n} bez adresu",
   "kreator.lista.powtorzen": ", {n} powtórzeń",
   "kreator.b2b": "B2B",

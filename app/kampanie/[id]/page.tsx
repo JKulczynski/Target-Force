@@ -9,7 +9,7 @@ import {
   usunKampanie,
   zmienKampanie,
 } from "@/lib/store";
-import { STATUSY, ZRODLA, type Kampania } from "@/lib/types";
+import { STATUSY, type Kampania } from "@/lib/types";
 import { SkrzynkaKampanii } from "@/components/SkrzynkaKampanii";
 import { Wiadomosci } from "@/components/Wiadomosci";
 import { Wysylka } from "@/components/Wysylka";
@@ -18,8 +18,10 @@ import { StronaAkcji } from "@/components/StronaAkcji";
 import { Wplyw } from "@/components/Wplyw";
 import { MomentSejmu } from "@/components/MomentSejmu";
 import { Oswiadczenie } from "@/components/Oswiadczenie";
+import { useT } from "@/lib/i18n/klient";
 
 export default function SzczegolyKampanii() {
+  const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [k, setK] = useState<Kampania | null | undefined>(undefined);
@@ -58,19 +60,17 @@ export default function SzczegolyKampanii() {
   }, [id]);
 
   if (k === undefined)
-    return <p className="text-sm text-slate-400">Wczytuję...</p>;
+    return <p className="text-sm text-slate-400">{t("wspolne.wczytuje")}</p>;
   if (k === null) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
-        <p className="font-medium text-slate-700">Nie ma takiej kampanii</p>
-        <p className="mt-2 text-sm text-slate-500">
-          Mogła zostać usunięta albo nie masz jeszcze dostępu do zespołu.
-        </p>
+        <p className="font-medium text-slate-700">{t("kampania.brak.tytul")}</p>
+        <p className="mt-2 text-sm text-slate-500">{t("kampania.brak.opis")}</p>
         <Link
           href="/"
           className="mt-6 inline-flex rounded-lg bg-brand-600 hover:bg-brand-700 px-4 py-2.5 text-sm font-medium text-white"
         >
-          Wróć do kampanii
+          {t("kampania.brak.wroc")}
         </Link>
       </div>
     );
@@ -81,58 +81,58 @@ export default function SzczegolyKampanii() {
   // Przewodnik "co dalej" (test Jana 02.10: gubił się na stronie kampanii). Kolejność = kolejność pracy.
   const kroki = [
     {
-      nazwa: "Zleceniodawca zweryfikowany",
+      nazwa: t("kampania.krok.zleceniodawca"),
       gotowe: k.zgodaZespolu === "zaakceptowana",
       href: "#zleca",
       podpowiedz:
         k.zgodaZespolu === "czeka"
-          ? "zespół sprawdza oświadczenie zleceniodawcy"
+          ? t("kampania.krok.zleceniodawca.czeka")
           : k.zgodaZespolu === "odrzucona"
-            ? "oświadczenie odrzucone, popraw i złóż ponownie (Kto zleca)"
-            : "wypełnij oświadczenie zleceniodawcy (Kto zleca)",
+            ? t("kampania.krok.zleceniodawca.odrzucone")
+            : t("kampania.krok.zleceniodawca.wypelnij"),
     },
     {
-      nazwa: "Wiadomości wygenerowane",
+      nazwa: t("kampania.krok.wiadomosci"),
       gotowe: (postep?.wariantow ?? 0) > 0,
       href: "#wiadomosci",
-      podpowiedz: "wygeneruj wiadomości",
+      podpowiedz: t("kampania.krok.wiadomosci.podp"),
     },
     {
-      nazwa: "Pierwsza wiadomość zatwierdzona",
+      nazwa: t("kampania.krok.pierwsza"),
       gotowe: (postep?.zatwierdzonePierwsze ?? 0) > 0,
       href: "#wiadomosci",
-      podpowiedz: "zatwierdź co najmniej jeden wariant pierwszej wiadomości",
+      podpowiedz: t("kampania.krok.pierwsza.podp"),
     },
     {
-      nazwa: "Skrzynka nadawcy wybrana",
+      nazwa: t("kampania.krok.skrzynka"),
       gotowe: !!k.skrzynkaId,
       href: "#skrzynka",
-      podpowiedz: "wybierz skrzynkę nadawcy",
+      podpowiedz: t("kampania.krok.skrzynka.podp"),
     },
     {
-      nazwa: "Lista odbiorców gotowa",
+      nazwa: t("kampania.krok.lista"),
       gotowe: (postep?.odbiorcy ?? 0) > 0,
       href: "#wysylka",
-      podpowiedz: "przygotuj listę odbiorców (Wysyłka, krok 1)",
+      podpowiedz: t("kampania.krok.lista.podp"),
     },
     {
-      nazwa: "Test na własny adres",
+      nazwa: t("kampania.krok.test"),
       gotowe: testWyslany || (postep?.wyslane ?? 0) > 0,
       href: "#wysylka",
-      podpowiedz: "wyślij test na swój adres (Wysyłka, krok 2)",
+      podpowiedz: t("kampania.krok.test.podp"),
     },
     {
-      nazwa: "Wysyłka ruszyła",
+      nazwa: t("kampania.krok.wysylka"),
       gotowe: (postep?.wyslane ?? 0) > 0,
       href: "#wysylka",
-      podpowiedz: "wyślij pierwszą partię albo włącz automat",
+      podpowiedz: t("kampania.krok.wysylka.podp"),
     },
   ];
   const nastepny = kroki.findIndex((x) => !x.gotowe);
 
   async function uruchom() {
     if (k!.zgodaZespolu !== "zaakceptowana") {
-      window.alert("Najpierw oświadczenie zleceniodawcy i akceptacja zespołu (sekcja Kto zleca).");
+      window.alert(t("kampania.alertZgoda"));
       return;
     }
     const zmieniona = await zmienKampanie(k!.id, { status: "uruchomiona" });
@@ -166,14 +166,14 @@ export default function SzczegolyKampanii() {
             strokeLinejoin="round"
           />
         </svg>
-        Kampanie
+        {t("nav.kampanie")}
       </Link>
 
       <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{k.nazwa}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Utworzona {new Date(k.utworzona).toLocaleDateString("pl-PL")}
+            {t("kampania.utworzona", { data: new Date(k.utworzona).toLocaleDateString(t.locale) })}
             {k.kogoSzukamy && <> · {k.kogoSzukamy}</>}
           </p>
         </div>
@@ -182,12 +182,12 @@ export default function SzczegolyKampanii() {
             href={`/kampanie/${k.id}/raport`}
             className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 hover:text-slate-900"
           >
-            Raport
+            {t("kampania.raport")}
           </Link>
           <span
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${status.klasa}`}
           >
-            {status.etykieta}
+            {t(`status.${k.status}`)}
           </span>
         </div>
       </div>
@@ -196,48 +196,44 @@ export default function SzczegolyKampanii() {
         <div className="min-w-0">
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <h2 className="text-base font-semibold tracking-tight text-slate-900">
-              Brief kampanii
+              {t("kampania.brief")}
             </h2>
             <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
-              <Wiersz etykieta="Cel" wartosc={k.cel} szeroki />
+              <Wiersz etykieta={t("kampania.cel")} wartosc={k.cel} szeroki />
               <div>
-                <p className="text-xs font-medium text-slate-500">
-                  Do kogo piszemy
-                </p>
+                <p className="text-xs font-medium text-slate-500">{t("kampania.doKogo")}</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {k.zrodla.map((z) => (
                     <span
                       key={z}
                       className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
                     >
-                      {ZRODLA[z]?.nazwa ?? z}
+                      {t(`zrodlo.${z}.nazwa`)}
                     </span>
                   ))}
                   {k.zrodla.includes("wlasna_lista") && (
                     <span className="text-xs text-slate-500">
-                      {zListy === null
-                        ? "..."
-                        : `${zListy} ${zListy === 1 ? "osoba" : "osób"} na liście`}
+                      {zListy === null ? "..." : t.n("kampania.naLiscie", zListy)}
                     </span>
                   )}
                 </div>
               </div>
-              <Wiersz etykieta="Nadawca" wartosc={k.nadawca} />
-              <Wiersz etykieta="Film albo strona" wartosc={k.linkFilm} />
+              <Wiersz etykieta={t("kampania.nadawca")} wartosc={k.nadawca} />
+              <Wiersz etykieta={t("kampania.film")} wartosc={k.linkFilm} />
               <Wiersz
-                etykieta="Wiadomości"
-                wartosc={`${k.liczbaWariantow} ${k.liczbaWariantow === 1 ? "wariant" : "wariantów"}${k.psychografia ? ", z psychografią odbiorców" : ""}`}
+                etykieta={t("kampania.wiadomosci")}
+                wartosc={`${t.n("kampania.wariant", k.liczbaWariantow)}${k.psychografia ? t("kampania.zPsychografia") : ""}`}
               />
               <Wiersz
-                etykieta="Przypomnienia"
+                etykieta={t("kampania.przypomnienia")}
                 wartosc={
                   k.liczbaFollowupow === 0
-                    ? "Brak, tylko pierwsza wiadomość"
-                    : `${k.liczbaFollowupow}, co ${k.odstepDni} dni`
+                    ? t("kampania.brakPrzypomnien")
+                    : t("kampania.przypomnieniaCo", { n: k.liczbaFollowupow, dni: k.odstepDni })
                 }
               />
               {k.materialy && (
-                <Wiersz etykieta="Materiały" wartosc={k.materialy} szeroki />
+                <Wiersz etykieta={t("kampania.materialy")} wartosc={k.materialy} szeroki />
               )}
             </div>
           </section>
@@ -310,14 +306,14 @@ export default function SzczegolyKampanii() {
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
             >
               {k.status === "uruchomiona"
-                ? "Kampania uruchomiona"
-                : "Oznacz jako uruchomioną"}
+                ? t("kampania.uruchomiona")
+                : t("kampania.oznaczUruchomiona")}
             </button>
             <button
               onClick={usun}
               className="text-sm text-slate-500 transition-colors duration-150 hover:text-red-700"
             >
-              Usuń kampanię
+              {t("kampania.usun")}
             </button>
           </div>
         </div>
@@ -326,7 +322,7 @@ export default function SzczegolyKampanii() {
           <section className="rounded-xl border border-slate-200 bg-white p-5">
             <div className="flex items-baseline justify-between">
               <h2 className="text-base font-semibold tracking-tight text-slate-900">
-                Co dalej
+                {t("kampania.coDalej")}
               </h2>
               <span className="tabular text-xs text-slate-500">
                 {gotowych}/{kroki.length}
@@ -358,7 +354,7 @@ export default function SzczegolyKampanii() {
                 className="mt-5 block rounded-lg bg-brand-50 px-3.5 py-3 text-sm text-brand-800 ring-1 ring-brand-100 transition-colors duration-150 hover:bg-brand-100"
               >
                 <span className="block text-xs font-medium text-brand-700">
-                  Następny krok
+                  {t("kampania.nastepnyKrok")}
                 </span>
                 <span className="mt-0.5 block first-letter:uppercase">
                   {kroki[nastepny].podpowiedz}
@@ -366,7 +362,7 @@ export default function SzczegolyKampanii() {
               </a>
             ) : (
               <p className="mt-5 rounded-lg bg-emerald-50 px-3.5 py-3 text-sm text-emerald-800 ring-1 ring-emerald-100">
-                Kampania ruszyła. Zaglądaj do listy odbiorców i raportu.
+                {t("kampania.ruszyla")}
               </p>
             )}
           </section>
@@ -390,11 +386,12 @@ function Wiersz({
   wartosc: string;
   szeroki?: boolean;
 }) {
+  const { t } = useT();
   return (
     <div className={szeroki ? "sm:col-span-2" : ""}>
       <p className="text-xs font-medium text-slate-500">{etykieta}</p>
       <p className="mt-1 max-w-[70ch] text-sm break-words text-slate-800">
-        {wartosc || <span className="text-slate-400">nie podano</span>}
+        {wartosc || <span className="text-slate-400">{t("kampania.niePodano")}</span>}
       </p>
     </div>
   );

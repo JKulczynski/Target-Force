@@ -140,9 +140,9 @@ export const en: Record<keyof typeof pl, string> = {
   "kreator.wlasnaLista.opis2":
     "(optionally first name, last name, organisation, position) or paste a list, one person per line. You can also copy cells from Excel or Google Sheets and paste them.",
   "kreator.lista.ph": "Jan Kowalski, jan.kowalski@theatre.pl\nanna.nowak@museum.pl",
-  "kreator.lista.osoba.1": "{n} person with a valid email",
-  "kreator.lista.osoba.few": "{n} people with a valid email",
-  "kreator.lista.osoba.many": "{n} people with a valid email",
+  "kreator.lista.osoba.1": "person with a valid email",
+  "kreator.lista.osoba.few": "people with a valid email",
+  "kreator.lista.osoba.many": "people with a valid email",
   "kreator.lista.pominieto": ", {n} skipped without an address",
   "kreator.lista.powtorzen": ", {n} duplicates",
   "kreator.b2b": "B2B",
