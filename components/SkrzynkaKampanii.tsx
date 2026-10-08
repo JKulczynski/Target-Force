@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Werdykt } from "@/components/Werdykt";
 import type { WynikDomeny } from "@/lib/dns-poczty";
 import { POLE } from "@/components/ui";
+import { useT } from "@/lib/i18n/klient";
 
 type Skrzynka = {
   id: string;
@@ -29,6 +30,7 @@ export function SkrzynkaKampanii({
   skrzynkaId: string | null;
   onZmiana: (id: string | null) => Promise<void>;
 }) {
+  const { t } = useT();
   const [lista, setLista] = useState<Skrzynka[]>([]);
 
   async function wczytaj() {
@@ -52,7 +54,7 @@ export function SkrzynkaKampanii({
   return (
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
       <h2 className="text-base font-semibold tracking-tight text-slate-900">
-        Skrzynka nadawcy
+        {t("skrzynka.tytul")}
       </h2>
       {wybrana ? (
         <Podlaczona s={wybrana} onOdlacz={() => onZmiana(null)} />
@@ -71,6 +73,7 @@ export function SkrzynkaKampanii({
 }
 
 function Podlaczona({ s, onOdlacz }: { s: Skrzynka; onOdlacz: () => void }) {
+  const { t } = useT();
   const [domena, setDomena] = useState<WynikDomeny | null>(null);
   const [odbiorca, setOdbiorca] = useState("");
   const [trwa, setTrwa] = useState(false);
@@ -97,14 +100,11 @@ function Podlaczona({ s, onOdlacz }: { s: Skrzynka; onOdlacz: () => void }) {
       const dane = await odp.json();
       setWynik(
         odp.ok
-          ? {
-              ok: true,
-              tekst: `Skrzynka działa: krótki mail techniczny poszedł na ${dane.do}. Teksty kampanii testujesz niżej, w Wysyłce, krok 2.`,
-            }
-          : { ok: false, tekst: dane.blad ?? "Nie udało się wysłać." },
+          ? { ok: true, tekst: t("skrzynka.dziala", { do: dane.do }) }
+          : { ok: false, tekst: dane.blad ?? t("skrzynka.nieWyslano") },
       );
     } catch {
-      setWynik({ ok: false, tekst: "Nie udało się wysłać." });
+      setWynik({ ok: false, tekst: t("skrzynka.nieWyslano") });
     } finally {
       setTrwa(false);
     }
@@ -120,14 +120,14 @@ function Podlaczona({ s, onOdlacz }: { s: Skrzynka; onOdlacz: () => void }) {
             {s.email_nadawcy}
           </p>
           <p className="mt-0.5 text-xs text-slate-400">
-            Połączenie działa · limit {s.dzienny_limit} maili dziennie
+            {t("skrzynka.polaczenie", { n: s.dzienny_limit })}
           </p>
         </div>
         <button
           onClick={onOdlacz}
           className="text-xs text-slate-400 transition hover:text-red-600"
         >
-          Zmień skrzynkę
+          {t("skrzynka.zmien")}
         </button>
       </div>
       {domena && <Werdykt wynik={domena} />}
@@ -137,10 +137,10 @@ function Podlaczona({ s, onOdlacz }: { s: Skrzynka; onOdlacz: () => void }) {
           type="email"
           value={odbiorca}
           onChange={(e) => setOdbiorca(e.target.value)}
-          placeholder={`krótki mail techniczny na... (domyślnie ${s.email_nadawcy})`}
+          placeholder={t("skrzynka.testPh", { email: s.email_nadawcy })}
         />
         <button onClick={test} disabled={trwa} className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 disabled:opacity-50">
-          {trwa ? "Sprawdzam..." : "Sprawdź skrzynkę"}
+          {trwa ? t("skrzynka.sprawdzam") : t("skrzynka.sprawdz")}
         </button>
       </div>
       {wynik && (
@@ -163,6 +163,7 @@ function Wybor({
   onWybierz: (id: string) => Promise<void>;
   onNowa: (id: string) => Promise<void>;
 }) {
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [haslo, setHaslo] = useState("");
   const [nazwa, setNazwa] = useState("");
@@ -189,11 +190,10 @@ function Wybor({
         }),
       });
       const dane = await odp.json();
-      if (!odp.ok)
-        return setBlad(dane.blad ?? "Nie udało się podłączyć skrzynki.");
+      if (!odp.ok) return setBlad(dane.blad ?? t("skrzynka.niePodlaczono"));
       await onNowa(dane.id);
     } catch {
-      setBlad("Nie udało się podłączyć skrzynki.");
+      setBlad(t("skrzynka.niePodlaczono"));
     } finally {
       setTrwa(false);
     }
@@ -202,16 +202,12 @@ function Wybor({
   return (
     <div className="mt-3">
       <p className="text-sm text-slate-500">
-        Z tej skrzynki pójdą wiadomości tej kampanii. Przy Gmailu wpisz{" "}
-        <b>hasło aplikacji</b> (16 znaków z myaccount.google.com/apppasswords),
-        nie zwykłe hasło. Hasło zapisujemy zaszyfrowane.
+        {t("skrzynka.opis1")} <b>{t("skrzynka.opis.haslo")}</b> {t("skrzynka.opis2")}
       </p>
 
       {lista.length > 0 && (
         <div className="mt-4">
-          <p className="text-sm font-medium text-slate-700">
-            Użyj skrzynki podłączonej wcześniej:
-          </p>
+          <p className="text-sm font-medium text-slate-700">{t("skrzynka.uzyjWczesniej")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {lista.map((s) => (
               <button
@@ -223,9 +219,7 @@ function Wybor({
               </button>
             ))}
           </div>
-          <p className="mt-4 text-sm font-medium text-slate-700">
-            albo podłącz nową:
-          </p>
+          <p className="mt-4 text-sm font-medium text-slate-700">{t("skrzynka.alboNowa")}</p>
         </div>
       )}
 
@@ -237,7 +231,7 @@ function Wybor({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="adres, np. biuro@firma.pl"
+            placeholder={t("skrzynka.ph.adres")}
           />
           <input
             className={pole}
@@ -245,7 +239,7 @@ function Wybor({
             required
             value={haslo}
             onChange={(e) => setHaslo(e.target.value)}
-            placeholder="hasło aplikacji"
+            placeholder={t("skrzynka.ph.haslo")}
             autoComplete="new-password"
           />
         </div>
@@ -253,7 +247,7 @@ function Wybor({
           className={pole}
           value={nazwa}
           onChange={(e) => setNazwa(e.target.value)}
-          placeholder="nazwa nadawcy widoczna u odbiorcy, np. Piotr z Manifesto (opcjonalnie)"
+          placeholder={t("skrzynka.ph.nazwa")}
         />
         <label className="flex items-center gap-2 text-sm text-slate-500">
           <input
@@ -261,7 +255,7 @@ function Wybor({
             checked={inny}
             onChange={(e) => setInny(e.target.checked)}
           />
-          Poczta firmowa albo inna niż Gmail/Outlook (podam serwer sam)
+          {t("skrzynka.innaPoczta")}
         </label>
         {inny && (
           <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
@@ -269,13 +263,13 @@ function Wybor({
               className={pole}
               value={host}
               onChange={(e) => setHost(e.target.value)}
-              placeholder="serwer SMTP, np. smtp.twojadomena.pl"
+              placeholder={t("skrzynka.ph.host")}
             />
             <input
               className={pole}
               value={port}
               onChange={(e) => setPort(e.target.value)}
-              placeholder="port, np. 465"
+              placeholder={t("skrzynka.ph.port")}
             />
           </div>
         )}
@@ -285,7 +279,7 @@ function Wybor({
           </p>
         )}
         <button disabled={trwa} className={przycisk}>
-          {trwa ? "Sprawdzam połączenie..." : "Podłącz i sprawdź"}
+          {trwa ? t("skrzynka.sprawdzamPolaczenie") : t("skrzynka.podlacz")}
         </button>
       </form>
     </div>

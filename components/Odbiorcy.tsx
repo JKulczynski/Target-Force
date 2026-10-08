@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/klient";
 
 type Odbiorca = {
   id: string;
@@ -31,6 +32,7 @@ export function Odbiorcy({
   kampaniaId: string;
   odswiez: number;
 }) {
+  const { t } = useT();
   const [lista, setLista] = useState<Odbiorca[] | null>(null);
   const [widok, setWidok] = useState<Widok>("wszyscy");
   const [szukaj, setSzukaj] = useState("");
@@ -44,16 +46,16 @@ export function Odbiorcy({
     try {
       const odp = await fetch(`/api/kampanie/${kampaniaId}/odpowiedzi`, { method: "POST" });
       const d = await odp.json().catch(() => ({}));
-      if (!odp.ok) return setInfoOdpowiedzi(d.blad ?? "Nie udało się sprawdzić skrzynki.");
+      if (!odp.ok) return setInfoOdpowiedzi(d.blad ?? t("odbiorcy.bladSkrzynki"));
       setInfoOdpowiedzi(
         d.nowe?.length
-          ? `Nowe odpowiedzi: ${d.nowe.length} (sprawdzono ${d.sprawdzono} maili).`
-          : `Bez nowych odpowiedzi (sprawdzono ${d.sprawdzono} maili).`,
+          ? t("odbiorcy.noweOdpowiedzi", { n: d.nowe.length, m: d.sprawdzono })
+          : t("odbiorcy.bezNowych", { m: d.sprawdzono }),
       );
       const odsw = await fetch(`/api/kampanie/${kampaniaId}/odbiorcy`);
       if (odsw.ok) setLista((await odsw.json()).odbiorcy);
     } catch {
-      setInfoOdpowiedzi("Nie udało się sprawdzić skrzynki.");
+      setInfoOdpowiedzi(t("odbiorcy.bladSkrzynki"));
     } finally {
       setSprawdza(false);
     }
@@ -110,18 +112,13 @@ export function Odbiorcy({
         ),
     );
 
-  const zakladki: { id: Widok; etykieta: string }[] = [
-    { id: "wszyscy", etykieta: "Wszyscy" },
-    { id: "wyslane", etykieta: "Wysłane" },
-    { id: "kliknieci", etykieta: "Kliknęli" },
-    { id: "odpisali", etykieta: "Odpisali" },
-  ];
+  const zakladki: Widok[] = ["wszyscy", "wyslane", "kliknieci", "odpisali"];
 
   return (
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold tracking-tight text-slate-900">
-          Odbiorcy
+          {t("odbiorcy.tytul")}
         </h2>
         <div className="flex items-center gap-3">
           <button
@@ -130,17 +127,17 @@ export function Odbiorcy({
             disabled={sprawdza}
             className="text-sm text-slate-500 underline-offset-2 transition hover:text-slate-900 hover:underline disabled:opacity-50"
           >
-            {sprawdza ? "Sprawdzam skrzynkę..." : "Sprawdź odpowiedzi w skrzynce"}
+            {sprawdza ? t("odbiorcy.sprawdzam") : t("odbiorcy.sprawdzOdpowiedzi")}
           </button>
           <Link
             href={`/kampanie/${kampaniaId}/raport`}
             className="text-sm text-slate-500 underline-offset-2 transition hover:text-slate-900 hover:underline"
           >
-            Raport dla klienta
+            {t("odbiorcy.raportDlaKlienta")}
           </Link>
           <input
             className="w-56 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-slate-900"
-            placeholder="Szukaj: nazwisko, klub, okręg"
+            placeholder={t("odbiorcy.szukaj")}
             value={szukaj}
             onChange={(e) => setSzukaj(e.target.value)}
           />
@@ -149,19 +146,15 @@ export function Odbiorcy({
       <div className="mt-3 flex flex-wrap gap-1.5">
         {zakladki.map((z) => (
           <button
-            key={z.id}
-            onClick={() => setWidok(z.id)}
-            className={`rounded-full px-3 py-1 text-xs ring-1 transition ${widok === z.id ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-300 hover:ring-slate-900"}`}
+            key={z}
+            onClick={() => setWidok(z)}
+            className={`rounded-full px-3 py-1 text-xs ring-1 transition ${widok === z ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-300 hover:ring-slate-900"}`}
           >
-            {z.etykieta} {licz[z.id]}
+            {t(`odbiorcy.zakladka.${z}`)} {licz[z]}
           </button>
         ))}
       </div>
-      <p className="mt-2 text-xs text-slate-400">
-        Odpowiedzi przychodzą do skrzynki nadawcy. Automat sprawdza ją w dni
-        robocze rano (IMAP), możesz też sprawdzić teraz albo zaznaczyć „Odpisał”
-        ręcznie. Odpisani nie dostają przypomnień.
-      </p>
+      <p className="mt-2 text-xs text-slate-400">{t("odbiorcy.info")}</p>
       {infoOdpowiedzi && (
         <p className="mt-2 text-sm text-slate-700">{infoOdpowiedzi}</p>
       )}
@@ -170,11 +163,11 @@ export function Odbiorcy({
         <table className="w-full text-left text-sm">
           <thead className="sticky top-0 bg-white text-xs text-slate-400">
             <tr>
-              <th className="py-2 pr-3 font-medium">Osoba</th>
-              <th className="py-2 pr-3 font-medium">Klub / okręg</th>
-              <th className="py-2 pr-3 font-medium">Wysłane</th>
-              <th className="py-2 pr-3 font-medium">Kliknął</th>
-              <th className="py-2 font-medium">Odpisał</th>
+              <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.osoba")}</th>
+              <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.klubOkreg")}</th>
+              <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.wyslane")}</th>
+              <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.kliknal")}</th>
+              <th className="py-2 font-medium">{t("odbiorcy.kol.odpisal")}</th>
             </tr>
           </thead>
           <tbody>
@@ -192,32 +185,28 @@ export function Odbiorcy({
                 <td className="py-2 pr-3 text-xs">
                   {o.blad ? (
                     <span className="text-red-600" title={o.blad}>
-                      Błąd
+                      {t("odbiorcy.blad")}
                     </span>
                   ) : o.wyslanychKrokow > 0 ? (
                     <span className="text-slate-700">
-                      {o.wyslanychKrokow === 1
-                        ? "1 mail"
-                        : `${o.wyslanychKrokow} maile`}
+                      {t.n("odbiorcy.mail", o.wyslanychKrokow)}
                       {o.ostatniaWyslana && (
                         <span className="text-slate-400">
                           {" "}
                           ·{" "}
-                          {new Date(o.ostatniaWyslana).toLocaleDateString(
-                            "pl-PL",
-                          )}
+                          {new Date(o.ostatniaWyslana).toLocaleDateString(t.locale)}
                         </span>
                       )}
                     </span>
                   ) : (
-                    <span className="text-slate-300">nie</span>
+                    <span className="text-slate-300">{t("odbiorcy.nie")}</span>
                   )}
                 </td>
                 <td className="py-2 pr-3 text-xs">
                   {o.kliknal ? (
-                    <span className="font-medium text-emerald-700">tak</span>
+                    <span className="font-medium text-emerald-700">{t("odbiorcy.tak")}</span>
                   ) : (
-                    <span className="text-slate-300">nie</span>
+                    <span className="text-slate-300">{t("odbiorcy.nie")}</span>
                   )}
                 </td>
                 <td className="py-2">
@@ -228,7 +217,7 @@ export function Odbiorcy({
                       onChange={() => przelaczOdpisal(o)}
                       disabled={o.wyslanychKrokow === 0}
                     />
-                    {o.odpowiedzial ? "tak" : ""}
+                    {o.odpowiedzial ? t("odbiorcy.tak") : ""}
                   </label>
                 </td>
               </tr>
@@ -236,9 +225,7 @@ export function Odbiorcy({
           </tbody>
         </table>
         {widoczni.length === 0 && (
-          <p className="py-4 text-center text-sm text-slate-400">
-            Nikogo w tym widoku.
-          </p>
+          <p className="py-4 text-center text-sm text-slate-400">{t("odbiorcy.nikogo")}</p>
         )}
       </div>
     </section>

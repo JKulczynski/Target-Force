@@ -1,4 +1,5 @@
 import { POLA } from "@/lib/personalizacja";
+import { tlumacz, type Jezyk } from "@/lib/i18n";
 
 /**
  * Automatyczna kontrola wygenerowanej wiadomości przed zatwierdzeniem.
@@ -66,7 +67,9 @@ function otwarcie(tresc: string): string {
 export function kontrolaWiadomosci(
   w: { temat: string; tresc: string; krok: number },
   fakty: string,
+  jezyk: Jezyk = "pl",
 ): Uwaga[] {
+  const t = tlumacz(jezyk);
   const uwagi: Uwaga[] = [];
   const caly = `${w.temat}\n${w.tresc}`;
   const male = caly.toLowerCase();
@@ -81,46 +84,28 @@ export function kontrolaWiadomosci(
     ),
   ];
   if (obce.length)
-    uwagi.push({
-      rodzaj: "fakt",
-      opis: `Liczby spoza celu i materiałów: ${obce.join(", ")}. Sprawdź, czy są prawdziwe, albo usuń.`,
-    });
+    uwagi.push({ rodzaj: "fakt", opis: t("kontrola.liczby", { liczby: obce.join(", ") }) });
 
   // 2. Zdania-szablony.
   const szablony = FRAZY.filter((f) => male.includes(f));
   if (szablony.length)
-    uwagi.push({
-      rodzaj: "styl",
-      opis: `Zwroty jak z szablonu: „${szablony.join("”, „")}”. Napisz to po swojemu.`,
-    });
+    uwagi.push({ rodzaj: "styl", opis: t("kontrola.szablony", { zwroty: szablony.join("”, „") }) });
 
   // 3. Przypomnienie zaczyna się od przypominania zamiast od nowej rzeczy.
   if (w.krok > 0 && PUSTE_OTWARCIE.test(otwarcie(w.tresc)))
-    uwagi.push({
-      rodzaj: "styl",
-      opis: "Przypomnienie zaczyna się od „wracam do wiadomości”. Zacznij od nowej rzeczy (materiał, fakt, termin).",
-    });
+    uwagi.push({ rodzaj: "styl", opis: t("kontrola.otwarcie") });
 
   // 4. Długość.
   const n = slowa(w.tresc);
   if (w.krok === 0 && (n < 90 || n > 220))
-    uwagi.push({
-      rodzaj: "styl",
-      opis: `${n} słów. Pierwsza wiadomość działa najlepiej przy 120-180.`,
-    });
+    uwagi.push({ rodzaj: "styl", opis: t("kontrola.slowaPierwsza", { n }) });
   if (w.krok > 0 && n > 110)
-    uwagi.push({
-      rodzaj: "styl",
-      opis: `${n} słów. Przypomnienie powinno mieć 50-90.`,
-    });
+    uwagi.push({ rodzaj: "styl", opis: t("kontrola.slowaPrzypomnienie", { n }) });
 
   // 5. Kilka pytań naraz rozmywa prośbę.
   const pytania = (w.tresc.match(/\?/g) ?? []).length;
   if (pytania > 2)
-    uwagi.push({
-      rodzaj: "styl",
-      opis: `${pytania} pytania w treści. Zostaw jedną, wyraźną prośbę.`,
-    });
+    uwagi.push({ rodzaj: "styl", opis: t("kontrola.pytania", { n: pytania }) });
 
   // 6. Technika: nieznane pola, nawiasy do uzupełnienia, długi myślnik.
   const pola = [...caly.matchAll(/\{([^}]*)\}/g)].map((m) => m[1]);
@@ -128,18 +113,15 @@ export function kontrolaWiadomosci(
   if (nieznane.length)
     uwagi.push({
       rodzaj: "technika",
-      opis: `Nieznane pola: {${[...new Set(nieznane)].join("}, {")}}. Dostępne: {${POLA.join("}, {")}}.`,
+      opis: t("kontrola.nieznanePola", {
+        pola: `{${[...new Set(nieznane)].join("}, {")}}`,
+        dostepne: `{${POLA.join("}, {")}}`,
+      }),
     });
   if (/\[[^\]]{2,40}\]/.test(caly))
-    uwagi.push({
-      rodzaj: "technika",
-      opis: "W tekście został nawias kwadratowy do uzupełnienia, np. [nazwa].",
-    });
+    uwagi.push({ rodzaj: "technika", opis: t("kontrola.nawias") });
   if (caly.includes(DLUGI_MYSLNIK))
-    uwagi.push({
-      rodzaj: "technika",
-      opis: "Długi myślnik. Zamień na przecinek albo kropkę.",
-    });
+    uwagi.push({ rodzaj: "technika", opis: t("kontrola.myslnik") });
 
   return uwagi;
 }

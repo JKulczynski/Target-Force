@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { kontrolaWiadomosci } from "@/lib/kontrola";
 import { POLE } from "@/components/ui";
+import { useT } from "@/lib/i18n/klient";
 import {
   psychografiaKampanii,
   warianty,
@@ -26,6 +27,7 @@ export function Wiadomosci({
   fakty: string;
   onZmiana?: () => void;
 }) {
+  const { t } = useT();
   const [lista, setLista] = useState<Wariant[] | null>(null);
   const [psychografia, setPsychografia] = useState<string | null>(null);
   const [jezyk, setJezyk] = useState<string | null>(null);
@@ -68,11 +70,10 @@ export function Wiadomosci({
         method: "POST",
       });
       const dane = await odp.json().catch(() => ({}));
-      if (!odp.ok)
-        return setBlad(dane.blad ?? "Nie udało się wygenerować wiadomości.");
+      if (!odp.ok) return setBlad(dane.blad ?? t("wiadomosci.bladGenerowania"));
       await wczytaj();
     } catch {
-      setBlad("Nie udało się wygenerować wiadomości.");
+      setBlad(t("wiadomosci.bladGenerowania"));
     } finally {
       setGeneruje(false);
     }
@@ -88,27 +89,23 @@ export function Wiadomosci({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold tracking-tight text-slate-900">
-            Wiadomości
+            {t("wiadomosci.tytul")}
           </h2>
           {aktywne.length > 0 && (
             <p className="mt-1 text-sm text-slate-600">
-              Zatwierdzone{" "}
+              {t("wiadomosci.zatwierdzoneA")}{" "}
               <span className="font-semibold text-slate-900">
                 {zatwierdzone}
               </span>{" "}
-              z {aktywne.length}
-              {jezyk && ` · język: ${jezyk}`}. Wysyłamy tylko zatwierdzone.
+              {t("wiadomosci.zatwierdzoneB", { razem: aktywne.length })}
+              {jezyk && t("wiadomosci.jezyk", { jezyk })}
+              {t("wiadomosci.tylkoZatwierdzone")}
             </p>
           )}
         </div>
         <button
           onClick={() => {
-            if (
-              aktywne.length &&
-              !window.confirm(
-                "Nowe wiadomości zastąpią obecne, także zatwierdzone. Wygenerować od nowa?",
-              )
-            )
+            if (aktywne.length && !window.confirm(t("wiadomosci.potwierdzRegeneracje")))
               return;
             generuj();
           }}
@@ -120,10 +117,10 @@ export function Wiadomosci({
           }
         >
           {generuje
-            ? "Piszę wiadomości (ok. 1-2 min)..."
+            ? t("wiadomosci.pisze")
             : aktywne.length
-              ? "Wygeneruj ponownie"
-              : "Wygeneruj wiadomości"}
+              ? t("wiadomosci.ponownie")
+              : t("wiadomosci.wygeneruj")}
         </button>
       </div>
 
@@ -136,7 +133,7 @@ export function Wiadomosci({
       {psychografia && (
         <details className="mt-5 rounded-lg bg-slate-50 p-4">
           <summary className="cursor-pointer text-sm font-medium text-slate-700">
-            Psychografia odbiorców (na tej podstawie pisane są wiadomości)
+            {t("wiadomosci.psychografia")}
           </summary>
           <p className="mt-3 text-sm whitespace-pre-line text-slate-600">
             {psychografia}
@@ -145,11 +142,7 @@ export function Wiadomosci({
       )}
 
       {lista && lista.length === 0 && !generuje && (
-        <p className="mt-4 text-sm text-slate-500">
-          Jeszcze nic nie ma. Kliknij „Wygeneruj wiadomości”: AI przygotuje
-          psychografię odbiorców i warianty maili na podstawie celu i materiałów
-          kampanii.
-        </p>
+        <p className="mt-4 text-sm text-slate-500">{t("wiadomosci.pusto")}</p>
       )}
 
       <div className="mt-5 space-y-4">
@@ -170,19 +163,20 @@ export function KartaWariantu({
   fakty: string;
   onZmiana: () => Promise<void>;
 }) {
+  const { t, jezyk } = useT();
   const [temat, setTemat] = useState(w.temat);
   const [tresc, setTresc] = useState(w.tresc);
   const [zapisuje, setZapisuje] = useState(false);
   const [otwarta, setOtwarta] = useState(w.status !== "zatwierdzony");
   const zmieniony = temat !== w.temat || tresc !== w.tresc;
   const uwagi = useMemo(
-    () => kontrolaWiadomosci({ temat, tresc, krok: w.krok }, fakty),
-    [temat, tresc, w.krok, fakty],
+    () => kontrolaWiadomosci({ temat, tresc, krok: w.krok }, fakty, jezyk),
+    [temat, tresc, w.krok, fakty, jezyk],
   );
   const etykieta =
     w.krok === 0
-      ? `Pierwsza wiadomość, wariant ${w.numer}`
-      : `Przypomnienie ${w.krok}`;
+      ? t("wiadomosci.etykietaPierwsza", { n: w.numer })
+      : t("wiadomosci.etykietaPrzypomnienie", { n: w.krok });
 
   async function zapisz(status?: Wariant["status"]) {
     setZapisuje(true);
@@ -214,10 +208,10 @@ export function KartaWariantu({
         </span>
         {uwagi.length > 0 && (
           <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-            {uwagi.length} do sprawdzenia
+            {t("wiadomosci.doSprawdzenia", { n: uwagi.length })}
           </span>
         )}
-        <span className="shrink-0 text-xs text-slate-500">Pokaż</span>
+        <span className="shrink-0 text-xs text-slate-500">{t("wiadomosci.pokaz")}</span>
       </button>
     );
 
@@ -232,7 +226,7 @@ export function KartaWariantu({
             onClick={() => setOtwarta(false)}
             className="text-xs font-medium text-emerald-700 hover:text-emerald-900"
           >
-            Zatwierdzona · zwiń
+            {t("wiadomosci.zatwierdzonaZwin")}
           </button>
         )}
       </div>
@@ -248,7 +242,7 @@ export function KartaWariantu({
       />
       {uwagi.length > 0 && (
         <div className="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-100">
-          <p className="font-medium">Do sprawdzenia przed zatwierdzeniem</p>
+          <p className="font-medium">{t("wiadomosci.doSprawdzeniaTytul")}</p>
           <ul className="mt-1.5 list-disc space-y-1 pl-5">
             {uwagi.map((u) => (
               <li key={u.opis}>{u.opis}</li>
@@ -266,7 +260,7 @@ export function KartaWariantu({
             disabled={zapisuje}
             className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-emerald-800 disabled:bg-slate-300"
           >
-            {zmieniony ? "Zapisz i zatwierdź" : "Zatwierdź"}
+            {zmieniony ? t("wiadomosci.zapiszIZatwierdz") : t("wiadomosci.zatwierdz")}
           </button>
         ) : (
           zmieniony && (
@@ -275,7 +269,7 @@ export function KartaWariantu({
               disabled={zapisuje}
               className="rounded-lg bg-brand-600 hover:bg-brand-700 px-4 py-2 text-sm font-medium text-white disabled:bg-slate-300"
             >
-              Zapisz zmiany
+              {t("wiadomosci.zapiszZmiany")}
             </button>
           )
         )}
@@ -285,7 +279,7 @@ export function KartaWariantu({
             disabled={zapisuje}
             className="text-sm text-slate-500 hover:text-slate-900"
           >
-            Cofnij zatwierdzenie
+            {t("wiadomosci.cofnij")}
           </button>
         )}
         <button
@@ -293,7 +287,7 @@ export function KartaWariantu({
           disabled={zapisuje}
           className="text-sm text-slate-500 transition-colors duration-150 hover:text-red-700"
         >
-          Odrzuć
+          {t("wiadomosci.odrzuc")}
         </button>
       </div>
     </div>

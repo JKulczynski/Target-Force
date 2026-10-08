@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { POLE } from "@/components/ui";
 import type { FiltrOdbiorcow } from "@/lib/types";
+import { useT } from "@/lib/i18n/klient";
+import type { Klucz } from "@/lib/i18n";
 
 const WOJEWODZTWA = [
   "dolnośląskie",
@@ -22,6 +24,7 @@ const WOJEWODZTWA = [
   "wielkopolskie",
   "zachodniopomorskie",
 ];
+/** Wartości filtra zgodne z bazą (lib/dane/jst.json); etykieta: t(`jst.${typ}`). */
 const TYPY_JST = [
   "Gmina wiejska",
   "Gmina miejsko-wiejska",
@@ -30,7 +33,7 @@ const TYPY_JST = [
   "Powiat",
   "Województwo",
   "dzielnica",
-];
+] as const;
 type Stan = {
   odbiorcy: number;
   wyslane: number;
@@ -77,6 +80,7 @@ export function Wysylka({
   zSamorzadow?: boolean;
   onZmiana?: () => void;
 }) {
+  const { t } = useT();
   const [stan, setStan] = useState<Stan | null>(null);
   const [testDo, setTestDo] = useState("");
   const [ile, setIle] = useState(10);
@@ -154,28 +158,25 @@ export function Wysylka({
         }),
       });
       const dane = await odp.json().catch(() => ({}));
-      if (!odp.ok) return setBlad(dane.blad ?? "Coś poszło nie tak.");
+      if (!odp.ok) return setBlad(dane.blad ?? t("wysylka.cosNieTak"));
       if (tryb === "odbiorcy")
-        setInfo(
-          `Lista odbiorców gotowa: ${dane.odbiorcy} osób z e-mailem (nowych: ${dane.dodane}).`,
-        );
+        setInfo(t("wysylka.listaGotowa", { n: dane.odbiorcy, dodane: dane.dodane }));
       if (tryb === "test") {
         try {
           localStorage.setItem(`tf-test-${kampaniaId}`, "1");
         } catch {}
       }
       if (tryb === "test")
-        setInfo(
-          `Wysłano ${dane.wyslane} ${dane.wyslane === 1 ? "wiadomość testową" : "wiadomości testowe"} na ${dane.do}. Sprawdź, czy są w odebranych, a nie w spamie.`,
-        );
+        setInfo(t.n("wysylka.testWyslany", dane.wyslane, { do: dane.do }));
       if (tryb === "partia" || tryb === "przypomnienia")
         setInfo(
-          `Wysłano ${dane.wyslanoTeraz}.${dane.bledyTeraz?.length ? ` Błędy: ${dane.bledyTeraz.join(" ")}` : ""}`,
+          t("wysylka.wyslano", { n: dane.wyslanoTeraz }) +
+            (dane.bledyTeraz?.length ? t("wysylka.bledy", { bledy: dane.bledyTeraz.join(" ") }) : ""),
         );
       await wczytaj();
       onZmiana?.();
     } catch {
-      setBlad("Brak połączenia z serwerem.");
+      setBlad(t("wysylka.brakPolaczenia"));
     } finally {
       setPracuje(null);
     }
@@ -193,17 +194,13 @@ export function Wysylka({
         body: JSON.stringify({ tryb: "auto", wlacz, start: startAuto || null }),
       });
       const dane = await odp.json().catch(() => ({}));
-      if (!odp.ok) return setBlad(dane.blad ?? "Coś poszło nie tak.");
+      if (!odp.ok) return setBlad(dane.blad ?? t("wysylka.cosNieTak"));
       setStan((st) =>
         st ? { ...st, auto: dane.auto, start: dane.start } : st,
       );
-      setInfo(
-        wlacz
-          ? "Automat włączony. Pierwsza partia w najbliższy dzień roboczy rano (od dnia startu)."
-          : "Automat wyłączony. Wysyłasz ręcznie.",
-      );
+      setInfo(wlacz ? t("wysylka.autoWlaczony") : t("wysylka.autoWylaczony"));
     } catch {
-      setBlad("Brak połączenia z serwerem.");
+      setBlad(t("wysylka.brakPolaczenia"));
     } finally {
       setZapisujeAuto(false);
     }
@@ -214,69 +211,58 @@ export function Wysylka({
   return (
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
       <h2 className="text-base font-semibold tracking-tight text-slate-900">
-        Wysyłka
+        {t("wysylka.tytul")}
       </h2>
 
       {!maSkrzynke && (
-        <p className="mt-4 text-sm text-amber-700">
-          Najpierw wybierz skrzynkę nadawcy (sekcja niżej).
-        </p>
+        <p className="mt-4 text-sm text-amber-700">{t("wysylka.najpierwSkrzynka")}</p>
       )}
 
       {stan && (
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
-          <Liczba etykieta="Odbiorcy z e-mailem" wartosc={stan.odbiorcy} />
-          <Liczba etykieta="Wysłane" wartosc={stan.wyslane} />
-          <Liczba etykieta="Do wysłania" wartosc={stan.doWyslania} />
+          <Liczba etykieta={t("wysylka.l.odbiorcy")} wartosc={stan.odbiorcy} />
+          <Liczba etykieta={t("wysylka.l.wyslane")} wartosc={stan.wyslane} />
+          <Liczba etykieta={t("wysylka.l.doWyslania")} wartosc={stan.doWyslania} />
           <Liczba
             etykieta={
-              stan.rozgrzewka ? "Dziś (rozgrzewanie)" : "Dziś ze skrzynki"
+              stan.rozgrzewka ? t("wysylka.l.dzisRozgrzewanie") : t("wysylka.l.dzisZeSkrzynki")
             }
             wartosc={`${stan.dzis} / ${stan.limit}`}
           />
           {stan.wyslane > 0 && (
             <Liczba
-              etykieta="Kliknęło w link"
+              etykieta={t("wysylka.l.klikneloWLink")}
               wartosc={`${stan.kliknieci ?? 0} (${Math.round(((stan.kliknieci ?? 0) / stan.wyslane) * 100)}%)`}
             />
           )}
         </div>
       )}
       {stan && stan.bledy > 0 && (
-        <p className="mt-2 text-xs text-red-600">
-          Nieudane wysyłki: {stan.bledy}.
-        </p>
+        <p className="mt-2 text-xs text-red-600">{t("wysylka.nieudane", { n: stan.bledy })}</p>
       )}
 
       <KomunikatKroku.Provider value={{ gdzie, info, blad }}>
         <div className="mt-6 space-y-6">
-          <Krok
-            nr={1}
-            tytul="Lista odbiorców"
-            opis="Pobiera osoby z e-mailem ze źródeł kampanii (Sejm, Parlament Europejski, samorządy, ministerstwa, Tweede Kamer). Własna lista jest już w bazie. Zmiana zawężenia i ponowne kliknięcie odświeża listę (osób, które już dostały maila, nie usuwamy)."
-          >
+          <Krok nr={1} tytul={t("wysylka.k1.tytul")} opis={t("wysylka.k1.opis")}>
             {zSejmu && (
               <div className="mb-4 space-y-3">
                 {kogoSzukamy && (
                   <p className="text-xs text-slate-500">
-                    Zawężenie z kreatora: „{kogoSzukamy}”. Wybierz niżej komisje
-                    albo kluby, które mu odpowiadają.
+                    {t("wysylka.zawezenie", { kogo: kogoSzukamy })}
                   </p>
                 )}
                 <div>
                   <p className="mb-1.5 text-xs font-medium text-slate-600">
-                    Komisje Sejmu{" "}
+                    {t("wysylka.komisje")}{" "}
                     {wybraneKomisje.length === 0 && (
                       <span className="font-normal text-slate-400">
-                        (nic nie wybrane = wszyscy posłowie)
+                        {t("wysylka.komisje.wszyscy")}
                       </span>
                     )}
                   </p>
                   <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 p-2">
                     {komisje.length === 0 && (
-                      <p className="p-1 text-xs text-slate-400">
-                        Wczytuję komisje...
-                      </p>
+                      <p className="p-1 text-xs text-slate-400">{t("wysylka.wczytujeKomisje")}</p>
                     )}
                     {komisje.map((k) => (
                       <label
@@ -301,10 +287,10 @@ export function Wysylka({
                 {kluby.length > 0 && (
                   <div>
                     <p className="mb-1.5 text-xs font-medium text-slate-600">
-                      Kluby{" "}
+                      {t("wysylka.kluby")}{" "}
                       {wybraneKluby.length === 0 && (
                         <span className="font-normal text-slate-400">
-                          (nic nie wybrane = wszystkie)
+                          {t("wysylka.kluby.wszystkie")}
                         </span>
                       )}
                     </p>
@@ -330,18 +316,18 @@ export function Wysylka({
               <div className="mb-4 space-y-3">
                 {[
                   {
-                    tytul: "Województwa",
-                    lista: WOJEWODZTWA,
+                    tytul: t("wysylka.wojewodztwa"),
+                    lista: WOJEWODZTWA as readonly string[],
+                    etykieta: (x: string) => x,
                     wybrane: wybraneWoj,
                     ustaw: setWybraneWoj,
-                    pusto: "wszystkie",
                   },
                   {
-                    tytul: "Rodzaj samorządu",
-                    lista: TYPY_JST,
+                    tytul: t("wysylka.rodzajSamorzadu"),
+                    lista: TYPY_JST as readonly string[],
+                    etykieta: (x: string) => t(`jst.${x}` as Klucz),
                     wybrane: wybraneTypy,
                     ustaw: setWybraneTypy,
-                    pusto: "wszystkie",
                   },
                 ].map((g) => (
                   <div key={g.tytul}>
@@ -349,7 +335,7 @@ export function Wysylka({
                       {g.tytul}{" "}
                       {g.wybrane.length === 0 && (
                         <span className="font-normal text-slate-400">
-                          (nic nie wybrane = {g.pusto})
+                          {t("wysylka.nicNieWybrane", { pusto: t("wysylka.wszystkie") })}
                         </span>
                       )}
                     </p>
@@ -361,7 +347,7 @@ export function Wysylka({
                           onClick={() => przelacz(g.wybrane, g.ustaw, x)}
                           className={`rounded-full px-3 py-1 text-xs ring-1 transition ${g.wybrane.includes(x) ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-300 hover:ring-slate-900"}`}
                         >
-                          {x}
+                          {g.etykieta(x)}
                         </button>
                       ))}
                     </div>
@@ -374,21 +360,15 @@ export function Wysylka({
               disabled={!!pracuje}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
             >
-              {pracuje === "odbiorcy"
-                ? "Pobieram..."
-                : "Przygotuj listę odbiorców"}
+              {pracuje === "odbiorcy" ? t("wysylka.pobieram") : t("wysylka.przygotujListe")}
             </button>
           </Krok>
 
-          <Krok
-            nr={2}
-            tytul="Test na własny adres"
-            opis="Wysyła każdy zatwierdzony tekst (wiadomości i przypomnienia) z dopiskiem [TEST], z przykładowymi danymi posła w polach {nazwisko} i {okreg}. Puste pole = na adres skrzynki nadawcy."
-          >
+          <Krok nr={2} tytul={t("wysylka.k2.tytul")} opis={t("wysylka.k2.opis")}>
             <div className="flex flex-wrap gap-3">
               <input
                 className={`${pole} max-w-xs`}
-                placeholder="twoj@adres.pl"
+                placeholder={t("wysylka.test.ph")}
                 value={testDo}
                 onChange={(e) => setTestDo(e.target.value)}
               />
@@ -397,16 +377,12 @@ export function Wysylka({
                 disabled={!!pracuje || !maSkrzynke}
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
               >
-                {pracuje === "test" ? "Wysyłam..." : "Wyślij test"}
+                {pracuje === "test" ? t("wysylka.wysylam") : t("wspolne.wyslijTest")}
               </button>
             </div>
           </Krok>
 
-          <Krok
-            nr={3}
-            tytul="Wyślij partię"
-            opis="Do kolejnych odbiorców, w granicach dziennego limitu skrzynki. Między mailami kilka sekund przerwy, więc 10 maili to ok. pół minuty."
-          >
+          <Krok nr={3} tytul={t("wysylka.k3.tytul")} opis={t("wysylka.k3.opis")}>
             <div className="flex flex-wrap items-center gap-3">
               <input
                 type="number"
@@ -419,67 +395,46 @@ export function Wysylka({
               <button
                 onClick={() => {
                   const n = Math.min(ile, Math.max(maxPartia, 1));
-                  if (
-                    window.confirm(
-                      `Wyślesz ${n} ${n === 1 ? "prawdziwy mail" : "prawdziwych maili"} do odbiorców kampanii (nie test). Na pewno?`,
-                    )
-                  )
-                    wyslij("partia");
+                  if (window.confirm(t.n("wysylka.potwierdzPartie", n))) wyslij("partia");
                 }}
                 disabled={!!pracuje || !maSkrzynke || maxPartia < 1}
                 className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
               >
                 {pracuje === "partia"
-                  ? "Wysyłam..."
-                  : `Wyślij ${Math.min(ile, Math.max(maxPartia, 1))} maili`}
+                  ? t("wysylka.wysylam")
+                  : t("wysylka.wyslijN", { n: Math.min(ile, Math.max(maxPartia, 1)) })}
               </button>
             </div>
             {stan && stan.zostaloDzis === 0 && stan.limit > 0 && (
-              <p className="mt-2 text-xs text-slate-500">
-                Dzienny limit skrzynki wyczerpany. Kolejna partia jutro.
-              </p>
+              <p className="mt-2 text-xs text-slate-500">{t("wysylka.limitWyczerpany")}</p>
             )}
           </Krok>
 
-          <Krok
-            nr={4}
-            tytul="Przypomnienia"
-            opis="Do osób, które nie odpisały po ustawionej w kampanii liczbie dni. Idzie w tym samym wątku (Re: temat). Zaznacz w liście odbiorców, kto odpisał."
-          >
+          <Krok nr={4} tytul={t("wysylka.k4.tytul")} opis={t("wysylka.k4.opis")}>
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => {
                   const n = stan?.doPrzypomnienia ?? 0;
-                  if (
-                    window.confirm(
-                      `Wyślesz przypomnienie do ${n} prawdziwych odbiorców. Na pewno?`,
-                    )
-                  )
+                  if (window.confirm(t("wysylka.potwierdzPrzypomnienia", { n })))
                     wyslij("przypomnienia");
                 }}
                 disabled={!!pracuje || !maSkrzynke || !stan?.doPrzypomnienia}
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
               >
                 {pracuje === "przypomnienia"
-                  ? "Wysyłam..."
-                  : `Wyślij przypomnienia (${stan?.doPrzypomnienia ?? 0})`}
+                  ? t("wysylka.wysylam")
+                  : t("wysylka.wyslijPrzypomnienia", { n: stan?.doPrzypomnienia ?? 0 })}
               </button>
               {stan && !stan.doPrzypomnienia && (
-                <span className="text-xs text-slate-400">
-                  Na razie nikt nie czeka na przypomnienie.
-                </span>
+                <span className="text-xs text-slate-400">{t("wysylka.niktNieCzeka")}</span>
               )}
             </div>
           </Krok>
 
-          <Krok
-            nr={5}
-            tytul="Wysyłka automatyczna"
-            opis="Zamiast klikać: w dni robocze rano (ok. 8:30-9:30) system sam wysyła kolejną partię w dziennym limicie skrzynki i przypomnienia tym, którzy nie odpisali. Włącz dopiero po udanym teście."
-          >
+          <Krok nr={5} tytul={t("wysylka.k5.tytul")} opis={t("wysylka.k5.opis")}>
             <div className="flex flex-wrap items-center gap-3">
               <label className="text-xs text-slate-600">
-                Start od
+                {t("wysylka.startOd")}
                 <input
                   type="date"
                   className={`${pole} ml-2 inline-block w-auto py-1.5`}
@@ -493,29 +448,25 @@ export function Wysylka({
                   disabled={zapisujeAuto}
                   className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 disabled:opacity-50"
                 >
-                  {zapisujeAuto ? "Zapisuję..." : "Wyłącz automat"}
+                  {zapisujeAuto ? t("wysylka.zapisuje") : t("wysylka.wylaczAutomat")}
                 </button>
               ) : (
                 <button
                   onClick={() => {
-                    if (
-                      window.confirm(
-                        `Automat będzie codziennie rano sam wysyłał prawdziwe maile (do ${stan?.doWyslania ?? 0} osób w kolejce, w limicie skrzynki) i przypomnienia. Włączyć?`,
-                      )
-                    )
+                    if (window.confirm(t("wysylka.potwierdzAutomat", { n: stan?.doWyslania ?? 0 })))
                       ustawAuto(true);
                   }}
                   disabled={zapisujeAuto || !maSkrzynke}
                   className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
                 >
-                  {zapisujeAuto ? "Zapisuję..." : "Włącz automat"}
+                  {zapisujeAuto ? t("wysylka.zapisuje") : t("wysylka.wlaczAutomat")}
                 </button>
               )}
               {stan?.auto && (
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
-                  Działa
+                  {t("wysylka.dziala")}
                   {stan.start
-                    ? ` od ${new Date(stan.start).toLocaleDateString("pl-PL")}`
+                    ? t("wysylka.dzialaOd", { data: new Date(stan.start).toLocaleDateString(t.locale) })
                     : ""}
                 </span>
               )}
