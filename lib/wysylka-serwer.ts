@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { odszyfruj } from "@/lib/szyfr";
-import { opiszBladSmtp, transport } from "@/lib/smtp";
+import { opiszBladSmtp, rodzajBleduSmtp, transport } from "@/lib/smtp";
 import { personalizuj, polaKontaktu } from "@/lib/personalizacja";
+import { tlumacz, type Jezyk } from "@/lib/i18n";
 
 /**
  * Silnik wysyłki wspólny dla przycisku w aplikacji i automatu (cron w dni robocze rano).
@@ -181,9 +182,6 @@ type Wynik =
  * Wysyła pierwszą wiadomość do kolejnych odbiorców ("partia") albo kolejne przypomnienie ("przypomnienia"),
  * w granicach dziennego limitu skrzynki. `koniec` (ms) przerywa przed limitem czasu funkcji (automat).
  */
-export const BLAD_BRAK_ZGODY =
-  "Wysyłka zablokowana: kampania potrzebuje oświadczenia zleceniodawcy zaakceptowanego przez zespół (sekcja Kto zleca).";
-
 export async function wyslijKolejke(
   supabase: SupabaseClient,
   o: {
@@ -196,9 +194,12 @@ export async function wyslijKolejke(
     warianty: Wariant[];
     baza: string;
     koniec?: number;
+    /** Język komunikatów błędów (cookie użytkownika); automat zostawia domyślny polski. */
+    jezyk?: Jezyk;
   },
 ): Promise<Wynik> {
   const { kampaniaId: id, skrzynka: s, warianty } = o;
+  const t = tlumacz(o.jezyk ?? "pl");
   // Blokada (punkt 1 Piotra): bez zaakceptowanego oświadczenia zleceniodawcy nic nie wychodzi, ani ręcznie, ani z automatu.
   const { data: zgoda } = await supabase
     .from("kampanie")
@@ -208,14 +209,14 @@ export async function wyslijKolejke(
   if (zgoda?.zgoda_zespolu !== "zaakceptowana")
     return {
       ok: false,
-      blad: BLAD_BRAK_ZGODY,
+      blad: t("api.brakZgody"),
       status: 403,
     };
   const zatwierdzone = warianty.filter((w) => w.krok === 0);
   if (o.tryb === "partia" && zatwierdzone.length === 0)
     return {
       ok: false,
-      blad: "Brak zatwierdzonych wiadomości. Zatwierdź co najmniej jeden wariant pierwszej wiadomości.",
+      blad: t("api.brakZatwierdzonych"),
       status: 400,
     };
 
@@ -230,8 +231,8 @@ export async function wyslijKolejke(
     return {
       ok: false,
       blad: rozgrzewka
-        ? `Dzisiejszy limit rozgrzewania skrzynki wyczerpany (${limit}). Limit rośnie codziennie o ${ROZGRZEWKA_KROK}, aż do ${s.dzienny_limit}.`
-        : `Dzienny limit skrzynki wyczerpany (${limit}). Kolejna partia jutro.`,
+        ? t("api.limitRozgrzewki", { limit, krok: ROZGRZEWKA_KROK, max: s.dzienny_limit })
+        : t("api.limitDzienny", { limit }),
       status: 429,
     };
 
@@ -284,7 +285,7 @@ export async function wyslijKolejke(
     if (kolejka.length === 0)
       return {
         ok: false,
-        blad: "Wszyscy odbiorcy dostali już pierwszą wiadomość.",
+        blad: t("api.wszyscyDostali"),
         status: 400,
       };
   } else {
@@ -308,7 +309,7 @@ export async function wyslijKolejke(
     if (kolejka.length === 0)
       return {
         ok: false,
-        blad: "Nikt nie czeka na przypomnienie (za wcześnie, ktoś odpisał albo brak zatwierdzonego przypomnienia).",
+        blad: t("api.niktNieCzeka"),
         status: 400,
       };
   }
@@ -369,14 +370,15 @@ export async function wyslijKolejke(
         .eq("id", wiersz.id);
       wyslane++;
     } catch (e) {
-      const opis = opiszBladSmtp(e);
+      // W bazie opis po polsku (dane), na ekranie w języku użytkownika.
       await supabase
         .from("wiadomosci")
-        .update({ status: "blad", blad: opis })
+        .update({ status: "blad", blad: opiszBladSmtp(e) })
         .eq("id", wiersz.id);
-      bledy.push(opis);
+      bledy.push(opiszBladSmtp(e, o.jezyk));
       // Odrzucony login albo brak serwera: nie ma sensu próbować dalej.
-      if (/login|hasło|serwera/i.test(opis)) break;
+      const rodzaj = rodzajBleduSmtp(e);
+      if (rodzaj === "login" || rodzaj === "host") break;
     }
     if (i < kolejka.length - 1) await czekaj(PRZERWA_MS);
   }

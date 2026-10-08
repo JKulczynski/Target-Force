@@ -1,4 +1,5 @@
 import { resolveTxt } from "node:dns/promises";
+import { tlumacz, type Jezyk } from "@/lib/i18n";
 
 /**
  * Sprawdzenie, czy domena nadawcy jest gotowa do wysyłki: SPF, DKIM, DMARC.
@@ -35,23 +36,25 @@ export function oczyscDomene(wejscie: string): string | null {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d) ? d : null;
 }
 
-export async function sprawdzDomene(domena: string): Promise<WynikDomeny> {
+/** Uwagi (`uwaga`) są w języku użytkownika; domyślnie po polsku. */
+export async function sprawdzDomene(domena: string, jezyk: Jezyk = "pl"): Promise<WynikDomeny> {
+  const t = tlumacz(jezyk);
   const [txtDomeny, txtDmarc] = await Promise.all([txt(domena), txt(`_dmarc.${domena}`)]);
 
   const spfRekord = txtDomeny.find((r) => r.toLowerCase().startsWith("v=spf1")) ?? null;
   const spf: WynikDomeny["spf"] = !spfRekord
-    ? { stan: "brak", rekord: null, uwaga: "Brak rekordu SPF. Serwery odbiorców nie wiedzą, kto może wysyłać z tej domeny." }
+    ? { stan: "brak", rekord: null, uwaga: t("dns.spf.brak") }
     : /[~-]all\b|\bredirect=/.test(spfRekord)
-      ? { stan: "ok", rekord: spfRekord, uwaga: "SPF ustawiony." }
-      : { stan: "slabe", rekord: spfRekord, uwaga: "SPF jest, ale kończy się zbyt pobłażliwie (brak ~all lub -all)." };
+      ? { stan: "ok", rekord: spfRekord, uwaga: t("dns.spf.ok") }
+      : { stan: "slabe", rekord: spfRekord, uwaga: t("dns.spf.slabe") };
 
   const dmarcRekord = txtDmarc.find((r) => r.toLowerCase().startsWith("v=dmarc1")) ?? null;
   const polityka = dmarcRekord?.match(/\bp=(\w+)/i)?.[1]?.toLowerCase();
   const dmarc: WynikDomeny["dmarc"] = !dmarcRekord
-    ? { stan: "brak", rekord: null, uwaga: "Brak DMARC. Gmail wymaga go od nadawców wysyłających więcej maili." }
+    ? { stan: "brak", rekord: null, uwaga: t("dns.dmarc.brak") }
     : polityka === "none"
-      ? { stan: "slabe", rekord: dmarcRekord, uwaga: "DMARC jest w trybie obserwacji (p=none). Wystarczy na start, docelowo quarantine albo reject." }
-      : { stan: "ok", rekord: dmarcRekord, uwaga: `DMARC ustawiony (p=${polityka}).` };
+      ? { stan: "slabe", rekord: dmarcRekord, uwaga: t("dns.dmarc.none") }
+      : { stan: "ok", rekord: dmarcRekord, uwaga: t("dns.dmarc.ok", { p: polityka ?? "" }) };
 
   let selektor: string | null = null;
   for (const s of SELEKTORY) {
@@ -63,12 +66,8 @@ export async function sprawdzDomene(domena: string): Promise<WynikDomeny> {
     }
   }
   const dkim: WynikDomeny["dkim"] = selektor
-    ? { stan: "ok", selektor, uwaga: `Klucz DKIM znaleziony (selektor „${selektor}”).` }
-    : {
-        stan: "slabe",
-        selektor: null,
-        uwaga: "Nie znaleziono klucza pod typowymi nazwami. Nie musi to znaczyć, że go nie ma. Potwierdzi to testowy mail.",
-      };
+    ? { stan: "ok", selektor, uwaga: t("dns.dkim.ok", { s: selektor }) }
+    : { stan: "slabe", selektor: null, uwaga: t("dns.dkim.brak") };
 
   return { domena, spf, dkim, dmarc };
 }

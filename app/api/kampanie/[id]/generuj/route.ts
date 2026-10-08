@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ZRODLA, type ZrodloId } from "@/lib/types";
 import { WARSZTAT } from "@/lib/prompty/pisanie";
 import { psychografiaDla } from "@/lib/prompty/odbiorcy";
+import { tSerwer } from "@/lib/i18n/serwer";
 
 export const runtime = "nodejs";
 // Generowanie kilku wariantów z myśleniem trwa zwykle 1-2 minuty.
@@ -49,6 +50,7 @@ export async function POST(
   const body = await req.json().catch(() => ({}));
   const rola: "nadawca" | "sympatyk" =
     body?.rola === "sympatyk" ? "sympatyk" : "nadawca";
+  const t = await tSerwer();
   const supabase = await createClient();
 
   const { data: k } = await supabase
@@ -59,10 +61,7 @@ export async function POST(
     .eq("id", id)
     .maybeSingle();
   if (!k)
-    return NextResponse.json(
-      { blad: "Nie znaleziono kampanii albo brak dostępu." },
-      { status: 404 },
-    );
+    return NextResponse.json({ blad: t("api.nieZnalezionoKampanii") }, { status: 404 });
 
   const zrodla = (k.zrodla as ZrodloId[]) ?? [];
   const jezyk = zrodla.map((z) => JEZYK[z]).find(Boolean) ?? "polski";
@@ -126,40 +125,21 @@ export async function POST(
       messages: [{ role: "user", content: brief }],
     });
     if (odp.stop_reason === "refusal") {
-      return NextResponse.json(
-        {
-          blad: "Model odmówił napisania tych wiadomości. Zmień cel albo materiały.",
-        },
-        { status: 422 },
-      );
+      return NextResponse.json({ blad: t("api.modelOdmowil") }, { status: 422 });
     }
     if (!odp.parsed_output) {
-      return NextResponse.json(
-        {
-          blad: "Nie udało się odczytać wygenerowanych wiadomości. Spróbuj ponownie.",
-        },
-        { status: 502 },
-      );
+      return NextResponse.json({ blad: t("api.nieudanoOdczytac") }, { status: 502 });
     }
     wynik = odp.parsed_output;
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) {
-      return NextResponse.json(
-        { blad: "Brak albo zły klucz ANTHROPIC_API_KEY na serwerze." },
-        { status: 500 },
-      );
+      return NextResponse.json({ blad: t("api.brakKluczaAI") }, { status: 500 });
     }
     if (e instanceof Anthropic.RateLimitError) {
-      return NextResponse.json(
-        { blad: "Za dużo zapytań do AI. Spróbuj za chwilę." },
-        { status: 429 },
-      );
+      return NextResponse.json({ blad: t("api.zaDuzoZapytan") }, { status: 429 });
     }
     if (e instanceof Anthropic.APIError) {
-      return NextResponse.json(
-        { blad: `Błąd AI (${e.status}). Spróbuj ponownie.` },
-        { status: 502 },
-      );
+      return NextResponse.json({ blad: t("api.bladAI", { status: String(e.status) }) }, { status: 502 });
     }
     throw e;
   }
@@ -196,10 +176,7 @@ export async function POST(
   ];
   const { error } = await supabase.from("warianty").insert(wiersze);
   if (error)
-    return NextResponse.json(
-      { blad: "Nie udało się zapisać wiadomości." },
-      { status: 500 },
-    );
+    return NextResponse.json({ blad: t("api.nieudanoZapisacWiadomosci") }, { status: 500 });
 
   if (rola === "nadawca")
     await supabase

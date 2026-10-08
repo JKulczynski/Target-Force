@@ -1,6 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
-import type { FiltrOdbiorcow } from "@/lib/types";
+import type { FiltrOdbiorcow, ZrodloId } from "@/lib/types";
 import { POBIERACZE } from "@/lib/zrodla-serwer";
+import { tlumacz, type Jezyk } from "@/lib/i18n";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -32,7 +33,9 @@ export async function przygotujOdbiorcow(
   id: string,
   zrodlaKampanii: string[],
   surowy: unknown,
+  jezyk: Jezyk = "pl",
 ): Promise<{ dodane: number; filtr: FiltrOdbiorcow } | { blad: string; status: number }> {
+  const t = tlumacz(jezyk);
   // Zawężenie (Sejm: komisje i kluby). Zapisujemy je w kampanii, żeby było widać, do kogo idzie wysyłka.
   const f = (surowy ?? {}) as Record<string, unknown>;
   const lista = (x: unknown) => (Array.isArray(x) ? x.map(String) : []);
@@ -57,7 +60,7 @@ export async function przygotujOdbiorcow(
       if (z === "sejm")
         wKomisjach = await poslowieKomisji(filtr.komisje ?? []);
     } catch {
-      return { blad: `Źródło ${z} chwilowo nie odpowiada. Spróbuj za chwilę.`, status: 502 };
+      return { blad: t("api.zrodloNieOdpowiada", { z: t(`zrodlo.${z as ZrodloId}.nazwa`) }), status: 502 };
     }
     if (z === "samorzady") {
       kontakty = kontakty.filter(
@@ -121,7 +124,7 @@ export async function przygotujOdbiorcow(
       .from("kontakty")
       .upsert(wiersze, { onConflict: "kampania_id,email" });
     if (error)
-      return { blad: "Nie udało się zapisać odbiorców.", status: 500 };
+      return { blad: t("api.nieudanoZapisacOdbiorcow"), status: 500 };
     const { count: po } = await supabase
       .from("kontakty")
       .select("id", { count: "exact", head: true })

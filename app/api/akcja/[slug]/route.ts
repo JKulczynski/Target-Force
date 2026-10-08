@@ -8,6 +8,7 @@ import {
   type Gmina,
 } from "@/lib/akcja";
 import { personalizuj } from "@/lib/personalizacja";
+import { tSerwer } from "@/lib/i18n/serwer";
 
 export const runtime = "nodejs";
 
@@ -64,6 +65,7 @@ export async function POST(
   ctx: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await ctx.params;
+  const t = await tSerwer();
   const body = await req.json().catch(() => ({}));
 
   // Pułapka na boty: pole, którego człowiek nie widzi. Udajemy sukces, nic nie zapisujemy.
@@ -89,32 +91,20 @@ export async function POST(
       .map((k) => [k, (zrodloSurowe[k] as string).trim().slice(0, 80)]),
   );
   if (imie.length < 2 || imie.length > 60)
-    return NextResponse.json({ blad: "Podaj imię." }, { status: 400 });
+    return NextResponse.json({ blad: t("api.akcja.podajImie") }, { status: 400 });
   if (nazwisko.length > 80)
-    return NextResponse.json(
-      { blad: "Nazwisko jest za długie." },
-      { status: 400 },
-    );
+    return NextResponse.json({ blad: t("api.akcja.nazwiskoDlugie") }, { status: 400 });
   if (email && !POPRAWNY_EMAIL.test(email))
-    return NextResponse.json(
-      { blad: "Podaj poprawny adres e-mail albo zostaw puste." },
-      { status: 400 },
-    );
+    return NextResponse.json({ blad: t("api.akcja.zlyEmail") }, { status: 400 });
   if (!body.zgoda)
-    return NextResponse.json(
-      { blad: "Potrzebna jest zgoda na przetwarzanie danych." },
-      { status: 400 },
-    );
+    return NextResponse.json({ blad: t("api.akcja.zgoda") }, { status: 400 });
   const gmina = gminaPoTeryt(gminaTeryt);
   if (!gmina)
-    return NextResponse.json({ blad: "Wybierz gminę z listy." }, { status: 400 });
+    return NextResponse.json({ blad: t("api.akcja.wybierzGmine") }, { status: 400 });
 
   const admin = createAdminClient();
   if (!admin)
-    return NextResponse.json(
-      { blad: "Strona akcji chwilowo nie działa." },
-      { status: 500 },
-    );
+    return NextResponse.json({ blad: t("api.akcja.nieDziala") }, { status: 500 });
 
   const { data: k } = await admin
     .from("kampanie")
@@ -122,7 +112,7 @@ export async function POST(
     .eq("akcja_slug", slug)
     .maybeSingle();
   if (!k || !k.akcja_wlaczona)
-    return NextResponse.json({ blad: "Nie ma takiej akcji." }, { status: 404 });
+    return NextResponse.json({ blad: t("api.akcja.nieMa") }, { status: 404 });
 
   // Prosty limit: jeden adres IP nie podpisuje się więcej niż 10 razy na godzinę.
   const ip =
@@ -138,10 +128,7 @@ export async function POST(
     .eq("ip_hash", ipHash)
     .gte("utworzony", new Date(Date.now() - 60 * 60 * 1000).toISOString());
   if ((ostatnie ?? 0) >= 10)
-    return NextResponse.json(
-      { blad: "Za dużo podpisów z tego adresu. Spróbuj za godzinę." },
-      { status: 429 },
-    );
+    return NextResponse.json({ blad: t("api.akcja.zaDuzo") }, { status: 429 });
 
   const [{ data: kontakty }, { data: warianty }] = await Promise.all([
     admin
@@ -160,10 +147,7 @@ export async function POST(
       .eq("status", "zatwierdzony"),
   ]);
   if (!kontakty?.length || !warianty?.length)
-    return NextResponse.json(
-      { blad: "Akcja jest jeszcze w przygotowaniu. Wróć za chwilę." },
-      { status: 409 },
-    );
+    return NextResponse.json({ blad: t("api.akcja.wPrzygotowaniu") }, { status: 409 });
 
   const kand = kandydaci(kontakty as Kontakt[], gmina);
   const { data: licz } = await admin
@@ -226,10 +210,7 @@ export async function POST(
     .select("id")
     .single();
   if (error || !zapis)
-    return NextResponse.json(
-      { blad: "Nie udało się zapisać podpisu." },
-      { status: 500 },
-    );
+    return NextResponse.json({ blad: t("api.akcja.nieZapisano") }, { status: 500 });
 
   const { count: razem } = await admin
     .from("podpisy")

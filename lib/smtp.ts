@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { t, type Jezyk } from "@/lib/i18n";
 
 /** Serwery SMTP najpopularniejszych skrzynek. Reszta: użytkownik podaje host i port sam. */
 const ZNANE: Record<string, { host: string; port: number }> = {
@@ -31,13 +32,19 @@ export function transport(d: DaneSmtp) {
   });
 }
 
-/** Tłumaczy błędy SMTP na zdanie, które zrozumie osoba nietechniczna. */
-export function opiszBladSmtp(e: unknown): string {
+export type RodzajBleduSmtp = "login" | "host" | "timeout" | "inny";
+
+/** Klasa błędu SMTP (niezależna od języka komunikatu): po "login" i "host" nie ma sensu próbować dalej. */
+export function rodzajBleduSmtp(e: unknown): RodzajBleduSmtp {
   const tekst = e instanceof Error ? e.message : String(e);
-  if (/535|534|Invalid login|Username and Password not accepted|BadCredentials/i.test(tekst))
-    return "Serwer odrzucił login albo hasło. Przy Gmailu użyj hasła aplikacji (16 znaków), nie zwykłego hasła do konta.";
-  if (/ENOTFOUND|EAI_AGAIN/i.test(tekst)) return "Nie znaleziono serwera poczty. Sprawdź adres serwera (host).";
-  if (/ETIMEDOUT|ECONNREFUSED|timeout/i.test(tekst))
-    return "Serwer poczty nie odpowiada. Sprawdź host i port (zwykle 465 albo 587).";
-  return `Serwer poczty zwrócił błąd: ${tekst.slice(0, 200)}`;
+  if (/535|534|Invalid login|Username and Password not accepted|BadCredentials/i.test(tekst)) return "login";
+  if (/ENOTFOUND|EAI_AGAIN/i.test(tekst)) return "host";
+  if (/ETIMEDOUT|ECONNREFUSED|timeout/i.test(tekst)) return "timeout";
+  return "inny";
+}
+
+/** Tłumaczy błędy SMTP na zdanie, które zrozumie osoba nietechniczna (w języku użytkownika, domyślnie pl). */
+export function opiszBladSmtp(e: unknown, jezyk: Jezyk = "pl"): string {
+  const tekst = e instanceof Error ? e.message : String(e);
+  return t(jezyk, `smtp.${rodzajBleduSmtp(e)}`, { tekst: tekst.slice(0, 200) });
 }

@@ -1,5 +1,6 @@
 import { ImapFlow } from "imapflow";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { t, type Jezyk } from "@/lib/i18n";
 
 /**
  * Automatyczne "odpisał": zaglądamy do skrzynki nadawcy przez IMAP i szukamy maili, które są odpowiedzią
@@ -127,12 +128,15 @@ export async function sprawdzOdpowiedzi(
   return { sprawdzono, nowe };
 }
 
-/** Tłumaczy błędy IMAP na zdanie dla człowieka. */
-export function opiszBladImap(e: unknown): string {
-  const t = e instanceof Error ? e.message : String(e);
-  if (/AUTHENTICATIONFAILED|Invalid credentials|LOGIN failed/i.test(t))
-    return "Serwer poczty odrzucił logowanie IMAP. Przy Gmailu włącz IMAP w ustawieniach poczty i użyj hasła aplikacji.";
-  if (/ENOTFOUND|EAI_AGAIN/i.test(t)) return "Nie znaleziono serwera IMAP. Sprawdź host IMAP skrzynki.";
-  if (/ETIMEDOUT|ECONNREFUSED|timeout/i.test(t)) return "Serwer IMAP nie odpowiada. Sprawdź host i port (zwykle 993).";
-  return `Serwer poczty zwrócił błąd: ${t.slice(0, 200)}`;
+/** Tłumaczy błędy IMAP na zdanie dla człowieka (w języku użytkownika, domyślnie pl). */
+export function opiszBladImap(e: unknown, jezyk: Jezyk = "pl"): string {
+  const tekst = e instanceof Error ? e.message : String(e);
+  const rodzaj = /AUTHENTICATIONFAILED|Invalid credentials|LOGIN failed/i.test(tekst)
+    ? "login"
+    : /ENOTFOUND|EAI_AGAIN/i.test(tekst)
+      ? "host"
+      : /ETIMEDOUT|ECONNREFUSED|timeout/i.test(tekst)
+        ? "timeout"
+        : "inny";
+  return t(jezyk, `imap.${rodzaj}`, { tekst: tekst.slice(0, 200) });
 }

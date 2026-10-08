@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { tSerwer } from "@/lib/i18n/serwer";
 
 export const runtime = "nodejs";
 
@@ -32,7 +33,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
       .limit(1)
       .maybeSingle(),
   ]);
-  if (!k) return NextResponse.json({ blad: "Nie znaleziono kampanii albo brak dostępu." }, { status: 404 });
+  const t = await tSerwer();
+  if (!k) return NextResponse.json({ blad: t("api.nieZnalezionoKampanii") }, { status: 404 });
   if (!kontakty?.length) return NextResponse.json({ od: null, interpelacje: [] });
 
   const od = (pierwsza?.wyslana ?? k.utworzona).slice(0, 10);
@@ -56,6 +58,6 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
       }));
     return NextResponse.json({ od, interpelacje: trafione, sprawdzono: lista.length });
   } catch {
-    return NextResponse.json({ blad: "API Sejmu chwilowo nie odpowiada." }, { status: 502 });
+    return NextResponse.json({ blad: t("api.sejmNieOdpowiada") }, { status: 502 });
   }
 }

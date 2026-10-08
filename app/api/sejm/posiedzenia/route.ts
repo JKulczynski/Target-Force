@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { tSerwer } from "@/lib/i18n/serwer";
 
 /**
  * Właściwy moment (wizja pkt 4): najbliższe posiedzenia Sejmu z otwartego API, żeby zaplanować wysyłkę
@@ -32,6 +33,7 @@ export async function GET() {
       headers: { "Cache-Control": "public, max-age=3600" },
     });
   } catch {
-    return NextResponse.json({ blad: "API Sejmu nie odpowiada." }, { status: 502 });
+    const t = await tSerwer();
+    return NextResponse.json({ blad: t("api.sejmNieOdpowiada") }, { status: 502 });
   }
 }

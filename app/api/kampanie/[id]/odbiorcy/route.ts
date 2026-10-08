@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { tSerwer } from "@/lib/i18n/serwer";
 
 export const runtime = "nodejs";
 
@@ -12,7 +13,10 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     supabase.from("kontakty").select("id, imie, nazwisko, email, organizacja, dane, odpowiedzial, wypisany").eq("kampania_id", id).order("nazwisko"),
     supabase.from("wiadomosci").select("id, kontakt_id, krok, status, wyslana, blad").eq("kampania_id", id),
   ]);
-  if (error) return NextResponse.json({ blad: "Nie udało się wczytać odbiorców." }, { status: 500 });
+  if (error) {
+    const t = await tSerwer();
+    return NextResponse.json({ blad: t("api.nieudanoWczytacOdbiorcow") }, { status: 500 });
+  }
 
   const ids = (wiad ?? []).filter((w) => w.status === "wyslana").map((w) => w.id);
   const kliknieteWiad = new Set<string>();
@@ -55,6 +59,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     .update({ odpowiedzial: body.odpisal ? new Date().toISOString() : null })
     .eq("id", kontaktId)
     .eq("kampania_id", id);
-  if (error) return NextResponse.json({ blad: "Nie udało się zapisać." }, { status: 500 });
+  if (error) {
+    const t = await tSerwer();
+    return NextResponse.json({ blad: t("api.nieudanoZapisac") }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { tSerwer } from "@/lib/i18n/serwer";
 
 const DOBA = 60 * 60 * 24;
 
@@ -19,6 +20,7 @@ export async function GET() {
       .sort((a, b) => a.nazwa.localeCompare(b.nazwa, "pl"));
     return NextResponse.json({ komisje: lista, kluby: [...kluby].sort() });
   } catch {
-    return NextResponse.json({ blad: "API Sejmu chwilowo nie odpowiada" }, { status: 502 });
+    const t = await tSerwer();
+    return NextResponse.json({ blad: t("api.sejmNieOdpowiada") }, { status: 502 });
   }
 }

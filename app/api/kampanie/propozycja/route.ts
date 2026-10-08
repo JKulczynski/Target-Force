@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { ZRODLA, type ZrodloId } from "@/lib/types";
+import { tSerwer } from "@/lib/i18n/serwer";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -33,16 +34,17 @@ const Propozycja = z.object({
  * Komisje bierzemy na żywo z API Sejmu, żeby model nie zmyślał nazw. Nadawca zawsze może zmienić.
  */
 export async function POST(req: NextRequest) {
+  const t = await tSerwer();
   const supabase = await createClient();
   const { data: wZespole } = await supabase.rpc("czy_w_zespole");
-  if (!wZespole) return NextResponse.json({ blad: "Brak dostępu." }, { status: 403 });
+  if (!wZespole) return NextResponse.json({ blad: t("api.brakDostepu") }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
   const cel = String(body.cel ?? "").trim();
   const materialy = String(body.materialy ?? "").trim();
   const nazwa = String(body.nazwa ?? "").trim();
   if (cel.length < 10)
-    return NextResponse.json({ blad: "Najpierw opisz, o co chodzi (krok 1)." }, { status: 400 });
+    return NextResponse.json({ blad: t("api.najpierwCel") }, { status: 400 });
 
   let komisje: { code: string; name: string; type: string }[] = [];
   try {
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
       messages: [{ role: "user", content: prompt }],
     });
     if (!odp.parsed_output)
-      return NextResponse.json({ blad: "Nie udało się odczytać propozycji. Spróbuj ponownie." }, { status: 502 });
+      return NextResponse.json({ blad: t("api.nieudanoPropozycji") }, { status: 502 });
     const p = odp.parsed_output;
     const znane = new Map(stale.map((k) => [k.code, k.name]));
     return NextResponse.json({
@@ -95,9 +97,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError)
-      return NextResponse.json({ blad: "Brak albo zły klucz ANTHROPIC_API_KEY na serwerze." }, { status: 500 });
+      return NextResponse.json({ blad: t("api.brakKluczaAI") }, { status: 500 });
     if (e instanceof Anthropic.APIError)
-      return NextResponse.json({ blad: `Błąd AI (${e.status}). Spróbuj ponownie.` }, { status: 502 });
+      return NextResponse.json({ blad: t("api.bladAI", { status: String(e.status) }) }, { status: 502 });
     throw e;
   }
 }

@@ -5,6 +5,7 @@ import { odszyfruj } from "@/lib/szyfr";
 import { opiszBladSmtp, transport } from "@/lib/smtp";
 import { przygotujOdbiorcow } from "@/lib/odbiorcy-serwer";
 import { personalizuj, POLA_TESTOWE } from "@/lib/personalizacja";
+import { tSerwer } from "@/lib/i18n/serwer";
 import {
   gotowiDoPrzypomnienia,
   MAKS_PARTIA,
@@ -87,13 +88,11 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
+  const t = await tSerwer();
   const supabase = await createClient();
   const k = await wczytajKampanie(supabase, id);
   if (!k)
-    return NextResponse.json(
-      { blad: "Nie znaleziono kampanii albo brak dostępu." },
-      { status: 404 },
-    );
+    return NextResponse.json({ blad: t("api.nieZnalezionoKampanii") }, { status: 404 });
   return NextResponse.json({
     ...(await stan(supabase, id, k.skrzynka_id)),
     filtr: (k.filtr_odbiorcow as Filtr) ?? {},
@@ -117,17 +116,15 @@ export async function POST(
   const { id } = await ctx.params;
   const body = await req.json().catch(() => ({}));
   const tryb = String(body.tryb ?? "");
+  const t = await tSerwer();
   const supabase = await createClient();
 
   const k = await wczytajKampanie(supabase, id);
   if (!k)
-    return NextResponse.json(
-      { blad: "Nie znaleziono kampanii albo brak dostępu." },
-      { status: 404 },
-    );
+    return NextResponse.json({ blad: t("api.nieZnalezionoKampanii") }, { status: 404 });
 
   if (tryb === "odbiorcy") {
-    const wynik = await przygotujOdbiorcow(supabase, id, k.zrodla as string[], body.filtr);
+    const wynik = await przygotujOdbiorcow(supabase, id, k.zrodla as string[], body.filtr, t.jezyk);
     if ("blad" in wynik)
       return NextResponse.json({ blad: wynik.blad }, { status: wynik.status });
     return NextResponse.json({
@@ -146,19 +143,13 @@ export async function POST(
         ? body.start
         : null;
     if (wlacz && !k.skrzynka_id)
-      return NextResponse.json(
-        { blad: "Najpierw wybierz skrzynkę nadawcy." },
-        { status: 400 },
-      );
+      return NextResponse.json({ blad: t("api.najpierwSkrzynka") }, { status: 400 });
     const { error } = await supabase
       .from("kampanie")
       .update({ auto_wysylka: wlacz, ...(start ? { start } : {}) })
       .eq("id", id);
     if (error)
-      return NextResponse.json(
-        { blad: "Nie udało się zapisać ustawienia." },
-        { status: 500 },
-      );
+      return NextResponse.json({ blad: t("api.nieudanoZapisacUstawienia") }, { status: 500 });
     return NextResponse.json({
       ok: true,
       auto: wlacz,
@@ -167,15 +158,10 @@ export async function POST(
   }
 
   if (tryb !== "test" && tryb !== "partia" && tryb !== "przypomnienia")
-    return NextResponse.json({ blad: "Nieznany tryb." }, { status: 400 });
+    return NextResponse.json({ blad: t("api.nieznanyTryb") }, { status: 400 });
 
   if (!k.skrzynka_id)
-    return NextResponse.json(
-      {
-        blad: "Kampania nie ma skrzynki nadawcy. Wybierz ją niżej, w sekcji Skrzynka.",
-      },
-      { status: 400 },
-    );
+    return NextResponse.json({ blad: t("api.brakSkrzynkiWSekcji") }, { status: 400 });
   const { data: s } = await supabase
     .from("skrzynki")
     .select(
@@ -184,20 +170,14 @@ export async function POST(
     .eq("id", k.skrzynka_id)
     .maybeSingle();
   if (!s)
-    return NextResponse.json(
-      { blad: "Nie znaleziono skrzynki kampanii." },
-      { status: 404 },
-    );
+    return NextResponse.json({ blad: t("api.nieZnalezionoSkrzynki") }, { status: 404 });
 
   const { data: sekret, error: bladSekretu } = await supabase.rpc(
     "pobierz_sekret_skrzynki",
     { p_skrzynka: s.id },
   );
   if (bladSekretu || !sekret)
-    return NextResponse.json(
-      { blad: "Brak zapisanego hasła skrzynki. Podłącz ją ponownie." },
-      { status: 400 },
-    );
+    return NextResponse.json({ blad: t("api.brakHaslaSkrzynki") }, { status: 400 });
 
   const { data: wszystkieZatw } = await supabase
     .from("warianty")
@@ -208,12 +188,7 @@ export async function POST(
     .order("numer");
   const zatwierdzone = (wszystkieZatw ?? []).filter((w) => w.krok === 0);
   if (tryb !== "przypomnienia" && zatwierdzone.length === 0)
-    return NextResponse.json(
-      {
-        blad: "Brak zatwierdzonych wiadomości. Zatwierdź co najmniej jeden wariant pierwszej wiadomości.",
-      },
-      { status: 400 },
-    );
+    return NextResponse.json({ blad: t("api.brakZatwierdzonych") }, { status: 400 });
 
   if (tryb === "test") {
     const poczta = transport({
@@ -225,10 +200,7 @@ export async function POST(
     const od = { name: s.nazwa, address: s.email_nadawcy };
     const doKogo = String(body.do ?? "").trim() || s.email_nadawcy;
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(doKogo))
-      return NextResponse.json(
-        { blad: "Podaj poprawny adres odbiorcy testu." },
-        { status: 400 },
-      );
+      return NextResponse.json({ blad: t("api.zlyAdresTestu") }, { status: 400 });
     // Test: wszystkie zatwierdzone teksty (pierwsza wiadomość i przypomnienia) z przykładowymi polami personalizacji.
     const doTestu = wszystkieZatw ?? [];
     try {
@@ -243,7 +215,7 @@ export async function POST(
         });
       }
     } catch (e) {
-      return NextResponse.json({ blad: opiszBladSmtp(e) }, { status: 400 });
+      return NextResponse.json({ blad: opiszBladSmtp(e, t.jezyk) }, { status: 400 });
     }
     return NextResponse.json({ ok: true, do: doKogo, wyslane: doTestu.length });
   }
@@ -258,6 +230,7 @@ export async function POST(
     hasloZaszyfrowane: sekret as string,
     warianty: wszystkieZatw ?? [],
     baza: req.nextUrl.origin,
+    jezyk: t.jezyk,
   });
   if (!wynik.ok)
     return NextResponse.json({ blad: wynik.blad }, { status: wynik.status });
