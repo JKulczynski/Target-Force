@@ -17,6 +17,7 @@ import { Odbiorcy } from "@/components/Odbiorcy";
 import { StronaAkcji } from "@/components/StronaAkcji";
 import { Wplyw } from "@/components/Wplyw";
 import { MomentSejmu } from "@/components/MomentSejmu";
+import { Oswiadczenie } from "@/components/Oswiadczenie";
 
 export default function SzczegolyKampanii() {
   const { id } = useParams<{ id: string }>();
@@ -80,6 +81,17 @@ export default function SzczegolyKampanii() {
   // Przewodnik "co dalej" (test Jana 02.10: gubił się na stronie kampanii). Kolejność = kolejność pracy.
   const kroki = [
     {
+      nazwa: "Zleceniodawca zweryfikowany",
+      gotowe: k.zgodaZespolu === "zaakceptowana",
+      href: "#zleca",
+      podpowiedz:
+        k.zgodaZespolu === "czeka"
+          ? "zespół sprawdza oświadczenie zleceniodawcy"
+          : k.zgodaZespolu === "odrzucona"
+            ? "oświadczenie odrzucone, popraw i złóż ponownie (Kto zleca)"
+            : "wypełnij oświadczenie zleceniodawcy (Kto zleca)",
+    },
+    {
       nazwa: "Wiadomości wygenerowane",
       gotowe: (postep?.wariantow ?? 0) > 0,
       href: "#wiadomosci",
@@ -119,6 +131,10 @@ export default function SzczegolyKampanii() {
   const nastepny = kroki.findIndex((x) => !x.gotowe);
 
   async function uruchom() {
+    if (k!.zgodaZespolu !== "zaakceptowana") {
+      window.alert("Najpierw oświadczenie zleceniodawcy i akceptacja zespołu (sekcja Kto zleca).");
+      return;
+    }
     const zmieniona = await zmienKampanie(k!.id, { status: "uruchomiona" });
     if (zmieniona) setK(zmieniona);
   }
@@ -225,6 +241,10 @@ export default function SzczegolyKampanii() {
               )}
             </div>
           </section>
+
+          <div id="zleca" className="scroll-mt-20">
+            <Oswiadczenie k={k} onZmiana={setK} />
+          </div>
 
           <div id="wiadomosci" className="scroll-mt-20">
             <Wiadomosci

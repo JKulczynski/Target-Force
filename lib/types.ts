@@ -121,6 +121,9 @@ export type Kampania = {
   akcjaAdministrator: string;
   /** Zawężenie odbiorców (Sejm: komisje, kluby; samorządy: województwa, typy). Kreator może je ustawić z propozycji AI. */
   filtrOdbiorcow: FiltrOdbiorcow;
+  /** Weryfikacja oświadczenia zleceniodawcy przez zespół (null = oświadczenie nie złożone). Zapisuje API /oswiadczenie. */
+  zgodaZespolu: "czeka" | "zaakceptowana" | "odrzucona" | null;
+  zgodaPowod: string;
 };
 
 export type FiltrOdbiorcow = {
@@ -152,5 +155,7 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     akcjaOpis: "",
     akcjaAdministrator: "",
     filtrOdbiorcow: {},
+    zgodaZespolu: null,
+    zgodaPowod: "",
   };
 }

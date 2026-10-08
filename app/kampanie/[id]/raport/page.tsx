@@ -11,6 +11,7 @@ import {
   type Wydarzenie,
 } from "@/lib/store";
 import type { Kampania } from "@/lib/types";
+import { ZRODLA_FINANSOWANIA, type TrescOswiadczenia } from "@/lib/oswiadczenie";
 
 type Odbiorca = {
   id: string;
@@ -62,6 +63,7 @@ export default function RaportKampanii() {
   const [k, setK] = useState<Kampania | null | undefined>(undefined);
   const [lista, setLista] = useState<Odbiorca[] | null>(null);
   const [wplyw, setWplyw] = useState<Wydarzenie[]>([]);
+  const [oswiadczenie, setOswiadczenie] = useState<{ tresc: TrescOswiadczenia; utworzone: string } | null>(null);
   const [akcja, setAkcja] = useState<{
     razem: number;
     otworzyli: number;
@@ -75,6 +77,10 @@ export default function RaportKampanii() {
       .catch(() => setK(null));
     wydarzenia(id)
       .then(setWplyw)
+      .catch(() => {});
+    fetch(`/api/kampanie/${id}/oswiadczenie`)
+      .then((o) => (o.ok ? o.json() : null))
+      .then((d) => d?.oswiadczenie && setOswiadczenie(d.oswiadczenie))
       .catch(() => {});
     podpisyKampanii(id, 1)
       .then((p) => setAkcja({ razem: p.razem, otworzyli: p.otworzyli, udostepnili: p.udostepnili, zrodla: p.zrodla }))
@@ -188,6 +194,20 @@ export default function RaportKampanii() {
           <p className="mt-3 max-w-3xl text-sm text-slate-600">
             <span className="text-slate-400">Cel: </span>
             {k.cel}
+          </p>
+        )}
+        {oswiadczenie && (
+          <p className="mt-2 max-w-3xl text-sm text-slate-600">
+            <span className="text-slate-400">Zleceniodawca: </span>
+            {oswiadczenie.tresc.zleceniodawca}
+            {oswiadczenie.tresc.rola === "zlecenie" && ` (na zlecenie: ${oswiadczenie.tresc.naZlecenieKogo})`}
+            {" · "}
+            <span className="text-slate-400">źródło finansowania: </span>
+            {ZRODLA_FINANSOWANIA[oswiadczenie.tresc.zrodlo]}
+            {oswiadczenie.tresc.zrodloOpis && ` (${oswiadczenie.tresc.zrodloOpis})`}
+            {" · "}
+            <span className="text-slate-400">oświadczenie z </span>
+            {new Date(oswiadczenie.utworzone).toLocaleDateString("pl-PL")}
           </p>
         )}
       </header>

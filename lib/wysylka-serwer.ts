@@ -181,6 +181,9 @@ type Wynik =
  * Wysyła pierwszą wiadomość do kolejnych odbiorców ("partia") albo kolejne przypomnienie ("przypomnienia"),
  * w granicach dziennego limitu skrzynki. `koniec` (ms) przerywa przed limitem czasu funkcji (automat).
  */
+export const BLAD_BRAK_ZGODY =
+  "Wysyłka zablokowana: kampania potrzebuje oświadczenia zleceniodawcy zaakceptowanego przez zespół (sekcja Kto zleca).";
+
 export async function wyslijKolejke(
   supabase: SupabaseClient,
   o: {
@@ -196,6 +199,18 @@ export async function wyslijKolejke(
   },
 ): Promise<Wynik> {
   const { kampaniaId: id, skrzynka: s, warianty } = o;
+  // Blokada (punkt 1 Piotra): bez zaakceptowanego oświadczenia zleceniodawcy nic nie wychodzi, ani ręcznie, ani z automatu.
+  const { data: zgoda } = await supabase
+    .from("kampanie")
+    .select("zgoda_zespolu")
+    .eq("id", id)
+    .maybeSingle();
+  if (zgoda?.zgoda_zespolu !== "zaakceptowana")
+    return {
+      ok: false,
+      blad: BLAD_BRAK_ZGODY,
+      status: 403,
+    };
   const zatwierdzone = warianty.filter((w) => w.krok === 0);
   if (o.tryb === "partia" && zatwierdzone.length === 0)
     return {
