@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { tSerwer } from "@/lib/i18n/serwer";
 
 /**
  * Krótki link śledzący z maila: /r/{kod wiadomości}/{numer linku w treści}.
@@ -11,14 +12,15 @@ export async function GET(
 ) {
   const { id: kod, nr } = await ctx.params;
   const numer = Number(nr);
+  const t = await tSerwer();
   if (!/^[0-9a-f]{8}$/.test(kod) || !Number.isInteger(numer) || numer < 1)
-    return new NextResponse("Nieprawidłowy link.", { status: 400 });
+    return new NextResponse(t("wypis.nieprawidlowy"), { status: 400 });
 
   const supabase = await createClient();
   const { data } = await supabase.rpc("zapisz_klikniecie_kod", {
     p_kod: kod,
     p_nr: numer,
   });
-  if (!data) return new NextResponse("Nieprawidłowy link.", { status: 404 });
+  if (!data) return new NextResponse(t("wypis.nieprawidlowy"), { status: 404 });
   return NextResponse.redirect(data as string, 302);
 }

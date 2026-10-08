@@ -787,6 +787,7 @@ export const en: Record<keyof typeof pl, string> = {
   "api.nieudanoUsunac": "Could not delete.",
   "api.zlyAdresOdbiorcy": "Enter a valid recipient address.",
   "api.brakHaslaPodlacz": "No saved password. Connect the mailbox again.",
+  "api.testPrzypomnienie": "TEST follow-up {n}",
   "api.testTemat": "Target Force: test message",
   "api.testTresc":
     "This is a test message from Target Force ({teraz}).\n\nIf you can see it in your inbox and not in spam, the mailbox {email} is ready for the campaign.",

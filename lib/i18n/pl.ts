@@ -789,6 +789,7 @@ export const pl = {
   "api.nieudanoUsunac": "Nie udało się usunąć.",
   "api.zlyAdresOdbiorcy": "Podaj poprawny adres odbiorcy.",
   "api.brakHaslaPodlacz": "Brak zapisanego hasła. Podłącz skrzynkę ponownie.",
+  "api.testPrzypomnienie": "TEST przypomnienie {n}",
   "api.testTemat": "Target Force: testowa wiadomość",
   "api.testTresc":
     "To jest testowa wiadomość z Target Force ({teraz}).\n\nJeśli ją widzisz w skrzynce odbiorczej, a nie w spamie, skrzynka {email} jest gotowa do kampanii.",

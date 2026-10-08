@@ -206,7 +206,7 @@ export async function POST(
     try {
       for (const w of doTestu) {
         const etykieta =
-          w.krok === 0 ? `TEST ${w.numer}` : `TEST przypomnienie ${w.krok}`;
+          w.krok === 0 ? `TEST ${w.numer}` : t("api.testPrzypomnienie", { n: w.krok });
         await poczta.sendMail({
           from: od,
           to: doKogo,
