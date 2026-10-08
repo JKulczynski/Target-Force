@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { POLE, PRZYCISK_DRUGI, PRZYCISK_GLOWNY } from "@/components/ui";
 import type { Kampania } from "@/lib/types";
+import { useT } from "@/lib/i18n/klient";
 import {
   FORMY_PRAWNE,
   OSWIADCZENIA,
@@ -24,8 +25,10 @@ type Zlozone = { tresc: TrescOswiadczenia; utworzone: string };
  * Kto zleca kampanię (punkt 1 Piotra, 07.10): zleceniodawca, źródło finansowania, oświadczenia.
  * Bez tego i bez akceptacji zespołu nie rusza ani ręczna, ani automatyczna wysyłka (lib/wysylka-serwer).
  * Oświadczenie jest append-only: poprawka = nowy wiersz, decyzja zespołu wraca na "czeka".
+ * Wartości (forma prawna, źródło finansowania) idą do bazy po polsku; etykiety z t().
  */
 export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampania) => void }) {
+  const { t: tl } = useT();
   const [zlozone, setZlozone] = useState<Zlozone | null | undefined>(undefined);
   const [edycja, setEdycja] = useState(false);
   const [t, setT] = useState<TrescOswiadczenia>(pusteOswiadczenie());
@@ -49,7 +52,7 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
 
   async function zloz(e: React.FormEvent) {
     e.preventDefault();
-    const b = sprawdzOswiadczenie(t);
+    const b = sprawdzOswiadczenie(t, tl);
     if (b) return setBlad(b);
     setBlad(null);
     setZapisuje(true);
@@ -60,19 +63,19 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
         body: JSON.stringify(t),
       });
       const d = await odp.json().catch(() => ({}));
-      if (!odp.ok) return setBlad(d.blad ?? "Nie udało się zapisać.");
+      if (!odp.ok) return setBlad(d.blad ?? tl("wspolne.nieZapisano"));
       setZlozone({ tresc: t, utworzone: new Date().toISOString() });
       setEdycja(false);
       onZmiana({ ...k, zgodaZespolu: "czeka", zgodaPowod: "" });
     } catch {
-      setBlad("Nie udało się zapisać.");
+      setBlad(tl("wspolne.nieZapisano"));
     } finally {
       setZapisuje(false);
     }
   }
 
   async function decyzja(zgoda: "zaakceptowana" | "odrzucona") {
-    if (zgoda === "odrzucona" && !powod.trim()) return setBlad("Podaj powód odrzucenia.");
+    if (zgoda === "odrzucona" && !powod.trim()) return setBlad(tl("osw.podajPowod"));
     setBlad(null);
     setZapisuje(true);
     try {
@@ -82,10 +85,10 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
         body: JSON.stringify({ zgoda, powod }),
       });
       const d = await odp.json().catch(() => ({}));
-      if (!odp.ok) return setBlad(d.blad ?? "Nie udało się zapisać decyzji.");
+      if (!odp.ok) return setBlad(d.blad ?? tl("osw.nieZapisanoDecyzji"));
       onZmiana({ ...k, zgodaZespolu: zgoda, zgodaPowod: zgoda === "odrzucona" ? powod.trim() : "" });
     } catch {
-      setBlad("Nie udało się zapisać decyzji.");
+      setBlad(tl("osw.nieZapisanoDecyzji"));
     } finally {
       setZapisuje(false);
     }
@@ -98,61 +101,63 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold tracking-tight text-slate-900">Kto zleca</h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">
-            Zleceniodawca, źródło finansowania i oświadczenia. Bez tego i bez akceptacji zespołu wysyłka nie
-            ruszy. Oświadczenia zostają w bazie z datą i adresem IP.
-          </p>
+          <h2 className="text-base font-semibold tracking-tight text-slate-900">{tl("osw.tytul")}</h2>
+          <p className="mt-1 max-w-2xl text-sm text-slate-600">{tl("osw.opis")}</p>
         </div>
-        {zgoda && (
+        {zgoda && k.zgodaZespolu && (
           <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${zgoda.klasa}`}>
-            {zgoda.etykieta}
+            {tl(`zgoda.${k.zgodaZespolu}`)}
           </span>
         )}
       </div>
 
-      {zlozone === undefined && <p className="mt-4 text-sm text-slate-400">Wczytuję...</p>}
+      {zlozone === undefined && <p className="mt-4 text-sm text-slate-400">{tl("wspolne.wczytuje")}</p>}
 
       {zlozone && !edycja && (
         <div className="mt-5">
           <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-            <Poz etykieta="Zleceniodawca" wartosc={`${zlozone.tresc.zleceniodawca} (${zlozone.tresc.formaPrawna}, ${zlozone.tresc.kraj})`} />
-            <Poz etykieta="Osoba odpowiedzialna" wartosc={`${zlozone.tresc.osoba}, ${zlozone.tresc.email}`} />
             <Poz
-              etykieta="Rola"
-              wartosc={zlozone.tresc.rola === "wlasne" ? "Działa we własnym imieniu" : `Na zlecenie: ${zlozone.tresc.naZlecenieKogo}`}
+              etykieta={tl("osw.zleceniodawca")}
+              wartosc={`${zlozone.tresc.zleceniodawca} (${tl(`formaPrawna.${zlozone.tresc.formaPrawna}`)}, ${zlozone.tresc.kraj})`}
+            />
+            <Poz etykieta={tl("osw.osoba")} wartosc={`${zlozone.tresc.osoba}, ${zlozone.tresc.email}`} />
+            <Poz
+              etykieta={tl("osw.rola")}
+              wartosc={
+                zlozone.tresc.rola === "wlasne"
+                  ? tl("osw.wlasne")
+                  : tl("osw.naZlecenie", { kto: zlozone.tresc.naZlecenieKogo })
+              }
             />
             <Poz
-              etykieta="Źródło finansowania"
-              wartosc={`${ZRODLA_FINANSOWANIA[zlozone.tresc.zrodlo]}${zlozone.tresc.zrodloOpis ? `: ${zlozone.tresc.zrodloOpis}` : ""}`}
+              etykieta={tl("osw.zrodlo")}
+              wartosc={`${tl(`zrodloFin.${zlozone.tresc.zrodlo}`)}${zlozone.tresc.zrodloOpis ? `: ${zlozone.tresc.zrodloOpis}` : ""}`}
             />
-            {zlozone.tresc.nipKrs && <Poz etykieta="NIP / KRS" wartosc={zlozone.tresc.nipKrs} />}
-            <Poz etykieta="Złożone" wartosc={new Date(zlozone.utworzone).toLocaleString("pl-PL")} />
+            {zlozone.tresc.nipKrs && <Poz etykieta={tl("osw.nipKrs")} wartosc={zlozone.tresc.nipKrs} />}
+            <Poz etykieta={tl("osw.zlozone")} wartosc={new Date(zlozone.utworzone).toLocaleString(tl.locale)} />
           </dl>
           {k.zgodaZespolu === "odrzucona" && k.zgodaPowod && (
             <p className="mt-4 rounded-lg bg-red-50 px-3.5 py-3 text-sm text-red-800 ring-1 ring-red-100">
-              Powód odrzucenia: {k.zgodaPowod}
+              {tl("osw.powodOdrzucenia", { powod: k.zgodaPowod })}
             </p>
           )}
 
           {k.zgodaZespolu === "czeka" && (
             <div className="mt-5 rounded-lg bg-slate-50 p-4 ring-1 ring-slate-200">
-              <p className="text-sm font-medium text-slate-800">Decyzja zespołu Target Force</p>
-              <p className="mt-1 text-sm text-slate-600">
-                Sprawdź, czy zleceniodawca i źródło finansowania są wiarygodne. Odrzucenie wymaga powodu.
-              </p>
+              <p className="text-sm font-medium text-slate-800">{tl("osw.decyzja")}</p>
+              <p className="mt-1 text-sm text-slate-600">{tl("osw.decyzja.opis")}</p>
               <input
                 className={pole}
                 value={powod}
                 onChange={(e) => setPowod(e.target.value)}
-                placeholder="Powód odrzucenia (tylko przy odrzuceniu)"
+                placeholder={tl("osw.powod.ph")}
               />
               <div className="mt-3 flex flex-wrap gap-3">
                 <button type="button" disabled={zapisuje} onClick={() => decyzja("zaakceptowana")} className={PRZYCISK_GLOWNY}>
-                  Akceptuję
+                  {tl("osw.akceptuje")}
                 </button>
                 <button type="button" disabled={zapisuje} onClick={() => decyzja("odrzucona")} className={PRZYCISK_DRUGI}>
-                  Odrzucam
+                  {tl("osw.odrzucam")}
                 </button>
               </div>
             </div>
@@ -166,7 +171,7 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
             }}
             className="mt-4 text-sm text-slate-500 transition-colors duration-150 hover:text-slate-900"
           >
-            Złóż nowe oświadczenie
+            {tl("osw.zlozNowe")}
           </button>
         </div>
       )}
@@ -175,75 +180,76 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
         <form onSubmit={zloz} className="mt-5 space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">Zleceniodawca (organizacja albo osoba)</span>
+              <span className="text-xs font-medium text-slate-500">{tl("osw.f.zleceniodawca")}</span>
               <input className={pole} value={t.zleceniodawca} onChange={(e) => zm("zleceniodawca", e.target.value)} />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">Forma prawna</span>
+              <span className="text-xs font-medium text-slate-500">{tl("osw.f.forma")}</span>
               <select className={pole} value={t.formaPrawna} onChange={(e) => zm("formaPrawna", e.target.value as TrescOswiadczenia["formaPrawna"])}>
                 {FORMY_PRAWNE.map((f) => (
                   <option key={f} value={f}>
-                    {f}
+                    {tl(`formaPrawna.${f}`)}
                   </option>
                 ))}
               </select>
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">Kraj</span>
+              <span className="text-xs font-medium text-slate-500">{tl("osw.f.kraj")}</span>
               <input className={pole} value={t.kraj} onChange={(e) => zm("kraj", e.target.value)} />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">NIP / KRS (opcjonalnie)</span>
+              <span className="text-xs font-medium text-slate-500">{tl("osw.f.nipKrs")}</span>
               <input className={pole} value={t.nipKrs} onChange={(e) => zm("nipKrs", e.target.value)} />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">Osoba odpowiedzialna</span>
+              <span className="text-xs font-medium text-slate-500">{tl("osw.f.osoba")}</span>
               <input className={pole} value={t.osoba} onChange={(e) => zm("osoba", e.target.value)} />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">E-mail tej osoby</span>
+              <span className="text-xs font-medium text-slate-500">{tl("osw.f.email")}</span>
               <input className={pole} type="email" value={t.email} onChange={(e) => zm("email", e.target.value)} />
             </label>
           </div>
 
           <fieldset>
-            <legend className="text-xs font-medium text-slate-500">Rola</legend>
+            <legend className="text-xs font-medium text-slate-500">{tl("osw.f.rola")}</legend>
             <div className="mt-2 space-y-2 text-sm">
               <label className="flex items-center gap-2">
                 <input type="radio" checked={t.rola === "wlasne"} onChange={() => zm("rola", "wlasne")} />
-                Działam we własnym imieniu
+                {tl("osw.f.wlasne")}
               </label>
               <label className="flex items-center gap-2">
                 <input type="radio" checked={t.rola === "zlecenie"} onChange={() => zm("rola", "zlecenie")} />
-                Działam na zlecenie innego podmiotu
+                {tl("osw.f.zlecenie")}
               </label>
               {t.rola === "zlecenie" && (
-                <input className={POLE} value={t.naZlecenieKogo} onChange={(e) => zm("naZlecenieKogo", e.target.value)} placeholder="Na czyje zlecenie" />
+                <input className={POLE} value={t.naZlecenieKogo} onChange={(e) => zm("naZlecenieKogo", e.target.value)} placeholder={tl("osw.f.naCzyje")} />
               )}
             </div>
           </fieldset>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="text-xs font-medium text-slate-500">Źródło finansowania kampanii</span>
+              <span className="text-xs font-medium text-slate-500">{tl("osw.f.zrodlo")}</span>
               <select className={pole} value={t.zrodlo} onChange={(e) => zm("zrodlo", e.target.value as ZrodloFinansowania)}>
                 {(Object.keys(ZRODLA_FINANSOWANIA) as ZrodloFinansowania[]).map((z) => (
                   <option key={z} value={z}>
-                    {ZRODLA_FINANSOWANIA[z]}
+                    {tl(`zrodloFin.${z}`)}
                   </option>
                 ))}
               </select>
             </label>
             <label className="block">
               <span className="text-xs font-medium text-slate-500">
-                Opis {ZRODLA_Z_OPISEM.includes(t.zrodlo) || t.rola === "zlecenie" ? "(wymagany)" : "(opcjonalnie)"}
+                {tl("osw.f.opis")}{" "}
+                {ZRODLA_Z_OPISEM.includes(t.zrodlo) || t.rola === "zlecenie" ? tl("osw.f.wymagany") : tl("osw.f.opcjonalnie")}
               </span>
-              <input className={pole} value={t.zrodloOpis} onChange={(e) => zm("zrodloOpis", e.target.value)} placeholder="np. nazwa programu grantowego, nazwa zleceniodawcy" />
+              <input className={pole} value={t.zrodloOpis} onChange={(e) => zm("zrodloOpis", e.target.value)} placeholder={tl("osw.f.opis.ph")} />
             </label>
           </div>
 
           <fieldset className="space-y-3">
-            <legend className="text-xs font-medium text-slate-500">Oświadczenia (każde wymagane)</legend>
+            <legend className="text-xs font-medium text-slate-500">{tl("osw.f.oswiadczenia")}</legend>
             {(Object.keys(OSWIADCZENIA) as KluczOswiadczenia[]).map((klucz) => (
               <label key={klucz} className="flex items-start gap-3 text-sm text-slate-700">
                 <input
@@ -252,18 +258,18 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
                   checked={t.potwierdzenia[klucz]}
                   onChange={(e) => zm("potwierdzenia", { ...t.potwierdzenia, [klucz]: e.target.checked })}
                 />
-                <span>{OSWIADCZENIA[klucz]}</span>
+                <span>{tl(`osw.tekst.${klucz}`)}</span>
               </label>
             ))}
           </fieldset>
 
           <div className="flex flex-wrap items-center gap-3">
             <button disabled={zapisuje} className={PRZYCISK_GLOWNY}>
-              {zapisuje ? "Zapisuję..." : "Składam oświadczenie"}
+              {zapisuje ? tl("osw.zapisuje") : tl("osw.skladam")}
             </button>
             {zlozone && (
               <button type="button" onClick={() => setEdycja(false)} className={PRZYCISK_DRUGI}>
-                Anuluj
+                {tl("wspolne.anuluj")}
               </button>
             )}
           </div>

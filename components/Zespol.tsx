@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { POLE } from "@/components/ui";
+import { useT } from "@/lib/i18n/klient";
 
 type Czlonek = { user_id: string; email: string; dodany: string };
 
@@ -9,6 +10,7 @@ const pole = POLE;
 
 /** Zespół: kto widzi kampanie i kogo dopraszamy. Do 07.10 nową osobę trzeba było wpisać ręcznie w bazie. */
 export function Zespol() {
+  const { t } = useT();
   const [lista, setLista] = useState<Czlonek[] | null>(null);
   const [email, setEmail] = useState("");
   const [info, setInfo] = useState<string | null>(null);
@@ -40,18 +42,18 @@ export function Zespol() {
       });
       const dane = await odp.json();
       if (!odp.ok) {
-        setBlad(dane.blad ?? "Nie udało się dodać.");
+        setBlad(dane.blad ?? t("zespol.nieDodano"));
         return;
       }
       setInfo(
         dane.zaproszono
-          ? `Wysłaliśmy zaproszenie na ${dane.email}. Po kliknięciu w link ta osoba ustawi hasło i od razu zobaczy kampanie.`
-          : `${dane.email} ma już konto i od teraz widzi kampanie zespołu.`,
+          ? t("zespol.zaproszono", { email: dane.email })
+          : t("zespol.maKonto", { email: dane.email }),
       );
       setEmail("");
       await wczytaj();
     } catch {
-      setBlad("Nie udało się dodać.");
+      setBlad(t("zespol.nieDodano"));
     } finally {
       setDodaje(false);
     }
@@ -59,15 +61,11 @@ export function Zespol() {
 
   return (
     <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="font-medium">Zespół</h2>
-      <p className="mt-1 text-sm text-slate-500">
-        Osoby z tej listy widzą i prowadzą wszystkie kampanie. Jeśli ktoś nie
-        ma jeszcze konta, dostanie mailem zaproszenie z linkiem do ustawienia
-        hasła.
-      </p>
+      <h2 className="font-medium">{t("zespol.tytul")}</h2>
+      <p className="mt-1 text-sm text-slate-500">{t("zespol.opis")}</p>
 
       {lista === null ? (
-        <p className="mt-5 text-sm text-slate-400">Wczytuję...</p>
+        <p className="mt-5 text-sm text-slate-400">{t("wspolne.wczytuje")}</p>
       ) : (
         <ul className="mt-5 divide-y divide-slate-100 rounded-lg border border-slate-200">
           {lista.map((c) => (
@@ -77,14 +75,12 @@ export function Zespol() {
             >
               <span className="truncate text-slate-800">{c.email}</span>
               <span className="shrink-0 text-xs text-slate-400">
-                od {new Date(c.dodany).toLocaleDateString("pl-PL")}
+                {t("zespol.od", { data: new Date(c.dodany).toLocaleDateString(t.locale) })}
               </span>
             </li>
           ))}
           {lista.length === 0 && (
-            <li className="px-4 py-2.5 text-sm text-slate-400">
-              Nie widzisz zespołu, bo jeszcze w nim nie jesteś.
-            </li>
+            <li className="px-4 py-2.5 text-sm text-slate-400">{t("zespol.pusto")}</li>
           )}
         </ul>
       )}
@@ -95,13 +91,13 @@ export function Zespol() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="np. anna@agencja.pl"
+          placeholder={t("zespol.ph")}
         />
         <button
           disabled={dodaje || !email.trim()}
           className="shrink-0 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
         >
-          {dodaje ? "Dodaję..." : "Dodaj"}
+          {dodaje ? t("zespol.dodaje") : t("zespol.dodaj")}
         </button>
       </form>
       {info && <p className="mt-4 text-sm text-emerald-700">{info}</p>}

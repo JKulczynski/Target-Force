@@ -12,6 +12,7 @@ import type { Kampania } from "@/lib/types";
 import { POPRAWNY_SLUG, slugZNazwy } from "@/lib/akcja";
 import { KartaWariantu } from "@/components/Wiadomosci";
 import { POLE } from "@/components/ui";
+import { useT } from "@/lib/i18n/klient";
 
 const pole = `mt-1.5 ${POLE}`;
 
@@ -30,6 +31,7 @@ export function StronaAkcji({
   fakty: string;
   onZmiana: (k: Kampania) => void;
 }) {
+  const { t } = useT();
   const [wlaczona, setWlaczona] = useState(k.akcjaWlaczona);
   const [slug, setSlug] = useState(k.akcjaSlug ?? slugZNazwy(k.nazwa));
   const [tytul, setTytul] = useState(k.akcjaTytul);
@@ -76,10 +78,8 @@ export function StronaAkcji({
   async function zapisz() {
     setBlad(null);
     const s = slug.trim();
-    if (!POPRAWNY_SLUG.test(s))
-      return setBlad("Adres strony: małe litery, cyfry i myślniki, 2-60 znaków.");
-    if (wlaczona && !tytul.trim())
-      return setBlad("Strona potrzebuje tytułu, zanim ją włączysz.");
+    if (!POPRAWNY_SLUG.test(s)) return setBlad(t("akcjaPanel.bladSlug"));
+    if (wlaczona && !tytul.trim()) return setBlad(t("akcjaPanel.bladTytul"));
     setZapisuje(true);
     try {
       const nowa = await zmienKampanie(k.id, {
@@ -91,11 +91,7 @@ export function StronaAkcji({
       });
       if (nowa) onZmiana(nowa);
     } catch (e) {
-      setBlad(
-        String(e).includes("duplicate")
-          ? "Ten adres strony jest już zajęty przez inną kampanię."
-          : "Nie udało się zapisać.",
-      );
+      setBlad(String(e).includes("duplicate") ? t("akcjaPanel.slugZajety") : t("wspolne.nieZapisano"));
     } finally {
       setZapisuje(false);
     }
@@ -111,10 +107,10 @@ export function StronaAkcji({
         body: JSON.stringify({ rola: "sympatyk" }),
       });
       const dane = await odp.json().catch(() => ({}));
-      if (!odp.ok) return setBlad(dane.blad ?? "Nie udało się wygenerować wiadomości.");
+      if (!odp.ok) return setBlad(dane.blad ?? t("wiadomosci.bladGenerowania"));
       await wczytaj();
     } catch {
-      setBlad("Nie udało się wygenerować wiadomości.");
+      setBlad(t("wiadomosci.bladGenerowania"));
     } finally {
       setGeneruje(false);
     }
@@ -128,9 +124,9 @@ export function StronaAkcji({
       : null;
 
   const gotowosc = [
-    { nazwa: "Lista odbiorców przygotowana (Wysyłka, krok 1)", ok: odbiorcy > 0 },
-    { nazwa: "Co najmniej jedna wiadomość sympatyka zatwierdzona", ok: zatwierdzone > 0 },
-    { nazwa: "Strona włączona i zapisana", ok: k.akcjaWlaczona && !!k.akcjaSlug },
+    { nazwa: t("akcjaPanel.got.lista"), ok: odbiorcy > 0 },
+    { nazwa: t("akcjaPanel.got.wariant"), ok: zatwierdzone > 0 },
+    { nazwa: t("akcjaPanel.got.strona"), ok: k.akcjaWlaczona && !!k.akcjaSlug },
   ];
 
   return (
@@ -138,13 +134,9 @@ export function StronaAkcji({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold tracking-tight text-slate-900">
-            Strona akcji dla sympatyków
+            {t("akcjaPanel.tytul")}
           </h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">
-            Publiczna strona, na której mieszkaniec podaje imię i gminę, dostaje
-            gotową wiadomość do swojego posła albo urzędu i wysyła ją sam ze swojej
-            poczty. Liczymy podpisy i kliknięcia „Otwórz w poczcie”.
-          </p>
+          <p className="mt-1 max-w-2xl text-sm text-slate-600">{t("akcjaPanel.opis")}</p>
         </div>
         {adres && k.akcjaWlaczona && (
           <div className="flex items-center gap-2">
@@ -154,7 +146,7 @@ export function StronaAkcji({
               rel="noreferrer"
               className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900"
             >
-              Otwórz stronę
+              {t("akcjaPanel.otworz")}
             </a>
             <button
               type="button"
@@ -168,7 +160,7 @@ export function StronaAkcji({
               }}
               className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:text-slate-900"
             >
-              {skopiowano ? "Skopiowano" : "Kopiuj link"}
+              {skopiowano ? t("akcjaPanel.skopiowano") : t("akcjaPanel.kopiuj")}
             </button>
           </div>
         )}
@@ -190,7 +182,7 @@ export function StronaAkcji({
 
       {podpisy && podpisy.zrodla.length > 0 && (
         <div className="mt-5 rounded-lg border border-slate-200 p-4">
-          <p className="text-xs font-medium text-slate-500">Skąd przyszli podpisujący</p>
+          <p className="text-xs font-medium text-slate-500">{t("akcjaPanel.skad")}</p>
           <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
             {podpisy.zrodla.map((z) => (
               <li key={z.nazwa}>
@@ -200,8 +192,9 @@ export function StronaAkcji({
             ))}
           </ul>
           <p className="mt-2 text-xs text-slate-500">
-            W reklamach i postach używaj linku z parametrami, np. {adres ? `${adres}?utm_source=facebook&utm_medium=reklama` : "…?utm_source=facebook&utm_medium=reklama"}.
-            Bez nich liczymy domenę, z której ktoś przyszedł.
+            {t("akcjaPanel.utm", {
+              adres: adres ? `${adres}?utm_source=facebook&utm_medium=reklama` : "…?utm_source=facebook&utm_medium=reklama",
+            })}
           </p>
         </div>
       )}
@@ -209,9 +202,9 @@ export function StronaAkcji({
       {podpisy && (podpisy.razem > 0 || k.akcjaWlaczona) && (
         <dl className="mt-5 grid grid-cols-3 gap-4 rounded-lg bg-slate-50 p-4">
           {[
-            ["Podpisów", podpisy.razem],
-            ["Otworzyło pocztę", podpisy.otworzyli],
-            ["Udostępniło", podpisy.udostepnili],
+            [t("akcjaPanel.podpisow"), podpisy.razem],
+            [t("akcjaPanel.otworzyloPoczte"), podpisy.otworzyli],
+            [t("akcjaPanel.udostepnilo"), podpisy.udostepnili],
           ].map(([e, v]) => (
             <div key={String(e)}>
               <dt className="text-xs text-slate-500">{e}</dt>
@@ -223,28 +216,26 @@ export function StronaAkcji({
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-slate-700">Tytuł strony</span>
+          <span className="text-sm font-medium text-slate-700">{t("akcjaPanel.tytulStrony")}</span>
           <input
             className={pole}
             value={tytul}
             onChange={(e) => setTytul(e.target.value)}
-            placeholder="np. Zatrzymajmy likwidację linii 12"
+            placeholder={t("akcjaPanel.tytulStrony.ph")}
           />
         </label>
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-slate-700">O co chodzi (dla mieszkańców)</span>
+          <span className="text-sm font-medium text-slate-700">{t("akcjaPanel.oCoChodzi")}</span>
           <textarea
             className={`${pole} min-h-32 resize-y`}
             value={opis}
             onChange={(e) => setOpis(e.target.value)}
-            placeholder="Prostym językiem: co się dzieje, dlaczego to ważne, co może zrobić poseł. Akapity oddziel pustą linią."
+            placeholder={t("akcjaPanel.oCoChodzi.ph")}
           />
-          <span className="mt-1 block text-xs text-slate-500">
-            Film albo strona z briefu kampanii pojawi się nad opisem.
-          </span>
+          <span className="mt-1 block text-xs text-slate-500">{t("akcjaPanel.filmNadOpisem")}</span>
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Adres strony</span>
+          <span className="text-sm font-medium text-slate-700">{t("akcjaPanel.adres")}</span>
           <div className="mt-1.5 flex items-center gap-1 text-sm text-slate-500">
             <span className="shrink-0">/a/</span>
             <input
@@ -255,12 +246,12 @@ export function StronaAkcji({
           </div>
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Administrator danych (RODO)</span>
+          <span className="text-sm font-medium text-slate-700">{t("akcjaPanel.administrator")}</span>
           <input
             className={pole}
             value={administrator}
             onChange={(e) => setAdministrator(e.target.value)}
-            placeholder="np. Fundacja X, ul. Y 1, Warszawa, kontakt@x.pl"
+            placeholder={t("akcjaPanel.administrator.ph")}
           />
         </label>
         <label className="flex items-start gap-3 sm:col-span-2">
@@ -271,10 +262,8 @@ export function StronaAkcji({
             onChange={(e) => setWlaczona(e.target.checked)}
           />
           <span className="text-sm">
-            <span className="font-medium text-slate-700">Strona włączona</span>
-            <span className="block text-slate-500">
-              Wyłączona strona pokazuje „nie ma takiej akcji”. Podpisy zostają.
-            </span>
+            <span className="font-medium text-slate-700">{t("akcjaPanel.wlaczona")}</span>
+            <span className="block text-slate-500">{t("akcjaPanel.wlaczona.opis")}</span>
           </span>
         </label>
       </div>
@@ -285,7 +274,7 @@ export function StronaAkcji({
           disabled={zapisuje || !zmienione}
           className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
         >
-          {zapisuje ? "Zapisuję..." : "Zapisz stronę"}
+          {zapisuje ? t("akcjaPanel.zapisuje") : t("akcjaPanel.zapiszStrone")}
         </button>
         {blad && <p className="text-sm text-red-700">{blad}</p>}
       </div>
@@ -293,23 +282,17 @@ export function StronaAkcji({
       <div className="mt-8 border-t border-slate-200 pt-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="font-medium text-slate-900">Wiadomości sympatyków</h3>
+            <h3 className="font-medium text-slate-900">{t("akcjaPanel.sympatycy.tytul")}</h3>
             <p className="mt-1 text-sm text-slate-600">
-              Pisane jak od mieszkańca, w pierwszej osobie, z polem {"{gmina}"}.
-              Każdy sympatyk dostaje losowo jeden z zatwierdzonych wariantów i może
-              go zmienić. Zatwierdzone{" "}
-              <span className="font-semibold text-slate-900">{zatwierdzone}</span> z{" "}
-              {aktywne.length}.
+              {t("akcjaPanel.sympatycy.opis")} {t("wiadomosci.zatwierdzoneA")}{" "}
+              <span className="font-semibold text-slate-900">{zatwierdzone}</span>{" "}
+              {t("wiadomosci.zatwierdzoneB", { razem: aktywne.length })}.
             </p>
           </div>
           <button
             type="button"
             onClick={() => {
-              if (
-                aktywne.length &&
-                !window.confirm("Nowe wiadomości zastąpią niezatwierdzone szkice. Wygenerować?")
-              )
-                return;
+              if (aktywne.length && !window.confirm(t("akcjaPanel.potwierdzRegeneracje"))) return;
               generuj();
             }}
             disabled={generuje}
@@ -320,10 +303,10 @@ export function StronaAkcji({
             }
           >
             {generuje
-              ? "Piszę wiadomości (ok. 1-2 min)..."
+              ? t("wiadomosci.pisze")
               : aktywne.length
-                ? "Wygeneruj ponownie"
-                : "Wygeneruj wiadomości sympatyków"}
+                ? t("wiadomosci.ponownie")
+                : t("akcjaPanel.wygenerujSympatykow")}
           </button>
         </div>
         <div className="mt-4 space-y-4">
@@ -335,16 +318,16 @@ export function StronaAkcji({
 
       {podpisy && podpisy.lista.length > 0 && (
         <div className="mt-8 border-t border-slate-200 pt-6">
-          <h3 className="font-medium text-slate-900">Ostatnie podpisy</h3>
+          <h3 className="font-medium text-slate-900">{t("akcjaPanel.ostatniePodpisy")}</h3>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-slate-500">
-                  <th className="py-2 pr-4 font-medium">Kto</th>
-                  <th className="py-2 pr-4 font-medium">Gmina</th>
-                  <th className="py-2 pr-4 font-medium">Do kogo</th>
-                  <th className="py-2 pr-4 font-medium">Kiedy</th>
-                  <th className="py-2 font-medium">Poczta</th>
+                  <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.kto")}</th>
+                  <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.gmina")}</th>
+                  <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.doKogo")}</th>
+                  <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.kiedy")}</th>
+                  <th className="py-2 font-medium">{t("akcjaPanel.kol.poczta")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -356,9 +339,9 @@ export function StronaAkcji({
                     <td className="py-2 pr-4 text-slate-600">{p.gminaNazwa}</td>
                     <td className="max-w-64 truncate py-2 pr-4 text-slate-600">{p.odbiorcaNazwa}</td>
                     <td className="py-2 pr-4 whitespace-nowrap text-slate-500">
-                      {new Date(p.utworzony).toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "short" })}
+                      {new Date(p.utworzony).toLocaleString(t.locale, { dateStyle: "short", timeStyle: "short" })}
                     </td>
-                    <td className="py-2 text-slate-600">{p.otworzylPoczte ? "otworzył" : ""}</td>
+                    <td className="py-2 text-slate-600">{p.otworzylPoczte ? t("akcjaPanel.otworzyl") : ""}</td>
                   </tr>
                 ))}
               </tbody>

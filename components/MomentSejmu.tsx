@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/klient";
 
 type Posiedzenie = { numer: number; tytul: string; od: string; do: string; trwa: boolean };
-
-const data = (d: string) =>
-  new Date(d).toLocaleDateString("pl-PL", { day: "numeric", month: "long" });
 
 /** Ile dni od dziś do daty (ujemne = w przeszłości). */
 function zaDni(d: string) {
@@ -17,7 +15,9 @@ function zaDni(d: string) {
  * Reguła: pierwsza wiadomość 5-7 dni przed posiedzeniem, żeby biuro zdążyło przygotować pytanie albo interpelację.
  */
 export function MomentSejmu({ start, onWybierz }: { start?: string | null; onWybierz?: (data: string) => void }) {
+  const { t } = useT();
   const [lista, setLista] = useState<Posiedzenie[] | null>(null);
+  const data = (d: string) => new Date(d).toLocaleDateString(t.locale, { day: "numeric", month: "long" });
 
   useEffect(() => {
     let aktualny = true;
@@ -39,25 +39,21 @@ export function MomentSejmu({ start, onWybierz }: { start?: string | null; onWyb
 
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-      <p className="text-xs font-medium text-slate-500">Właściwy moment</p>
+      <p className="text-xs font-medium text-slate-500">{t("moment.tytul")}</p>
       <p className="mt-1 text-slate-800">
-        {najblizsze.trwa ? "Trwa posiedzenie Sejmu" : "Najbliższe posiedzenie Sejmu"}:{" "}
+        {najblizsze.trwa ? t("moment.trwa") : t("moment.najblizsze")}:{" "}
         <span className="font-medium">
           {data(najblizsze.od)}
-          {najblizsze.do !== najblizsze.od && ` do ${data(najblizsze.do)}`}
+          {najblizsze.do !== najblizsze.od && t("moment.doDnia", { data: data(najblizsze.do) })}
         </span>
-        {!najblizsze.trwa && dni > 0 && <span className="text-slate-500"> (za {dni} dni)</span>}
+        {!najblizsze.trwa && dni > 0 && (
+          <span className="text-slate-500">{t("moment.zaDni", { n: dni })}</span>
+        )}
       </p>
       <p className="mt-1 text-xs text-slate-500">
-        Biura poselskie przygotowują pytania i interpelacje przed obradami. Wyślij
-        pierwszą wiadomość 5-7 dni wcześniej
-        {zaDni(sugerowanaIso) >= 0 && <>, czyli około {data(sugerowanaIso)}</>}.
-        {lista.length > 1 && (
-          <>
-            {" "}
-            Kolejne: {lista.slice(1).map((p) => data(p.od)).join(", ")}.
-          </>
-        )}
+        {t("moment.opis")}
+        {zaDni(sugerowanaIso) >= 0 && t("moment.czyliOkolo", { data: data(sugerowanaIso) })}.
+        {lista.length > 1 && t("moment.kolejne", { lista: lista.slice(1).map((p) => data(p.od)).join(", ") })}
       </p>
       {onWybierz && zaDni(sugerowanaIso) >= 0 && start !== sugerowanaIso && (
         <button
@@ -65,7 +61,7 @@ export function MomentSejmu({ start, onWybierz }: { start?: string | null; onWyb
           onClick={() => onWybierz(sugerowanaIso)}
           className="mt-2 text-xs font-medium text-brand-700 underline-offset-2 hover:underline"
         >
-          Ustaw start na {data(sugerowanaIso)}
+          {t("moment.ustawStart", { data: data(sugerowanaIso) })}
         </button>
       )}
     </div>
