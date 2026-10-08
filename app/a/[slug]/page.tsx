@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { youtubeId } from "@/lib/akcja";
 import { AkcjaFormularz } from "@/components/AkcjaFormularz";
+import { tlumacz } from "@/lib/i18n";
+import { jezykZCookie } from "@/lib/i18n/serwer";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,7 @@ export const dynamic = "force-dynamic";
  * Publiczna strona akcji (wariant A, 07.10): mieszkaniec czyta o sprawie, podaje imię i gminę,
  * dostaje gotową wiadomość do swojego posła albo urzędu i wysyła ją sam ze swojej poczty.
  * Dane czyta klient serwisowy (strona jest bez logowania), ale tylko pola oznaczone jako publiczne.
+ * Interfejs w języku z cookie (przełącznik w layoucie publicznym); treść strony i wiadomości są takie, jak wpisał nadawca.
  */
 type Akcja = {
   tytul: string;
@@ -21,7 +24,7 @@ type Akcja = {
   gotowa: boolean;
 };
 
-async function akcja(slug: string): Promise<Akcja | null> {
+async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null> {
   const admin = createAdminClient();
   if (!admin) return null;
   const { data: k } = await admin
@@ -52,7 +55,7 @@ async function akcja(slug: string): Promise<Akcja | null> {
         .not("email", "is", null),
     ]);
   return {
-    tytul: String(k.akcja_tytul || "Napisz do swojego posła"),
+    tytul: String(k.akcja_tytul || domyslnyTytul),
     opis: String(k.akcja_opis ?? ""),
     nadawca: String(k.nadawca ?? ""),
     administrator: String(k.akcja_administrator || k.nadawca || ""),
@@ -68,8 +71,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const a = await akcja(slug);
-  if (!a) return { title: "Nie ma takiej akcji" };
+  const t = tlumacz(await jezykZCookie());
+  const a = await akcja(slug, t("akcja.domyslnyTytul"));
+  if (!a) return { title: t("akcja.nieMaAkcji") };
   return {
     title: a.tytul,
     description: a.opis.split("\n")[0]?.slice(0, 160),
@@ -83,7 +87,8 @@ export default async function StronaAkcjiPubliczna({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const a = await akcja(slug);
+  const t = tlumacz(await jezykZCookie());
+  const a = await akcja(slug, t("akcja.domyslnyTytul"));
   if (!a) notFound();
   const yt = a.film ? youtubeId(a.film) : null;
   const akapity = a.opis
@@ -106,7 +111,7 @@ export default async function StronaAkcjiPubliczna({
               <iframe
                 className="h-full w-full"
                 src={`https://www.youtube-nocookie.com/embed/${yt}`}
-                title="Film"
+                title={t("akcja.film")}
                 allow="accelerometer; encrypted-media; picture-in-picture"
                 allowFullScreen
               />
@@ -119,7 +124,7 @@ export default async function StronaAkcjiPubliczna({
                 rel="noreferrer"
                 className="mt-6 inline-block text-sm font-medium text-brand-700 underline-offset-4 hover:underline"
               >
-                Zobacz film albo stronę sprawy
+                {t("akcja.zobaczFilm")}
               </a>
             )
           )}
@@ -131,15 +136,15 @@ export default async function StronaAkcjiPubliczna({
                 </p>
               ))
             ) : (
-              <p className="text-slate-500">Opis sprawy pojawi się wkrótce.</p>
+              <p className="text-slate-500">{t("akcja.opisWkrotce")}</p>
             )}
           </div>
           <div className="mt-8 rounded-xl bg-slate-100 p-5 text-sm text-slate-600">
-            <p className="font-medium text-slate-800">Jak to działa</p>
+            <p className="font-medium text-slate-800">{t("akcja.jakDziala")}</p>
             <ol className="mt-2 list-decimal space-y-1 pl-5">
-              <li>Podajesz imię i gminę. Dobieramy posła z Twojego okręgu albo Twój urząd.</li>
-              <li>Dostajesz gotową wiadomość. Możesz ją zmienić po swojemu.</li>
-              <li>Klikasz „Otwórz w poczcie” i wysyłasz ze swojej skrzynki. Odpowiedź przyjdzie do Ciebie.</li>
+              <li>{t("akcja.jak1")}</li>
+              <li>{t("akcja.jak2")}</li>
+              <li>{t("akcja.jak3")}</li>
             </ol>
           </div>
         </article>

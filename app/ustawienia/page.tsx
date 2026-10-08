@@ -5,6 +5,7 @@ import type { Swiatlo, WynikDomeny } from "@/lib/dns-poczty";
 import { Werdykt } from "@/components/Werdykt";
 import { Zespol } from "@/components/Zespol";
 import { POLE } from "@/components/ui";
+import { useT } from "@/lib/i18n/klient";
 
 const pole = POLE;
 
@@ -15,6 +16,7 @@ const KOLOR: Record<Swiatlo, string> = {
 };
 
 export default function Ustawienia() {
+  const { t } = useT();
   const [adres, setAdres] = useState("");
   const [wynik, setWynik] = useState<WynikDomeny | null>(null);
   const [blad, setBlad] = useState<string | null>(null);
@@ -28,10 +30,10 @@ export default function Ustawienia() {
     try {
       const odp = await fetch(`/api/domena?d=${encodeURIComponent(adres)}`);
       const dane = await odp.json();
-      if (!odp.ok) setBlad(dane.blad ?? "Nie udało się sprawdzić domeny.");
+      if (!odp.ok) setBlad(dane.blad ?? t("ustawienia.bladDomeny"));
       else setWynik(dane);
     } catch {
-      setBlad("Nie udało się sprawdzić domeny.");
+      setBlad(t("ustawienia.bladDomeny"));
     } finally {
       setSprawdzam(false);
     }
@@ -39,35 +41,27 @@ export default function Ustawienia() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Ustawienia</h1>
-      <p className="mt-1.5 text-sm text-slate-600">
-        Zespół i sprawdzenie domeny nadawcy przed pierwszą kampanią.
-      </p>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("ustawienia.tytul")}</h1>
+      <p className="mt-1.5 text-sm text-slate-600">{t("ustawienia.opis")}</p>
 
       <Zespol />
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="font-medium">
-          Czy domena nadawcy jest gotowa do wysyłki
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Wpisz adres, z którego chcesz wysyłać kampanię. Sprawdzimy trzy
-          ustawienia domeny, bez których maile trafiają do spamu albo w ogóle
-          nie dochodzą.
-        </p>
+        <h2 className="font-medium">{t("ustawienia.domena.tytul")}</h2>
+        <p className="mt-1 text-sm text-slate-500">{t("ustawienia.domena.opis")}</p>
 
         <form onSubmit={sprawdz} className="mt-5 flex gap-3">
           <input
             className={pole}
             value={adres}
             onChange={(e) => setAdres(e.target.value)}
-            placeholder="np. biuro@twojafirma.pl"
+            placeholder={t("ustawienia.ph")}
           />
           <button
             disabled={sprawdzam || !adres.trim()}
             className="shrink-0 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
           >
-            {sprawdzam ? "Sprawdzam..." : "Sprawdź"}
+            {sprawdzam ? t("ustawienia.sprawdzam") : t("ustawienia.sprawdz")}
           </button>
         </form>
 
@@ -77,25 +71,25 @@ export default function Ustawienia() {
           <div className="mt-6 space-y-3">
             <Werdykt wynik={wynik} />
             <p className="text-sm text-slate-500">
-              Domena:{" "}
+              {t("ustawienia.domena")}{" "}
               <span className="font-medium text-slate-900">{wynik.domena}</span>
             </p>
             <Pozycja
               nazwa="SPF"
-              opis="Kto może wysyłać z tej domeny"
+              opis={t("ustawienia.spf")}
               stan={wynik.spf.stan}
               uwaga={wynik.spf.uwaga}
               rekord={wynik.spf.rekord}
             />
             <Pozycja
               nazwa="DKIM"
-              opis="Podpis potwierdzający, że mail nie został podrobiony"
+              opis={t("ustawienia.dkim")}
               stan={wynik.dkim.stan}
               uwaga={wynik.dkim.uwaga}
             />
             <Pozycja
               nazwa="DMARC"
-              opis="Co robić z mailami, które nie przejdą SPF ani DKIM"
+              opis={t("ustawienia.dmarc")}
               stan={wynik.dmarc.stan}
               uwaga={wynik.dmarc.uwaga}
               rekord={wynik.dmarc.rekord}
@@ -104,10 +98,7 @@ export default function Ustawienia() {
         )}
       </section>
 
-      <p className="mt-6 text-sm text-slate-500">
-        Skrzynkę nadawcy podłączasz teraz w każdej kampanii osobno (strona
-        kampanii, sekcja „Skrzynka nadawcy”).
-      </p>
+      <p className="mt-6 text-sm text-slate-500">{t("ustawienia.skrzynkaInfo")}</p>
     </div>
   );
 }

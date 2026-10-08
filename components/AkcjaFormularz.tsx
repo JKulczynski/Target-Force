@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { etykietaGminy, type Gmina } from "@/lib/akcja";
 import { POLE } from "@/components/ui";
+import { useT } from "@/lib/i18n/klient";
 
 const pole = `mt-1.5 text-[15px] ${POLE}`;
 
@@ -56,6 +57,7 @@ export function AkcjaFormularz({
   gotowa: boolean;
   administrator: string;
 }) {
+  const { t } = useT();
   const [krok, setKrok] = useState<"dane" | "wiadomosc" | "dzieki">("dane");
   const [razem, setRazem] = useState(razemStart);
   const [imie, setImie] = useState("");
@@ -99,8 +101,8 @@ export function AkcjaFormularz({
   async function podpisz(e: React.FormEvent) {
     e.preventDefault();
     setBlad(null);
-    if (!gmina) return setBlad("Wybierz gminę z listy.");
-    if (!zgoda) return setBlad("Zaznacz zgodę na przetwarzanie danych.");
+    if (!gmina) return setBlad(t("akcja.wybierzGmine"));
+    if (!zgoda) return setBlad(t("akcja.zaznaczZgode"));
     setWysyla(true);
     try {
       const odp = await fetch(`/api/akcja/${slug}`, {
@@ -119,15 +121,15 @@ export function AkcjaFormularz({
         }),
       });
       const dane = await odp.json().catch(() => ({}));
-      if (!odp.ok) return setBlad(dane.blad ?? "Nie udało się. Spróbuj ponownie.");
-      if (!dane.podpisId) return setBlad("Nie udało się. Spróbuj ponownie.");
+      if (!odp.ok) return setBlad(dane.blad ?? t("akcja.nieUdalo"));
+      if (!dane.podpisId) return setBlad(t("akcja.nieUdalo"));
       setW(dane);
       setTemat(dane.temat);
       setTresc(dane.tresc);
       setRazem(dane.razem);
       setKrok("wiadomosc");
     } catch {
-      setBlad("Nie udało się. Sprawdź połączenie i spróbuj ponownie.");
+      setBlad(t("akcja.nieUdaloPolaczenie"));
     } finally {
       setWysyla(false);
     }
@@ -153,9 +155,7 @@ export function AkcjaFormularz({
   async function kopiuj() {
     if (!w) return;
     try {
-      await navigator.clipboard.writeText(
-        `Do: ${w.odbiorca.email}\nTemat: ${temat}\n\n${tresc}`,
-      );
+      await navigator.clipboard.writeText(t("akcja.kopia", { email: w.odbiorca.email, temat, tresc }));
       setSkopiowano(true);
       zapiszZdarzenie("otwarto");
     } catch {
@@ -164,7 +164,7 @@ export function AkcjaFormularz({
   }
 
   const linkStrony = typeof window !== "undefined" ? window.location.href : "";
-  const tekstUdostepnienia = `Napisałem do swojego posła w tej sprawie. Zajmuje to dwie minuty: ${linkStrony}`;
+  const tekstUdostepnienia = t("akcja.tekstUdostepnienia", { link: linkStrony });
 
   async function udostepnij() {
     zapiszZdarzenie("udostepnil");
@@ -190,23 +190,21 @@ export function AkcjaFormularz({
         <span className="text-2xl font-semibold tabular-nums text-slate-900">
           {razem}
         </span>{" "}
-        {razem === 1 ? "osoba już napisała" : razem >= 2 && razem <= 4 ? "osoby już napisały" : "osób już napisało"}
+        {t.n("akcja.juzNapisalo", razem)}
       </p>
 
       {!gotowa && krok === "dane" && (
         <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-100">
-          Akcja jest jeszcze w przygotowaniu. Wróć za chwilę.
+          {t("akcja.wPrzygotowaniu")}
         </p>
       )}
 
       {krok === "dane" && (
         <form onSubmit={podpisz} className="mt-5 space-y-4" aria-busy={wysyla}>
-          <h2 className="text-lg font-semibold tracking-tight">
-            Napisz do swojego posła
-          </h2>
+          <h2 className="text-lg font-semibold tracking-tight">{t("akcja.napiszDoPosla")}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">Imię</span>
+              <span className="text-sm font-medium text-slate-700">{t("akcja.imie")}</span>
               <input
                 className={pole}
                 required
@@ -218,9 +216,7 @@ export function AkcjaFormularz({
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">
-                Nazwisko
-              </span>
+              <span className="text-sm font-medium text-slate-700">{t("akcja.nazwisko")}</span>
               <input
                 className={pole}
                 maxLength={80}
@@ -233,12 +229,10 @@ export function AkcjaFormularz({
 
           <div className="relative">
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">
-                Gmina, w której mieszkasz
-              </span>
+              <span className="text-sm font-medium text-slate-700">{t("akcja.gmina")}</span>
               <input
                 className={pole}
-                placeholder="zacznij pisać, np. Bolesławiec"
+                placeholder={t("akcja.gmina.ph")}
                 value={gmina ? etykietaGminy(gmina) : szukaj}
                 onFocus={() => {
                   wczytajGminy();
@@ -263,13 +257,9 @@ export function AkcjaFormularz({
                 className="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
               >
                 {gminy === null ? (
-                  <li className="px-3.5 py-2 text-sm text-slate-400">
-                    Wczytuję gminy...
-                  </li>
+                  <li className="px-3.5 py-2 text-sm text-slate-400">{t("akcja.wczytujeGminy")}</li>
                 ) : podpowiedzi.length === 0 ? (
-                  <li className="px-3.5 py-2 text-sm text-slate-400">
-                    Nie znaleziono. Spróbuj innej pisowni.
-                  </li>
+                  <li className="px-3.5 py-2 text-sm text-slate-400">{t("akcja.nieZnaleziono")}</li>
                 ) : (
                   podpowiedzi.map((g) => (
                     <li key={g.t} role="option" aria-selected={false}>
@@ -292,31 +282,27 @@ export function AkcjaFormularz({
                 )}
               </ul>
             )}
-            <span className="mt-1.5 block text-xs text-slate-500">
-              Po gminie dobieramy posła z Twojego okręgu wyborczego.
-            </span>
+            <span className="mt-1.5 block text-xs text-slate-500">{t("akcja.poGminie")}</span>
           </div>
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Dlaczego to dla Ciebie ważne{" "}
-              <span className="font-normal text-slate-500">(opcjonalnie, 1-2 zdania)</span>
+              {t("akcja.dlaczego")}{" "}
+              <span className="font-normal text-slate-500">{t("akcja.dlaczego.opc")}</span>
             </span>
             <textarea
               className={`${pole} min-h-20 resize-y`}
               maxLength={400}
               value={dlaczego}
               onChange={(e) => setDlaczego(e.target.value)}
-              placeholder="np. Codziennie przeprowadzam tędy dwójkę dzieci do szkoły."
+              placeholder={t("akcja.dlaczego.ph")}
             />
-            <span className="mt-1.5 block text-xs text-slate-500">
-              Własne zdanie trafi do wiadomości. Poseł czyta takie maile uważniej niż identyczne.
-            </span>
+            <span className="mt-1.5 block text-xs text-slate-500">{t("akcja.dlaczego.info")}</span>
           </label>
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              E-mail <span className="font-normal text-slate-500">(opcjonalnie)</span>
+              {t("akcja.email")} <span className="font-normal text-slate-500">{t("akcja.opcjonalnie")}</span>
             </span>
             <input
               className={pole}
@@ -334,7 +320,7 @@ export function AkcjaFormularz({
                 checked={zgodaInformacje}
                 onChange={(e) => setZgodaInformacje(e.target.checked)}
               />
-              <span>Chcę dostać wiadomość, co dała ta akcja.</span>
+              <span>{t("akcja.chceInfo")}</span>
             </label>
           )}
 
@@ -354,10 +340,7 @@ export function AkcjaFormularz({
               onChange={(e) => setZgoda(e.target.checked)}
               required
             />
-            <span>
-              Zgadzam się na przetwarzanie podanych danych, żeby dobrać adresata i
-              przygotować dla mnie wiadomość.
-            </span>
+            <span>{t("akcja.zgoda")}</span>
           </label>
 
           {blad && (
@@ -370,43 +353,38 @@ export function AkcjaFormularz({
             disabled={wysyla || !gotowa}
             className="w-full rounded-lg bg-brand-600 px-5 py-3 text-[15px] font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
           >
-            {wysyla ? "Przygotowuję wiadomość..." : "Przygotuj moją wiadomość"}
+            {wysyla ? t("akcja.przygotowuje") : t("akcja.przygotuj")}
           </button>
 
           <p className="text-xs leading-relaxed text-slate-500">
-            Administrator danych: {administrator || "organizator akcji"}. Imię,
-            nazwisko i gminę zapisujemy, żeby dobrać adresata i policzyć podpisy;
-            e-mail tylko wtedy, gdy chcesz dostać informację o wynikach. Wiadomość
-            wysyłasz sam ze swojej poczty. Nie wysyłamy nic w Twoim imieniu.
+            {t("akcja.rodo", { administrator: administrator || t("akcja.organizator") })}
           </p>
         </form>
       )}
 
       {krok === "wiadomosc" && w && (
         <div className="mt-5 space-y-4">
-          <h2 className="text-lg font-semibold tracking-tight">Twoja wiadomość</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{t("akcja.twojaWiadomosc")}</h2>
           <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm">
-            <p className="text-xs font-medium text-slate-500">Do</p>
+            <p className="text-xs font-medium text-slate-500">{t("akcja.do")}</p>
             <p className="mt-0.5 font-medium text-slate-900">{w.odbiorca.nazwa}</p>
             <p className="text-slate-600">
               {w.odbiorca.email}
-              {w.odbiorca.okreg && ` · okręg ${w.odbiorca.okreg}`}
+              {w.odbiorca.okreg && t("akcja.okreg", { okreg: w.odbiorca.okreg })}
             </p>
           </div>
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Temat</span>
+            <span className="text-sm font-medium text-slate-700">{t("akcja.temat")}</span>
             <input className={pole} value={temat} onChange={(e) => setTemat(e.target.value)} />
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Treść</span>
+            <span className="text-sm font-medium text-slate-700">{t("akcja.tresc")}</span>
             <textarea
               className={`${pole} min-h-72 resize-y leading-relaxed`}
               value={tresc}
               onChange={(e) => setTresc(e.target.value)}
             />
-            <span className="mt-1.5 block text-xs text-slate-500">
-              Możesz zmienić, co chcesz. Własne słowa działają najlepiej.
-            </span>
+            <span className="mt-1.5 block text-xs text-slate-500">{t("akcja.mozeszZmienic")}</span>
           </label>
           <a
             href={mailto}
@@ -416,7 +394,7 @@ export function AkcjaFormularz({
             }}
             className="block w-full rounded-lg bg-brand-600 px-5 py-3 text-center text-[15px] font-medium text-white transition-colors duration-150 hover:bg-brand-700"
           >
-            Otwórz w poczcie i wyślij
+            {t("akcja.otworzWPoczcie")}
           </a>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <a
@@ -429,33 +407,26 @@ export function AkcjaFormularz({
               }}
               className="font-medium text-brand-700 underline-offset-4 hover:underline"
             >
-              Otwórz w Gmailu
+              {t("akcja.otworzWGmailu")}
             </a>
             <button type="button" onClick={kopiuj} className="font-medium text-slate-600 underline-offset-4 hover:underline">
-              {skopiowano ? "Skopiowano" : "Skopiuj treść i adres"}
+              {skopiowano ? t("akcja.skopiowano") : t("akcja.skopiujTresc")}
             </button>
           </div>
-          <p className="text-xs leading-relaxed text-slate-500">
-            Wiadomość wyjdzie z Twojej skrzynki, od Ciebie. Odpowiedź posła
-            przyjdzie na Twój adres.
-          </p>
+          <p className="text-xs leading-relaxed text-slate-500">{t("akcja.wyjdzieZTwojej")}</p>
         </div>
       )}
 
       {krok === "dzieki" && (
         <div className="mt-5 space-y-4">
-          <h2 className="text-lg font-semibold tracking-tight">Dziękujemy!</h2>
-          <p className="text-sm text-slate-700">
-            Jeśli poczta się nie otworzyła, wróć wyżej i skopiuj treść. Jeden
-            mail od mieszkańca znaczy więcej niż sto od organizacji. Dwa znaczą
-            jeszcze więcej.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{t("akcja.dziekujemy")}</h2>
+          <p className="text-sm text-slate-700">{t("akcja.dziekujemy.opis")}</p>
           <button
             type="button"
             onClick={udostepnij}
             className="w-full rounded-lg bg-slate-900 px-5 py-3 text-[15px] font-medium text-white transition-colors duration-150 hover:bg-slate-800"
           >
-            {skopiowanoLink ? "Link skopiowany" : "Udostępnij znajomym"}
+            {skopiowanoLink ? t("akcja.linkSkopiowany") : t("akcja.udostepnij")}
           </button>
           <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
             <a
@@ -478,10 +449,10 @@ export function AkcjaFormularz({
             </a>
             <a
               className="font-medium text-slate-600 underline-offset-4 hover:underline"
-              href={`mailto:?subject=${encodeURIComponent("Dwie minuty dla tej sprawy")}&body=${encodeURIComponent(tekstUdostepnienia)}`}
+              href={`mailto:?subject=${encodeURIComponent(t("akcja.emailTemat"))}&body=${encodeURIComponent(tekstUdostepnienia)}`}
               onClick={() => zapiszZdarzenie("udostepnil")}
             >
-              E-mail
+              {t("akcja.emailLink")}
             </a>
           </div>
           <button
@@ -489,7 +460,7 @@ export function AkcjaFormularz({
             onClick={() => setKrok("wiadomosc")}
             className="text-sm text-slate-500 underline-offset-4 hover:underline"
           >
-            Wróć do wiadomości
+            {t("akcja.wrocDoWiadomosci")}
           </button>
         </div>
       )}

@@ -1,82 +1,64 @@
 import { ZRODLA, type ZrodloId } from "@/lib/types";
+import { tlumacz, type Klucz } from "@/lib/i18n";
+import { jezykZCookie } from "@/lib/i18n/serwer";
 
 /** Stan źródła widziany przez użytkownika: czy można go użyć od razu. */
-const STAN: Record<ZrodloId, { etykieta: string; klasa: string }> = {
+const STAN: Record<ZrodloId, { etykieta: Klucz; klasa: string }> = {
   sejm: {
-    etykieta: "Gotowe",
+    etykieta: "zrodla.stan.gotowe",
     klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   },
   parlament_ue: {
-    etykieta: "Gotowe",
+    etykieta: "zrodla.stan.gotowe",
     klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   },
   tweede_kamer: {
-    etykieta: "Gotowe",
+    etykieta: "zrodla.stan.gotowe",
     klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   },
   samorzady: {
-    etykieta: "Gotowe",
+    etykieta: "zrodla.stan.gotowe",
     klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   },
   ministerstwa: {
-    etykieta: "Gotowe",
+    etykieta: "zrodla.stan.gotowe",
     klasa: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   },
   wlasna_lista: {
-    etykieta: "Import CSV",
+    etykieta: "zrodla.stan.import",
     klasa: "bg-slate-100 text-slate-700 ring-slate-200",
   },
   apollo: {
-    etykieta: "Wymaga klucza",
+    etykieta: "zrodla.stan.klucz",
     klasa: "bg-amber-50 text-amber-800 ring-amber-200",
   },
   clay: {
-    etykieta: "Wymaga klucza",
+    etykieta: "zrodla.stan.klucz",
     klasa: "bg-amber-50 text-amber-800 ring-amber-200",
   },
 };
 
-const GRUPY: { tytul: string; opis: string; typ: string }[] = [
-  {
-    tytul: "Decydenci publiczni",
-    opis: "Oficjalne źródła z adresami e-mail. Lista odbiorców powstaje jednym kliknięciem w kampanii.",
-    typ: "politycy",
-  },
-  {
-    tytul: "Własne listy",
-    opis: "Odbiorcy spoza rejestrów: media, darczyńcy, firmy, partnerzy.",
-    typ: "wlasne",
-  },
-  {
-    tytul: "Bazy B2B",
-    opis: "Kontakty biznesowe z płatnych baz. Potrzebny klucz API klienta.",
-    typ: "b2b",
-  },
-];
+const GRUPY = ["politycy", "wlasne", "b2b"] as const;
 
-export default function Zrodla() {
+export default async function Zrodla() {
+  const t = tlumacz(await jezykZCookie());
   const lista = Object.keys(ZRODLA) as ZrodloId[];
 
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Źródła kontaktów
-      </h1>
-      <p className="mt-1.5 max-w-2xl text-sm text-slate-600">
-        Skąd biorą się odbiorcy kampanii. Źródła publiczne sprawdzamy na
-        bieżąco, więc w kampanii zawsze trafiasz na aktualny skład.
-      </p>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("zrodla.tytul")}</h1>
+      <p className="mt-1.5 max-w-2xl text-sm text-slate-600">{t("zrodla.opis")}</p>
 
       <div className="mt-8 space-y-10">
-        {GRUPY.map((g) => {
-          const zGrupy = lista.filter((id) => ZRODLA[id].typ === g.typ);
+        {GRUPY.map((typ) => {
+          const zGrupy = lista.filter((id) => ZRODLA[id].typ === typ);
           if (!zGrupy.length) return null;
           return (
-            <section key={g.typ}>
+            <section key={typ}>
               <h2 className="text-base font-semibold tracking-tight text-slate-900">
-                {g.tytul}
+                {t(`zrodla.grupa.${typ}.tytul`)}
               </h2>
-              <p className="mt-1 text-sm text-slate-600">{g.opis}</p>
+              <p className="mt-1 text-sm text-slate-600">{t(`zrodla.grupa.${typ}.opis`)}</p>
               <ul className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
                 {zGrupy.map((id) => {
                   const z = ZRODLA[id];
@@ -87,10 +69,8 @@ export default function Zrodla() {
                       className="flex items-start justify-between gap-6 border-t border-slate-100 px-5 py-4 first:border-t-0"
                     >
                       <div className="min-w-0">
-                        <p className="font-medium text-slate-900">{z.nazwa}</p>
-                        <p className="mt-0.5 text-sm text-slate-600">
-                          {z.opis}
-                        </p>
+                        <p className="font-medium text-slate-900">{t(`zrodlo.${id}.nazwa`)}</p>
+                        <p className="mt-0.5 text-sm text-slate-600">{t(`zrodlo.${id}.opis`)}</p>
                         {z.api && (
                           <a
                             href={z.api}
@@ -105,7 +85,7 @@ export default function Zrodla() {
                       <span
                         className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${stan.klasa}`}
                       >
-                        {stan.etykieta}
+                        {t(stan.etykieta)}
                       </span>
                     </li>
                   );

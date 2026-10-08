@@ -6,12 +6,12 @@ import { useEffect, useState } from "react";
 import {
   kampania,
   podpisyKampanii,
-  TYPY_WYDARZEN,
   wydarzenia,
   type Wydarzenie,
 } from "@/lib/store";
 import type { Kampania } from "@/lib/types";
-import { ZRODLA_FINANSOWANIA, type TrescOswiadczenia } from "@/lib/oswiadczenie";
+import type { TrescOswiadczenia } from "@/lib/oswiadczenie";
+import { useT } from "@/lib/i18n/klient";
 
 type Odbiorca = {
   id: string;
@@ -33,24 +33,13 @@ const procent = (a: number, b: number) =>
 /**
  * Liczby odniesienia z badań (research TF, Vault: wiedza/research-tf-skille, 06.10.2026).
  * Tylko wartości, które są w wynikach researchu, z nazwą źródła. Orientacyjne: inne kraje, inne tematy, inne lata.
+ * Opis w słowniku (raport.bench.N), źródło (cytowanie) zostaje jak w publikacji.
  */
 const BENCHMARK = [
-  {
-    wartosc: "ok. 28%",
-    opis: "europosłów odpowiedziało merytorycznie na krótki mail obywatela z własnego kraju",
-    zrodlo: "De Vries, Dinas, Solaz 2016, wszyscy posłowie PE",
-  },
-  {
-    wartosc: "15-17%",
-    opis: "odpowiedzi na niezamawiane maile rzecznicze do parlamentarzystów stanowych w USA",
-    zrodlo: "Kreps i Kriner 2023, 32 tys. maili",
-  },
-  {
-    wartosc: "94%",
-    opis: "gmin w Polsce odpowiedziało na formalny wniosek o informację publiczną",
-    zrodlo: "Fundacja Batorego 2024, próba 200 gmin",
-  },
-];
+  { n: 1, wartosc: "ok. 28%", zrodlo: "De Vries, Dinas, Solaz 2016, wszyscy posłowie PE" },
+  { n: 2, wartosc: "15-17%", zrodlo: "Kreps i Kriner 2023, 32 tys. maili" },
+  { n: 3, wartosc: "94%", zrodlo: "Fundacja Batorego 2024, próba 200 gmin" },
+] as const;
 const osoba = (o: Odbiorca) =>
   [o.imie, o.nazwisko].filter(Boolean).join(" ") || o.email || "";
 
@@ -59,6 +48,7 @@ const osoba = (o: Odbiorca) =>
  * Druga część dowodu efektu z wizji (30.09). Do PDF przez druk przeglądarki (nawigacja chowa się przy druku).
  */
 export default function RaportKampanii() {
+  const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const [k, setK] = useState<Kampania | null | undefined>(undefined);
   const [lista, setLista] = useState<Odbiorca[] | null>(null);
@@ -92,10 +82,11 @@ export default function RaportKampanii() {
   }, [id]);
 
   if (k === undefined || lista === null)
-    return <p className="text-sm text-slate-400">Wczytuję...</p>;
+    return <p className="text-sm text-slate-400">{t("wspolne.wczytuje")}</p>;
   if (k === null)
-    return <p className="text-sm text-slate-500">Nie ma takiej kampanii.</p>;
+    return <p className="text-sm text-slate-500">{t("raport.brak")}</p>;
 
+  const data = (d: string | Date) => new Date(d).toLocaleDateString(t.locale);
   const wyslani = lista.filter((o) => o.wyslanychKrokow > 0);
   const kliknieci = wyslani.filter((o) => o.kliknal);
   const odpisali = wyslani.filter((o) => o.odpowiedzial);
@@ -111,7 +102,7 @@ export default function RaportKampanii() {
     { razem: number; wyslani: number; kliknieci: number; odpisali: number }
   >();
   for (const o of lista) {
-    const nazwa = o.klub || "Bez klubu";
+    const nazwa = o.klub || t("raport.bezKlubu");
     const w = kluby.get(nazwa) ?? {
       razem: 0,
       wyslani: 0,
@@ -138,24 +129,24 @@ export default function RaportKampanii() {
 
   const liczby = [
     {
-      etykieta: "Adresaci",
+      etykieta: t("raport.l.adresaci"),
       wartosc: wyslani.length,
-      opis: `${maile} ${maile === 1 ? "mail" : "maili"} z przypomnieniami`,
+      opis: t.n("raport.maili", maile),
     },
     {
-      etykieta: "Kliknęli w link",
+      etykieta: t("raport.l.kliknieli"),
       wartosc: kliknieci.length,
-      opis: `${procent(kliknieci.length, wyslani.length)} adresatów`,
+      opis: t("raport.adresatow", { p: procent(kliknieci.length, wyslani.length) }),
     },
     {
-      etykieta: "Odpisali",
+      etykieta: t("raport.l.odpisali"),
       wartosc: odpisali.length,
-      opis: `${procent(odpisali.length, wyslani.length)} adresatów`,
+      opis: t("raport.adresatow", { p: procent(odpisali.length, wyslani.length) }),
     },
     {
-      etykieta: "Wypisali się",
+      etykieta: t("raport.l.wypisali"),
       wartosc: wypisani.length,
-      opis: `${procent(wypisani.length, wyslani.length)} adresatów`,
+      opis: t("raport.adresatow", { p: procent(wypisani.length, wyslani.length) }),
     },
   ];
 
@@ -166,48 +157,53 @@ export default function RaportKampanii() {
           href={`/kampanie/${id}`}
           className="text-sm text-slate-500 transition hover:text-slate-900"
         >
-          &larr; Kampania
+          &larr; {t("raport.kampania")}
         </Link>
         <button
           onClick={() => window.print()}
           className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700"
         >
-          Zapisz jako PDF
+          {t("raport.pdf")}
         </button>
       </div>
 
       <header className="mt-6">
         <p className="flex items-center gap-2 text-sm font-medium text-brand-700">
           <span aria-hidden className="h-2 w-2 rounded-full bg-brand-600" />
-          Target Force · raport kampanii
+          {t("raport.naglowek")}
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           {k.nazwa}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {daty.length
-            ? `Wysyłka ${new Date(daty[0]).toLocaleDateString("pl-PL")}${daty.length > 1 && daty[0].slice(0, 10) !== daty[daty.length - 1].slice(0, 10) ? ` - ${new Date(daty[daty.length - 1]).toLocaleDateString("pl-PL")}` : ""}`
-            : "Wysyłka jeszcze nie ruszyła"}
-          {" · "}stan na {new Date().toLocaleDateString("pl-PL")}
+            ? t("raport.wysylka", { od: data(daty[0]) }) +
+              (daty.length > 1 && daty[0].slice(0, 10) !== daty[daty.length - 1].slice(0, 10)
+                ? t("raport.wysylkaDo", { do: data(daty[daty.length - 1]) })
+                : "")
+            : t("raport.nieRuszyla")}
+          {" · "}
+          {t("raport.stanNa", { data: data(new Date()) })}
         </p>
         {k.cel && (
           <p className="mt-3 max-w-3xl text-sm text-slate-600">
-            <span className="text-slate-400">Cel: </span>
+            <span className="text-slate-400">{t("raport.cel")}</span>
             {k.cel}
           </p>
         )}
         {oswiadczenie && (
           <p className="mt-2 max-w-3xl text-sm text-slate-600">
-            <span className="text-slate-400">Zleceniodawca: </span>
+            <span className="text-slate-400">{t("raport.zleceniodawca")}</span>
             {oswiadczenie.tresc.zleceniodawca}
-            {oswiadczenie.tresc.rola === "zlecenie" && ` (na zlecenie: ${oswiadczenie.tresc.naZlecenieKogo})`}
+            {oswiadczenie.tresc.rola === "zlecenie" &&
+              t("raport.naZlecenie", { kto: oswiadczenie.tresc.naZlecenieKogo })}
             {" · "}
-            <span className="text-slate-400">źródło finansowania: </span>
-            {ZRODLA_FINANSOWANIA[oswiadczenie.tresc.zrodlo]}
+            <span className="text-slate-400">{t("raport.zrodloFin")}</span>
+            {t(`zrodloFin.${oswiadczenie.tresc.zrodlo}`)}
             {oswiadczenie.tresc.zrodloOpis && ` (${oswiadczenie.tresc.zrodloOpis})`}
             {" · "}
-            <span className="text-slate-400">oświadczenie z </span>
-            {new Date(oswiadczenie.utworzone).toLocaleDateString("pl-PL")}
+            <span className="text-slate-400">{t("raport.oswZ")}</span>
+            {data(oswiadczenie.utworzone)}
           </p>
         )}
       </header>
@@ -230,20 +226,18 @@ export default function RaportKampanii() {
       {wplyw.length > 0 && (
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">
-            Co się wydarzyło
+            {t("raport.coSie")}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Reakcje decydentów i skutki kampanii, w kolejności od najnowszych.
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{t("raport.coSie.opis")}</p>
           <ol className="mt-4 space-y-3">
             {wplyw.map((w) => (
               <li key={w.id} className="flex gap-4 text-sm">
                 <span className="w-20 shrink-0 tabular-nums text-slate-500">
-                  {new Date(w.data).toLocaleDateString("pl-PL")}
+                  {data(w.data)}
                 </span>
                 <span>
                   <span className="mr-2 rounded-md bg-brand-50 px-1.5 py-0.5 text-xs font-medium text-brand-700 ring-1 ring-brand-100">
-                    {TYPY_WYDARZEN[w.typ]}
+                    {t(`typWydarzenia.${w.typ}`)}
                   </span>
                   <span className="text-slate-800">{w.opis}</span>
                 </span>
@@ -256,18 +250,14 @@ export default function RaportKampanii() {
       {k.akcjaSlug && akcja && (
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">
-            Strona akcji: głos mieszkańców
+            {t("raport.akcja.tytul")}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Mieszkańcy pisali do swoich posłów z własnej poczty. Liczymy podpisy
-            i kliknięcia „Otwórz w poczcie”, nie same maile, bo te wychodzą z ich
-            skrzynek.
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{t("raport.akcja.opis")}</p>
           <div className="mt-4 grid grid-cols-3 gap-4">
             {[
-              ["Podpisało", akcja.razem],
-              ["Otworzyło pocztę z gotowym mailem", akcja.otworzyli],
-              ["Udostępniło dalej", akcja.udostepnili],
+              [t("raport.akcja.podpisalo"), akcja.razem],
+              [t("raport.akcja.otworzylo"), akcja.otworzyli],
+              [t("raport.akcja.udostepnilo"), akcja.udostepnili],
             ].map(([e, v]) => (
               <div key={String(e)}>
                 <p className="text-3xl font-semibold tracking-tight">{v}</p>
@@ -277,7 +267,7 @@ export default function RaportKampanii() {
           </div>
           {akcja.zrodla.length > 1 && (
             <p className="mt-4 text-sm text-slate-600">
-              <span className="text-slate-400">Skąd przyszli: </span>
+              <span className="text-slate-400">{t("raport.skad")}</span>
               {akcja.zrodla.map((z) => `${z.nazwa} ${z.ile}`).join(" · ")}
             </p>
           )}
@@ -286,19 +276,16 @@ export default function RaportKampanii() {
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
         <h2 className="text-base font-semibold tracking-tight text-slate-900">
-          Dla porównania
+          {t("raport.porownanie")}
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Odsetek odpowiedzi w badaniach kontaktu z decydentami. Liczby
-          orientacyjne: inne kraje, tematy i lata, nie ta kampania.
-        </p>
+        <p className="mt-1 text-sm text-slate-500">{t("raport.porownanie.opis")}</p>
         <ul className="mt-4 grid gap-4 md:grid-cols-3">
           {BENCHMARK.map((b) => (
             <li key={b.zrodlo}>
               <p className="text-2xl font-semibold tracking-tight">
                 {b.wartosc}
               </p>
-              <p className="mt-1 text-sm text-slate-600">{b.opis}</p>
+              <p className="mt-1 text-sm text-slate-600">{t(`raport.bench.${b.n}`)}</p>
               <p className="mt-1 text-xs text-slate-400">({b.zrodlo})</p>
             </li>
           ))}
@@ -308,15 +295,15 @@ export default function RaportKampanii() {
       {wierszeKlubow.length > 1 && (
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">
-            Według klubów
+            {t("raport.wedlugKlubow")}
           </h2>
           <table className="mt-3 w-full text-left text-sm">
             <thead className="text-xs text-slate-400">
               <tr>
-                <th className="py-2 pr-3 font-medium">Klub</th>
-                <th className="py-2 pr-3 font-medium">Adresaci</th>
-                <th className="py-2 pr-3 font-medium">Kliknęli</th>
-                <th className="py-2 font-medium">Odpisali</th>
+                <th className="py-2 pr-3 font-medium">{t("raport.kol.klub")}</th>
+                <th className="py-2 pr-3 font-medium">{t("raport.kol.adresaci")}</th>
+                <th className="py-2 pr-3 font-medium">{t("raport.kol.kliknieli")}</th>
+                <th className="py-2 font-medium">{t("raport.kol.odpisali")}</th>
               </tr>
             </thead>
             <tbody>
@@ -345,12 +332,10 @@ export default function RaportKampanii() {
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="text-base font-semibold tracking-tight text-slate-900">
-          Kto zareagował
+          {t("raport.ktoZareagowal")}
         </h2>
         {zaangazowani.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-400">
-            Na razie nikt nie kliknął ani nie odpisał.
-          </p>
+          <p className="mt-3 text-sm text-slate-400">{t("raport.niktNie")}</p>
         ) : (
           <table className="mt-3 w-full text-left text-sm">
             <tbody>
@@ -365,11 +350,9 @@ export default function RaportKampanii() {
                   </td>
                   <td className="py-2 text-right text-xs">
                     {o.odpowiedzial ? (
-                      <span className="font-medium text-emerald-700">
-                        odpisał(a)
-                      </span>
+                      <span className="font-medium text-emerald-700">{t("raport.odpisal")}</span>
                     ) : (
-                      <span className="text-slate-600">kliknął(a) w link</span>
+                      <span className="text-slate-600">{t("raport.kliknal")}</span>
                     )}
                   </td>
                 </tr>
@@ -379,10 +362,7 @@ export default function RaportKampanii() {
         )}
       </section>
 
-      <p className="mt-6 text-xs text-slate-400">
-        Kliknięcia liczone przez link śledzący w treści maila. Odpowiedzi
-        oznacza nadawca, bo trafiają do jego skrzynki.
-      </p>
+      <p className="mt-6 text-xs text-slate-400">{t("raport.stopka")}</p>
     </>
   );
 }
