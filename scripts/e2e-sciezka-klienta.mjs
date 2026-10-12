@@ -1,7 +1,7 @@
 // Test calej sciezki klienta WinOver (blok D, 12.10). Uruchamia prawdziwa przegladarke na wskazanym adresie,
 // loguje sie kontem z "Organizacji testowej" (zwykly klient, nie administrator) i przechodzi:
 // lista -> blokada panelu admina -> kreator z szablonu -> oswiadczenie (automatyczna akceptacja) -> petycja -> raport -> regulamin.
-// Nic nie wysyla do decydentow (bez skrzynki nie da sie). Kampania testowa zostaje w organizacji testowej.
+// Nic nie wysyla do decydentow (bez skrzynki nie da sie). Na koncu usuwa kampanie testowa.
 //
 // Uzycie:
 //   node scripts/e2e-sciezka-klienta.mjs <katalog_na_zrzuty> <plik_z_haslem> [adres=https://target-force.vercel.app]
@@ -138,6 +138,15 @@ try {
   await krok("regulamin", async () => {
     await s.goto(`${adres}/regulamin`, { waitUntil: "load" });
     await s.getByRole("heading", { name: "Regulamin WinOver" }).waitFor();
+  });
+
+  await krok("sprzatanie", async () => {
+    // Kampania testowa nie zostaje w bazie: usuwamy ją tym samym przyciskiem, którego używa klient.
+    s.on("dialog", (d) => d.accept());
+    await s.goto(`${adres}/kampanie/${idKampanii}`, { waitUntil: "load" });
+    await s.getByRole("button", { name: "Usuń kampanię" }).click();
+    await s.waitForURL((u) => !u.toString().includes(idKampanii), { timeout: 20000 });
+    idKampanii = `${idKampanii} (usunieta)`;
   });
 } catch {
   /* wynik kroku juz zapisany */

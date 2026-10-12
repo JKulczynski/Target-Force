@@ -62,10 +62,14 @@ tests/                vitest, czyste funkcje
 
 ## Dostep i bezpieczenstwo
 
-- Dane widzi i zmienia tylko zespol: tabela `zespol` + funkcja `czy_w_zespole()` w kazdej polityce RLS.
-- Klucz serwisowy (`SUPABASE_SERVICE_ROLE_KEY`) tylko na serwerze: cron, zaproszenia do zespolu, strona akcji.
-- Hasla SMTP szyfrowane AES-256-GCM kluczem `TF_KLUCZ_SZYFROWANIA`, odczyt tylko przez funkcje bazy po sprawdzeniu zespolu.
-- Sciezki publiczne (proxy): `/login`, `/auth`, `/r/`, `/w/`, `/a/`, `/api/akcja/`, `/api/cron/`.
+- Organizacje (od 12.10): kazdy klient widzi tylko swoje dane. Tabele `organizacje` i `czlonkowie`, polityki RLS po `czy_dostep_org()` i `czy_dostep_kampania()`.
+- Administratorzy WinOver (Jan, Piotr) = tabela `zespol`: widza wszystkie organizacje, panel `/admin`, decyzje o oswiadczeniach.
+- Oswiadczenie zleceniodawcy: kampanie "poza zakresem" akceptuje automat, reszta czeka na administratora. Straznik w bazie (`straznik_kampanii`) nie pozwala klientowi zaakceptowac samego siebie.
+- Klucz serwisowy (`SUPABASE_SERVICE_ROLE_KEY`) tylko na serwerze: cron, zaproszenia, panel admina, automatyczna akceptacja, strona akcji.
+- Hasla SMTP szyfrowane AES-256-GCM kluczem `TF_KLUCZ_SZYFROWANIA`, odczyt tylko przez funkcje bazy po sprawdzeniu organizacji.
+- Konta tylko z zaproszenia (rejestracja wylaczona w Supabase Auth).
+- Wylacznik wszystkich wysylek: `WYSYLKA_WSTRZYMANA=1` w zmiennych Vercel.
+- Sciezki publiczne (proxy): `/login`, `/auth`, `/r/`, `/w/`, `/a/` (tez `?osadzona=1`), `/api/akcja/`, `/api/cron/`, `/regulamin`, `/prywatnosc`.
 
 ## Zmienne srodowiska
 
@@ -80,4 +84,10 @@ npm install
 npm run dev
 npm test          # vitest
 npm run build     # lint + next build (to samo, co Vercel)
+```
+
+Test calej sciezki klienta w prawdziwej przegladarce (konto z "Organizacji testowej", zrzuty ekranu, na koncu usuwa kampanie testowa):
+
+```
+node scripts/e2e-sciezka-klienta.mjs <katalog_na_zrzuty> <plik_z_haslem> [adres]
 ```
