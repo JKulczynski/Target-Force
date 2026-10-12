@@ -10,7 +10,7 @@ import type { Tlumacz } from "@/lib/i18n";
  * Odbiorca zwykle nie ma cookie języka, więc domyślnie strona jest po polsku.
  */
 const strona = (t: Tlumacz, tresc: string) => `<!doctype html><html lang="${t.jezyk}"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Target Force</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>WinOver</title>
 <style>body{font-family:system-ui,sans-serif;background:#faf7f8;color:#1f1a1c;margin:0;padding:48px 16px}
 main{max-width:480px;margin:0 auto;background:#fff;border:1px solid #e8dfe2;border-radius:16px;padding:32px}
 h1{font-size:22px;margin:0 0 8px}p{color:#5a4f53;line-height:1.5}button{background:#b3133f;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:15px;cursor:pointer}</style>

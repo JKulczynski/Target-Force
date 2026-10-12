@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Target Force: "sztab kampanii". Restrained: neutralne powierzchnie z lekkim odcieniem marki,
+ * WinOver: "sztab kampanii". Restrained: neutralne powierzchnie z lekkim odcieniem marki,
  * jeden kolor marki (karmin) tylko dla akcji, stanu i "następnego kroku". Zob. PRODUCT.md / DESIGN.md.
  * Paleta slate jest nadpisana centralnie, więc cała aplikacja (klasy slate-*) dostaje te same neutrale.
  */

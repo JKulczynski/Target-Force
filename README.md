@@ -1,11 +1,11 @@
-# Target Force
+# WinOver (dawniej Target Force)
 
 Kampanie do decydentow od celu do raportu wplywu: opisujesz sprawe, AI pisze warianty wiadomosci
 z psychografia grupy odbiorcow, nadawca je zatwierdza, wysylka idzie partiami z jego skrzynki,
 przypomnienia w tym samym watku, klikniecia i odpowiedzi sa liczone, klient dostaje raport.
 Do tego strona akcji, na ktorej mieszkancy pisza do swoich poslow z wlasnej poczty.
 
-Projekt dla Piotra (agencja). Stan, decyzje i kolejka: `Vault/02_PROJEKTY/piotr/TargetForce/_log.md`
+Projekt dla Piotra (agencja). Stan, decyzje i kolejka: `Vault/02_PROJEKTY/piotr/WinOver/_log.md`
 i `_todo.md`. Charakter produktu: `PRODUCT.md`. Produkcja: https://target-force.vercel.app
 
 ## Stack

@@ -31,7 +31,7 @@ const JEZYK: Partial<Record<ZrodloId, string>> = {
   parlament_ue: "angielski",
 };
 
-const SYSTEM = `Piszesz wiadomości e-mail do decydentów w imieniu nadawcy kampanii w narzędziu Target Force.
+const SYSTEM = `Piszesz wiadomości e-mail do decydentów w imieniu nadawcy kampanii w narzędziu WinOver.
 Psychografia dotyczy GRUPY odbiorców (np. posłowie komisji spraw zagranicznych), nigdy konkretnych nazwanych osób.
 Najpierw ułóż psychografię grupy według metody i profilu bazowego (dostaniesz je osobno), potem pisz wiadomości tak, żeby wynikały z tej psychografii. Trzymaj się poniższego warsztatu.
 

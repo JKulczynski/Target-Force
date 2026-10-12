@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
 
   const pakiet = {
     wygenerowano: new Date().toISOString(),
-    narzedzie: "Target Force",
+    narzedzie: "WinOver",
     wersjaTresciOswiadczen: WERSJA_OSWIADCZENIA,
     kampania: k,
     decyzjaZespolu: {

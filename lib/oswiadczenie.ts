@@ -44,11 +44,11 @@ export const OSWIADCZENIA = {
   jawnosc:
     "Nie ukrywam zleceniodawcy ani źródła finansowania kampanii (zakaz udawania oddolnej inicjatywy).",
   lobbing:
-    "Jeśli kampania jest zawodową działalnością lobbingową w rozumieniu ustawy z 7 lipca 2005 r. o działalności lobbingowej w procesie stanowienia prawa, zleceniodawca dopełnia obowiązków rejestrowych i zgłoszeniowych. Target Force nie prowadzi lobbingu, dostarcza narzędzie.",
+    "Jeśli kampania jest zawodową działalnością lobbingową w rozumieniu ustawy z 7 lipca 2005 r. o działalności lobbingowej w procesie stanowienia prawa, zleceniodawca dopełnia obowiązków rejestrowych i zgłoszeniowych. WinOver nie prowadzi lobbingu, dostarcza narzędzie.",
   pe:
     "Przy kampanii do Parlamentu Europejskiego: znam Rejestr Przejrzystości UE i stosuję jego zasady, jeśli mnie dotyczą.",
   odmowa:
-    "Zgadzam się, że Target Force może odmówić uruchomienia albo zatrzymać kampanię bez podania przyczyny, gdy oświadczenie jest niewiarygodne albo treść narusza prawo lub regulamin.",
+    "Zgadzam się, że WinOver może odmówić uruchomienia albo zatrzymać kampanię bez podania przyczyny, gdy oświadczenie jest niewiarygodne albo treść narusza prawo lub regulamin.",
 } as const;
 export type KluczOswiadczenia = keyof typeof OSWIADCZENIA;
 

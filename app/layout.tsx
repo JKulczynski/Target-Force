@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const t = tlumacz(await jezykZCookie());
   return {
-    title: "Target Force",
+    title: "WinOver",
     description: t("layout.opis"),
     robots: { index: false, follow: false },
   };
@@ -97,7 +97,7 @@ export default async function RootLayout({
                   </svg>
                 </span>
                 <span className="text-[15px] font-semibold tracking-tight">
-                  Target Force
+                  WinOver
                 </span>
               </Link>
               <nav className="flex items-center gap-1">
