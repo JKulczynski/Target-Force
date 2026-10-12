@@ -12,6 +12,8 @@ type Wiadomosc = {
   odbiorca: { nazwa: string; email: string; okreg: string | null };
   temat: string;
   tresc: string;
+  /** Kampania z zaakceptowanym oświadczeniem: można wysłać przez WinOver (z potwierdzeniem mailem). */
+  wysylkaWinOver?: boolean;
 };
 
 /** Skąd przyszedł sympatyk: UTM z adresu strony i domena odsyłacza. Do raportu „podpisy według źródła”. */
@@ -44,7 +46,8 @@ function prosto(s: string) {
 
 /**
  * Formularz strony akcji w trzech krokach: kto i skąd, gotowa wiadomość, podziękowanie z „udostępnij”.
- * Wiadomość wychodzi z poczty sympatyka (mailto albo Gmail w przeglądarce); my liczymy kliknięcia.
+ * Od 12.10 domyślnie wysyła WinOver w imieniu mieszkańca (decyzja Jana): "Wyślij" -> mail z potwierdzeniem ->
+ * wiadomość wychodzi jako "Imię Nazwisko", odpowiedź do mieszkańca. Wysyłka z własnej poczty zostaje jako opcja.
  */
 export function AkcjaFormularz({
   slug,
@@ -58,7 +61,8 @@ export function AkcjaFormularz({
   administrator: string;
 }) {
   const { t } = useT();
-  const [krok, setKrok] = useState<"dane" | "wiadomosc" | "dzieki">("dane");
+  const [krok, setKrok] = useState<"dane" | "wiadomosc" | "potwierdz" | "dzieki">("dane");
+  const [linkProbny, setLinkProbny] = useState<string | null>(null);
   const [razem, setRazem] = useState(razemStart);
   const [imie, setImie] = useState("");
   const [nazwisko, setNazwisko] = useState("");
@@ -128,6 +132,27 @@ export function AkcjaFormularz({
       setTresc(dane.tresc);
       setRazem(dane.razem);
       setKrok("wiadomosc");
+    } catch {
+      setBlad(t("akcja.nieUdaloPolaczenie"));
+    } finally {
+      setWysyla(false);
+    }
+  }
+
+  async function wyslijPrzezWinOver() {
+    if (!w) return;
+    setBlad(null);
+    setWysyla(true);
+    try {
+      const odp = await fetch(`/api/akcja/${slug}/wyslij`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ podpisId: w.podpisId, temat, tresc }),
+      });
+      const dane = await odp.json().catch(() => ({}));
+      if (!odp.ok) return setBlad(dane.blad ?? t("akcja.nieUdalo"));
+      setLinkProbny(dane.linkProbny ?? null);
+      setKrok("potwierdz");
     } catch {
       setBlad(t("akcja.nieUdaloPolaczenie"));
     } finally {
@@ -219,6 +244,8 @@ export function AkcjaFormularz({
               <span className="text-sm font-medium text-slate-700">{t("akcja.nazwisko")}</span>
               <input
                 className={pole}
+                required
+                minLength={2}
                 maxLength={80}
                 autoComplete="family-name"
                 value={nazwisko}
@@ -302,16 +329,18 @@ export function AkcjaFormularz({
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              {t("akcja.email")} <span className="font-normal text-slate-500">{t("akcja.opcjonalnie")}</span>
+              {t("akcja.email")}
             </span>
             <input
               className={pole}
+              required
               type="email"
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </label>
+          <span className="-mt-2 block text-xs text-slate-500">{t("akcja.email.info")}</span>
           {email.trim() && (
             <label className="flex items-start gap-2.5 text-sm text-slate-700">
               <input
@@ -389,34 +418,79 @@ export function AkcjaFormularz({
             />
             <span className="mt-1.5 block text-xs text-slate-500">{t("akcja.mozeszZmienic")}</span>
           </label>
-          <a
-            href={mailto}
-            onClick={() => {
-              zapiszZdarzenie("otwarto");
-              setTimeout(() => setKrok("dzieki"), 800);
-            }}
-            className="block w-full rounded-lg bg-brand-600 px-5 py-3 text-center text-[15px] font-medium text-white transition-colors duration-150 hover:bg-brand-700"
+          {w.wysylkaWinOver && (
+            <>
+              <button
+                type="button"
+                disabled={wysyla}
+                onClick={wyslijPrzezWinOver}
+                className="block w-full rounded-lg bg-brand-600 px-5 py-3 text-center text-[15px] font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
+              >
+                {wysyla ? t("akcja.wysylam") : t("akcja.wyslij")}
+              </button>
+              <p className="text-xs leading-relaxed text-slate-500">{t("akcja.wyslij.info", { email })}</p>
+              {blad && (
+                <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
+                  {blad}
+                </p>
+              )}
+            </>
+          )}
+          <details className="text-sm" open={!w.wysylkaWinOver}>
+            <summary className="cursor-pointer font-medium text-slate-600">{t("akcja.zSwojejPoczty")}</summary>
+            <div className="mt-3 space-y-3">
+              <a
+                href={mailto}
+                onClick={() => {
+                  zapiszZdarzenie("otwarto");
+                  setTimeout(() => setKrok("dzieki"), 800);
+                }}
+                className="block w-full rounded-lg border border-slate-300 px-5 py-2.5 text-center font-medium text-slate-800 transition-colors duration-150 hover:border-slate-900"
+              >
+                {t("akcja.otworzWPoczcie")}
+              </a>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <a
+                  href={gmail}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => {
+                    zapiszZdarzenie("otwarto");
+                    setTimeout(() => setKrok("dzieki"), 800);
+                  }}
+                  className="font-medium text-brand-700 underline-offset-4 hover:underline"
+                >
+                  {t("akcja.otworzWGmailu")}
+                </a>
+                <button type="button" onClick={kopiuj} className="font-medium text-slate-600 underline-offset-4 hover:underline">
+                  {skopiowano ? t("akcja.skopiowano") : t("akcja.skopiujTresc")}
+                </button>
+              </div>
+              <p className="text-xs leading-relaxed text-slate-500">{t("akcja.wyjdzieZTwojej")}</p>
+            </div>
+          </details>
+        </div>
+      )}
+
+      {krok === "potwierdz" && (
+        <div className="mt-5 space-y-4">
+          <h2 className="text-lg font-semibold tracking-tight">{t("akcja.sprawdzSkrzynke")}</h2>
+          <p className="text-sm text-slate-700">{t("akcja.sprawdzSkrzynke.opis", { email })}</p>
+          {linkProbny && (
+            <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-100">
+              {t("akcja.trybProbny")}{" "}
+              <a href={linkProbny} className="font-medium underline" data-link-probny>
+                {t("akcja.trybProbny.link")}
+              </a>
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={udostepnij}
+            className="w-full rounded-lg bg-slate-900 px-5 py-3 text-[15px] font-medium text-white transition-colors duration-150 hover:bg-slate-800"
           >
-            {t("akcja.otworzWPoczcie")}
-          </a>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-            <a
-              href={gmail}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => {
-                zapiszZdarzenie("otwarto");
-                setTimeout(() => setKrok("dzieki"), 800);
-              }}
-              className="font-medium text-brand-700 underline-offset-4 hover:underline"
-            >
-              {t("akcja.otworzWGmailu")}
-            </a>
-            <button type="button" onClick={kopiuj} className="font-medium text-slate-600 underline-offset-4 hover:underline">
-              {skopiowano ? t("akcja.skopiowano") : t("akcja.skopiujTresc")}
-            </button>
-          </div>
-          <p className="text-xs leading-relaxed text-slate-500">{t("akcja.wyjdzieZTwojej")}</p>
+            {skopiowanoLink ? t("akcja.linkSkopiowany") : t("akcja.udostepnij")}
+          </button>
         </div>
       )}
 

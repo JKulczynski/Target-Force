@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { wyslijKolejke } from "@/lib/wysylka-serwer";
+import { wyslijPodpis } from "@/lib/wysylka-sympatyka";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -104,6 +105,20 @@ export async function GET(req: NextRequest) {
       przypomnienia: opis(przyp),
     });
   }
-  console.log("cron wysylka", JSON.stringify(raport));
-  return NextResponse.json({ ok: true, raport });
+  // Kolejka wiadomości mieszkańców (wysyłka przez WinOver): to, co wczoraj przekroczyło dzienny limit na odbiorcę.
+  const { data: kolejka } = await supabase
+    .from("podpisy")
+    .select("id")
+    .eq("status_wysylki", "w_kolejce")
+    .order("potwierdzono", { ascending: true })
+    .limit(300);
+  const mieszkancy = { wyslane: 0, dalej: 0 };
+  for (const p of kolejka ?? []) {
+    if (Date.now() > koniec) break;
+    const st = await wyslijPodpis(supabase, p.id);
+    if (st === "wyslany") mieszkancy.wyslane++;
+    else mieszkancy.dalej++;
+  }
+  console.log("cron wysylka", JSON.stringify({ raport, mieszkancy }));
+  return NextResponse.json({ ok: true, raport, mieszkancy });
 }

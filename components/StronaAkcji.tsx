@@ -202,10 +202,13 @@ export function StronaAkcji({
       )}
 
       {podpisy && (podpisy.razem > 0 || k.akcjaWlaczona) && (
-        <dl className="mt-5 grid grid-cols-3 gap-4 rounded-lg bg-slate-50 p-4">
+        <dl className="mt-5 grid grid-cols-2 gap-4 rounded-lg bg-slate-50 p-4 sm:grid-cols-3 lg:grid-cols-6">
           {[
             [t("akcjaPanel.podpisow"), podpisy.razem],
+            [t("akcjaPanel.wyslali"), podpisy.wyslali],
+            [t("akcjaPanel.czekaja"), podpisy.czekaja],
             [t("akcjaPanel.otworzyloPoczte"), podpisy.otworzyli],
+            [t("akcjaPanel.odpowiedzi"), podpisy.odpowiedzi],
             [t("akcjaPanel.udostepnilo"), podpisy.udostepnili],
           ].map(([e, v]) => (
             <div key={String(e)}>
@@ -329,7 +332,9 @@ export function StronaAkcji({
                   <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.gmina")}</th>
                   <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.doKogo")}</th>
                   <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.kiedy")}</th>
-                  <th className="py-2 font-medium">{t("akcjaPanel.kol.poczta")}</th>
+                  <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.status")}</th>
+                  <th className="py-2 pr-4 font-medium">{t("akcjaPanel.kol.zrodlo")}</th>
+                  <th className="py-2 font-medium">{t("akcjaPanel.kol.email")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -341,9 +346,18 @@ export function StronaAkcji({
                     <td className="py-2 pr-4 text-slate-600">{p.gminaNazwa}</td>
                     <td className="max-w-64 truncate py-2 pr-4 text-slate-600">{p.odbiorcaNazwa}</td>
                     <td className="py-2 pr-4 whitespace-nowrap text-slate-500">
-                      {new Date(p.utworzony).toLocaleString(t.locale, { dateStyle: "short", timeStyle: "short" })}
+                      {new Date(p.wyslano ?? p.utworzony).toLocaleString(t.locale, { dateStyle: "short", timeStyle: "short" })}
                     </td>
-                    <td className="py-2 text-slate-600">{p.otworzylPoczte ? t("akcjaPanel.otworzyl") : ""}</td>
+                    <td className="py-2 pr-4 whitespace-nowrap text-slate-600">
+                      {p.statusWysylki
+                        ? t(`akcjaPanel.status.${p.statusWysylki as "wyslany" | "w_kolejce" | "czeka_na_potwierdzenie" | "blad"}`)
+                        : p.otworzylPoczte
+                          ? t("akcjaPanel.otworzyl")
+                          : t("akcjaPanel.status.podpisal")}
+                      {p.zglosilOdpowiedz && ` · ${t("akcjaPanel.odpisal")}`}
+                    </td>
+                    <td className="max-w-40 truncate py-2 pr-4 text-slate-500">{p.zrodlo}</td>
+                    <td className="py-2 text-slate-600">{p.email ?? ""}</td>
                   </tr>
                 ))}
               </tbody>

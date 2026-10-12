@@ -244,18 +244,45 @@ export type Podpis = {
   otworzylPoczte: string | null;
   udostepnil: string | null;
   utworzony: string;
+  /** Wysyłka przez WinOver: "" (z własnej poczty albo jeszcze nic), czeka_na_potwierdzenie, w_kolejce, wyslany, blad. */
+  statusWysylki: string;
+  wyslano: string | null;
+  zglosilOdpowiedz: string | null;
+  /** Tylko przy zgodzie na kontakt od organizatora (RODO, decyzja 12.10). */
+  email: string | null;
+  zrodlo: string;
 };
 
 /** Podpisy ze strony akcji (zespół czyta, zapisuje serwer). Najnowsze pierwsze. */
 export async function podpisyKampanii(
   kampaniaId: string,
   limit = 50,
-): Promise<{ lista: Podpis[]; razem: number; otworzyli: number; udostepnili: number; zrodla: { nazwa: string; ile: number }[] }> {
+): Promise<{
+  lista: Podpis[];
+  razem: number;
+  otworzyli: number;
+  udostepnili: number;
+  wyslali: number;
+  czekaja: number;
+  odpowiedzi: number;
+  zgodyKontakt: number;
+  zrodla: { nazwa: string; ile: number }[];
+}> {
   const supabase = createClient();
-  const [{ data, error }, { count: razem }, { count: otworzyli }, { count: udostepnili }, { data: zrodlaSurowe }] = await Promise.all([
+  const [
+    { data, error },
+    { count: razem },
+    { count: otworzyli },
+    { count: udostepnili },
+    { data: zrodlaSurowe },
+    { count: wyslali },
+    { count: czekaja },
+    { count: odpowiedzi },
+    { count: zgodyKontakt },
+  ] = await Promise.all([
     supabase
       .from("podpisy")
-      .select("id, imie, nazwisko, gmina_nazwa, okreg_nr, odbiorca_nazwa, otworzyl_poczte, udostepnil, utworzony")
+      .select("id, imie, nazwisko, gmina_nazwa, okreg_nr, odbiorca_nazwa, otworzyl_poczte, udostepnil, utworzony, status_wysylki, wyslano, zglosil_odpowiedz, email, zrodlo")
       .eq("kampania_id", kampaniaId)
       .order("utworzony", { ascending: false })
       .limit(limit),
@@ -263,13 +290,21 @@ export async function podpisyKampanii(
     supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).not("otworzyl_poczte", "is", null),
     supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).not("udostepnil", "is", null),
     supabase.from("podpisy").select("zrodlo").eq("kampania_id", kampaniaId),
+    supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).eq("status_wysylki", "wyslany"),
+    supabase
+      .from("podpisy")
+      .select("id", { count: "exact", head: true })
+      .eq("kampania_id", kampaniaId)
+      .in("status_wysylki", ["czeka_na_potwierdzenie", "w_kolejce"]),
+    supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).not("zglosil_odpowiedz", "is", null),
+    supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).eq("zgoda_informacje", true),
   ]);
   if (error) throw error;
   // Źródło wejścia: utm_source, w drugiej kolejności domena odsyłacza, reszta "bezpośrednio / nieznane".
   const licz = new Map<string, number>();
   for (const w of zrodlaSurowe ?? []) {
     const z = (w.zrodlo ?? {}) as Record<string, string>;
-    const nazwa = z.utm_source ? `${z.utm_source}${z.utm_medium ? ` / ${z.utm_medium}` : ""}` : z.ref || "bezpośrednio / nieznane";
+    const nazwa = nazwaZrodla(z);
     licz.set(nazwa, (licz.get(nazwa) ?? 0) + 1);
   }
   const zrodla = [...licz.entries()].map(([nazwa, ile]) => ({ nazwa, ile })).sort((a, b) => b.ile - a.ile);
@@ -285,11 +320,25 @@ export async function podpisyKampanii(
       otworzylPoczte: p.otworzyl_poczte,
       udostepnil: p.udostepnil,
       utworzony: p.utworzony,
+      statusWysylki: p.status_wysylki ?? "",
+      wyslano: p.wyslano,
+      zglosilOdpowiedz: p.zglosil_odpowiedz,
+      email: p.email,
+      zrodlo: nazwaZrodla((p.zrodlo ?? {}) as Record<string, string>),
     })),
     razem: razem ?? 0,
     otworzyli: otworzyli ?? 0,
     udostepnili: udostepnili ?? 0,
+    wyslali: wyslali ?? 0,
+    czekaja: czekaja ?? 0,
+    odpowiedzi: odpowiedzi ?? 0,
+    zgodyKontakt: zgodyKontakt ?? 0,
   };
+}
+
+/** Źródło wejścia do wyświetlenia: utm_source / utm_medium, potem domena odsyłacza. */
+function nazwaZrodla(z: Record<string, string>): string {
+  return z.utm_source ? `${z.utm_source}${z.utm_medium ? ` / ${z.utm_medium}` : ""}` : z.ref || "bezpośrednio / nieznane";
 }
 
 /** Rodzaje wydarzeń w raporcie wpływu (wartości w bazie). Etykieta: t(`typWydarzenia.${typ}`). */

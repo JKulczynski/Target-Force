@@ -10,7 +10,9 @@ export async function updateSession(request: NextRequest) {
     sciezka.startsWith("/a/") ||
     sciezka.startsWith("/api/akcja/") ||
     sciezka === "/prywatnosc" ||
-    sciezka === "/regulamin"
+    sciezka === "/regulamin" ||
+    sciezka.startsWith("/p/") ||
+    sciezka === "/api/potwierdz"
   ) {
     const naglowki = new Headers(request.headers);
     naglowki.set("x-strona-publiczna", "1");

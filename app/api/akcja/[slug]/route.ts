@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -94,7 +94,10 @@ export async function POST(
     return NextResponse.json({ blad: t("api.akcja.podajImie") }, { status: 400 });
   if (nazwisko.length > 80)
     return NextResponse.json({ blad: t("api.akcja.nazwiskoDlugie") }, { status: 400 });
-  if (email && !POPRAWNY_EMAIL.test(email))
+  // Od 12.10 nazwisko i e-mail są wymagane: wiadomość wychodzi podpisana i trzeba ją potwierdzić mailem.
+  if (nazwisko.length < 2)
+    return NextResponse.json({ blad: t("api.akcja.podajNazwisko") }, { status: 400 });
+  if (!email || !POPRAWNY_EMAIL.test(email))
     return NextResponse.json({ blad: t("api.akcja.zlyEmail") }, { status: 400 });
   if (!body.zgoda)
     return NextResponse.json({ blad: t("api.akcja.zgoda") }, { status: 400 });
@@ -108,7 +111,7 @@ export async function POST(
 
   const { data: k } = await admin
     .from("kampanie")
-    .select("id, akcja_wlaczona")
+    .select("id, akcja_wlaczona, zgoda_zespolu")
     .eq("akcja_slug", slug)
     .maybeSingle();
   if (!k || !k.akcja_wlaczona)
@@ -191,8 +194,9 @@ export async function POST(
       kampania_id: k.id,
       imie,
       nazwisko,
-      email: email || null,
-      zgoda_informacje: !!body.zgodaInformacje && !!email,
+      // E-mail widoczny dla twórcy akcji tylko przy zgodzie na kontakt (decyzja Jana 12.10, RODO).
+      email: body.zgodaInformacje ? email : null,
+      zgoda_informacje: !!body.zgodaInformacje,
       gmina_teryt: gmina.t,
       gmina_nazwa:
         gmina.typ === "dzielnica" ? `Warszawa, ${gmina.n}` : gmina.n,
@@ -211,6 +215,10 @@ export async function POST(
     .single();
   if (error || !zapis)
     return NextResponse.json({ blad: t("api.akcja.nieZapisano") }, { status: 500 });
+  // Adres do wysyłki i potwierdzenia: osobna tabela, czyta tylko serwer.
+  await admin
+    .from("podpisy_wysylka")
+    .insert({ podpis_id: zapis.id, email, token: randomBytes(24).toString("hex") });
 
   const { count: razem } = await admin
     .from("podpisy")
@@ -228,5 +236,7 @@ export async function POST(
     temat,
     tresc,
     razem: razem ?? 0,
+    // Wysyłka przez WinOver tylko dla kampanii z zaakceptowanym oświadczeniem zleceniodawcy.
+    wysylkaWinOver: k.zgoda_zespolu === "zaakceptowana",
   });
 }
