@@ -12,7 +12,7 @@ export const en: Record<keyof typeof pl, string> = {
   // Layout and navigation
   "layout.opis": "Campaigns to decision-makers: messages, recipients, sending, follow-ups and an impact report.",
   "layout.stopkaPubliczna":
-    "This page runs on WinOver. You send the message from your own mailbox; we send nothing on your behalf.",
+    "This page runs on WinOver. We send the message on your behalf only after you confirm by e-mail, or you send it yourself from your own mailbox.",
   "nav.kampanie": "Campaigns",
   "nav.zrodla": "Sources",
   "nav.ustawienia": "Settings",
@@ -837,9 +837,12 @@ export const en: Record<keyof typeof pl, string> = {
   "akcja.film": "Film",
   "akcja.opisWkrotce": "The description will appear soon.",
   "akcja.jakDziala": "How it works",
-  "akcja.jak1": "You enter your name and municipality. We match the MP for your constituency or your local office.",
-  "akcja.jak2": "You get a ready message. You can change it in your own words.",
-  "akcja.jak3": "You click “Open in email” and send it from your own mailbox. The reply comes to you.",
+  "akcja.jak1":
+    "You enter your name, municipality and e-mail. We match the MP for your constituency or your local office.",
+  "akcja.jak2":
+    "You get a ready message. You can change it in your own words.",
+  "akcja.jak3":
+    "You click “Send” and confirm with a link from an e-mail. The message goes out under your name and the reply comes to you.",
   "akcja.wybierzGmine": "Pick a municipality from the list.",
   "akcja.zaznaczZgode": "Tick the consent to data processing.",
   "akcja.nieUdalo": "Something went wrong. Try again.",
@@ -869,7 +872,7 @@ export const en: Record<keyof typeof pl, string> = {
   "akcja.przygotowuje": "Preparing your message...",
   "akcja.przygotuj": "Prepare my message",
   "akcja.rodo":
-    "Data controller: {administrator}. We store your first name, last name and municipality to match the addressee and count signatures; your email only if you want to hear about the results. You send the message yourself from your own mailbox. We send nothing on your behalf.",
+    "Data controller: {administrator}. We store your name and municipality to match the addressee, sign the message and count signatures. Your e-mail is used to confirm the send and for the recipient's reply; the organiser sees it only if you tick consent to contact. Nothing is sent without your confirmation.",
   "akcja.organizator": "the action organiser",
   "akcja.twojaWiadomosc": "Your message",
   "akcja.do": "To",

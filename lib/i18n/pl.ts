@@ -14,7 +14,7 @@ export const pl = {
   // Layout i nawigacja
   "layout.opis": "Kampanie do decydentów: wiadomości, odbiorcy, wysyłka, przypomnienia i raport wpływu.",
   "layout.stopkaPubliczna":
-    "Strona działa w WinOver. Wiadomość wysyłasz ze swojej poczty; nie wysyłamy nic w Twoim imieniu.",
+    "Strona działa w WinOver. Wiadomość wysyłamy w Twoim imieniu dopiero po potwierdzeniu mailem albo wysyłasz ją sam ze swojej poczty.",
   "nav.kampanie": "Kampanie",
   "nav.zrodla": "Źródła",
   "nav.ustawienia": "Ustawienia",
@@ -839,9 +839,12 @@ export const pl = {
   "akcja.film": "Film",
   "akcja.opisWkrotce": "Opis sprawy pojawi się wkrótce.",
   "akcja.jakDziala": "Jak to działa",
-  "akcja.jak1": "Podajesz imię i gminę. Dobieramy posła z Twojego okręgu albo Twój urząd.",
-  "akcja.jak2": "Dostajesz gotową wiadomość. Możesz ją zmienić po swojemu.",
-  "akcja.jak3": "Klikasz „Otwórz w poczcie” i wysyłasz ze swojej skrzynki. Odpowiedź przyjdzie do Ciebie.",
+  "akcja.jak1":
+    "Podajesz imię, nazwisko, gminę i e-mail. Dobieramy posła z Twojego okręgu albo Twój urząd.",
+  "akcja.jak2":
+    "Dostajesz gotową wiadomość. Możesz ją zmienić po swojemu.",
+  "akcja.jak3":
+    "Klikasz „Wyślij” i potwierdzasz linkiem z maila. Wiadomość idzie z Twoim imieniem i nazwiskiem, odpowiedź przyjdzie do Ciebie.",
   "akcja.wybierzGmine": "Wybierz gminę z listy.",
   "akcja.zaznaczZgode": "Zaznacz zgodę na przetwarzanie danych.",
   "akcja.nieUdalo": "Nie udało się. Spróbuj ponownie.",
@@ -871,7 +874,7 @@ export const pl = {
   "akcja.przygotowuje": "Przygotowuję wiadomość...",
   "akcja.przygotuj": "Przygotuj moją wiadomość",
   "akcja.rodo":
-    "Administrator danych: {administrator}. Imię, nazwisko i gminę zapisujemy, żeby dobrać adresata i policzyć podpisy; e-mail tylko wtedy, gdy chcesz dostać informację o wynikach. Wiadomość wysyłasz sam ze swojej poczty. Nie wysyłamy nic w Twoim imieniu.",
+    "Administrator danych: {administrator}. Imię, nazwisko i gminę zapisujemy, żeby dobrać adresata, podpisać wiadomość i policzyć podpisy. E-mail służy do potwierdzenia wysyłki i do odpowiedzi adresata; organizator zobaczy go tylko, jeśli zaznaczysz zgodę na kontakt. Bez Twojego potwierdzenia nic nie wyślemy.",
   "akcja.organizator": "organizator akcji",
   "akcja.twojaWiadomosc": "Twoja wiadomość",
   "akcja.do": "Do",

@@ -159,13 +159,13 @@ const PRYWATNOSC: Record<Jezyk, Dokument> = {
         akapity: [
           "Użytkownicy kont: e-mail, hasło (zaszyfrowane), dane oświadczenia zleceniodawcy, adres IP i przeglądarka przy oświadczeniu. Cel: prowadzenie konta, bezpieczeństwo, dowód złożenia oświadczenia. Podstawa: umowa i prawnie uzasadniony interes.",
           "Odbiorcy kampanii: imię, nazwisko, stanowisko i służbowy adres e-mail z publicznych rejestrów (np. Sejm, Parlament Europejski, baza teleadresowa samorządów) albo z listy klienta; zdarzenia: kliknięcia w linki, odpowiedzi, wypisanie. Cel: wysyłka kampanii i raport. Podstawa: prawnie uzasadniony interes organizatora.",
-          "Sympatycy na stronie akcji: imię, nazwisko, gmina, opcjonalnie e-mail, źródło wejścia, skrót adresu IP (ochrona przed botami). Wiadomość sympatyk wysyła sam ze swojej poczty; nie wysyłamy nic w jego imieniu.",
+          "Sympatycy na stronie akcji: imię, nazwisko, gmina, e-mail, źródło wejścia, skrót adresu IP (ochrona przed botami). Cel: przygotowanie wiadomości i, na wyraźne polecenie sympatyka potwierdzone linkiem z maila, wysłanie jej w jego imieniu do wybranego decydenta, z jego imieniem i nazwiskiem jako nadawcą i jego adresem do odpowiedzi. E-mail przekazujemy organizatorowi tylko przy osobnej zgodzie na kontakt. Sympatyk może też wysłać wiadomość sam ze swojej poczty.",
         ],
       },
       {
         tytul: "3. Komu przekazujemy dane",
         akapity: [
-          "Dostawcom, bez których usługa nie działa: hosting bazy danych (Supabase, serwery w Unii Europejskiej, Frankfurt), hosting aplikacji (Vercel), model językowy do przygotowania wiadomości (Anthropic; przekazujemy opis kampanii i materiały, nie listy odbiorców). Poczta wychodzi ze skrzynki klienta przez jego dostawcę.",
+          "Dostawcom, bez których usługa nie działa: hosting bazy danych (Supabase, serwery w Unii Europejskiej, Frankfurt), hosting aplikacji (Vercel), model językowy do przygotowania wiadomości (Anthropic; przekazujemy opis kampanii i materiały, nie listy odbiorców), wysyłka wiadomości sympatyków i maili potwierdzających (Resend). Poczta organizacji wychodzi ze skrzynki klienta przez jego dostawcę.",
         ],
       },
       {
@@ -204,13 +204,13 @@ const PRYWATNOSC: Record<Jezyk, Dokument> = {
         akapity: [
           "Account users: e-mail, password (encrypted), client declaration details, IP address and browser at the time of the declaration. Purpose: running the account, security, proof of the declaration. Basis: contract and legitimate interest.",
           "Campaign recipients: name, position and work e-mail from public registers (e.g. the Sejm, the European Parliament, local government directories) or from the client's list; events: link clicks, replies, unsubscribes. Purpose: sending the campaign and the report. Basis: the organiser's legitimate interest.",
-          "Supporters on an action page: name, municipality, optional e-mail, entry source, a hash of the IP address (bot protection). Supporters send the message themselves from their own mailbox; we send nothing on their behalf.",
+          "Supporters on an action page: name, municipality, e-mail, entry source, a hash of the IP address (bot protection). Purpose: preparing the message and, on the supporter's explicit instruction confirmed by an e-mail link, sending it on their behalf to the chosen decision-maker, with their name as the sender and their address for replies. We share the e-mail with the organiser only with separate consent to contact. Supporters may also send the message themselves from their own mailbox.",
         ],
       },
       {
         tytul: "3. Who receives data",
         akapity: [
-          "Providers without whom the service does not work: database hosting (Supabase, servers in the European Union, Frankfurt), application hosting (Vercel), a language model for drafting messages (Anthropic; we send the campaign description and materials, not recipient lists). E-mail leaves from the client's mailbox through its provider.",
+          "Providers without whom the service does not work: database hosting (Supabase, servers in the European Union, Frankfurt), application hosting (Vercel), a language model for drafting messages (Anthropic; we send the campaign description and materials, not recipient lists), sending of supporters' messages and confirmation e-mails (Resend). The organisation's e-mail leaves from the client's mailbox through its provider.",
         ],
       },
       {
