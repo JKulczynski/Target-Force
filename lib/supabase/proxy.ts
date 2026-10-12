@@ -6,9 +6,18 @@ export async function updateSession(request: NextRequest) {
   const sciezka = request.nextUrl.pathname;
   // Strona akcji i jej API: bez sesji i bez cookies Supabase (czyta je mieszkaniec bez konta).
   // Nagłówek mówi layoutowi, żeby nie rysował paska aplikacji.
-  if (sciezka.startsWith("/a/") || sciezka.startsWith("/api/akcja/")) {
+  if (
+    sciezka.startsWith("/a/") ||
+    sciezka.startsWith("/api/akcja/") ||
+    sciezka === "/prywatnosc" ||
+    sciezka === "/regulamin"
+  ) {
     const naglowki = new Headers(request.headers);
     naglowki.set("x-strona-publiczna", "1");
+    // Strona akcji osadzona na stronie klienta (widżet, ?osadzona=1): bez przełącznika języka i stopki.
+    if (sciezka.startsWith("/a/") && request.nextUrl.searchParams.get("osadzona") === "1")
+      naglowki.set("x-osadzona", "1");
+    else naglowki.delete("x-osadzona");
     return NextResponse.next({ request: { headers: naglowki } });
   }
 

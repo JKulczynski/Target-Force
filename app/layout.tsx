@@ -53,7 +53,18 @@ export default async function RootLayout({
   const jezyk = await jezykZCookie();
   const t = tlumacz(jezyk);
   // Strona akcji (/a/{slug}) dla mieszkańców: bez paska aplikacji i bez sprawdzania sesji (nagłówek z proxy).
-  if ((await headers()).get("x-strona-publiczna") === "1") {
+  const naglowki = await headers();
+  if (naglowki.get("x-strona-publiczna") === "1") {
+    if (naglowki.get("x-osadzona") === "1")
+      return (
+        <html lang={jezyk} className={`${geist.variable} ${geistMono.variable}`}>
+          <body className="bg-white text-slate-900 antialiased">
+            <JezykProvider jezyk={jezyk}>
+              <main className="px-3 py-4 sm:px-5">{children}</main>
+            </JezykProvider>
+          </body>
+        </html>
+      );
     return (
       <html lang={jezyk} className={`${geist.variable} ${geistMono.variable}`}>
         <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
@@ -63,7 +74,10 @@ export default async function RootLayout({
             </div>
             <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">{children}</main>
             <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-slate-400 sm:px-6">
-              {t("layout.stopkaPubliczna")}
+              {t("layout.stopkaPubliczna")}{" "}
+              <Link href="/regulamin" className="underline hover:text-slate-700">{t("prawne.regulamin")}</Link>
+              {" · "}
+              <Link href="/prywatnosc" className="underline hover:text-slate-700">{t("prawne.prywatnosc")}</Link>
             </footer>
           </JezykProvider>
         </body>

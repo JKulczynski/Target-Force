@@ -23,7 +23,8 @@ export default async function Logowanie({
   const { blad, info, tryb } = await searchParams;
   const kluczKomunikatu = KOMUNIKATY[blad ?? info ?? ""];
   const komunikat = kluczKomunikatu ? t(kluczKomunikatu) : null;
-  const rejestracja = tryb === "rejestracja" || blad === "rejestracja";
+  // Rejestracja tylko z zaproszenia (decyzja Jana 12.10; w Supabase wyłączone "Allow new users to sign up").
+  const rejestracja = false;
   const odzyskiwanie = tryb === "haslo";
 
   return (
@@ -39,29 +40,6 @@ export default async function Logowanie({
         <p className="mt-1.5 text-sm text-slate-600">
           {odzyskiwanie ? t("login.wyslemyLink") : t("login.tylkoZespol")}
         </p>
-
-        <div className="mt-7 grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-sm font-medium">
-          <Link
-            href="/login"
-            className={`rounded-md px-3 py-2 text-center transition-colors duration-150 ${
-              rejestracja
-                ? "text-slate-600 hover:text-slate-900"
-                : "bg-white text-slate-900 shadow-sm"
-            }`}
-          >
-            {t("login.logowanie")}
-          </Link>
-          <Link
-            href="/login?tryb=rejestracja"
-            className={`rounded-md px-3 py-2 text-center transition-colors duration-150 ${
-              rejestracja
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            {t("login.noweKonto")}
-          </Link>
-        </div>
 
         {komunikat && (
           <p
@@ -138,6 +116,11 @@ export default async function Logowanie({
               {t("login.niePamietasz")}
             </Link>
           )}
+          <p className="text-center text-xs text-slate-400">
+            <Link href="/regulamin" className="hover:text-slate-700">{t("prawne.regulamin")}</Link>
+            {" · "}
+            <Link href="/prywatnosc" className="hover:text-slate-700">{t("prawne.prywatnosc")}</Link>
+          </p>
         </form>
         )}
       </div>

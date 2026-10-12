@@ -100,6 +100,16 @@ function doWiersza(k: Partial<Kampania>): Partial<Wiersz> {
   return w;
 }
 
+/** Czy z kampanii tej organizacji wyszedł już choć jeden mail (RLS zawęża do organizacji). Krok 4 "Zacznij tutaj". */
+export async function czyCosWyslano(): Promise<boolean> {
+  const { count, error } = await createClient()
+    .from("wiadomosci")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "wyslana");
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
+
 export async function wszystkieKampanie(): Promise<Kampania[]> {
   const { data, error } = await createClient()
     .from("kampanie")

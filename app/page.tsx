@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { wszystkieKampanie } from "@/lib/store";
 import { STATUSY, type Kampania } from "@/lib/types";
 import { useT } from "@/lib/i18n/klient";
+import { ZacznijTutaj } from "@/components/ZacznijTutaj";
 
 export default function Kampanie() {
   const { t } = useT();
@@ -50,6 +51,8 @@ export default function Kampanie() {
           {t("lista.nowa")}
         </Link>
       </div>
+
+      {kampanie && kampanie.length > 0 && <ZacznijTutaj kampanie={kampanie} />}
 
       {blad ? (
         <p

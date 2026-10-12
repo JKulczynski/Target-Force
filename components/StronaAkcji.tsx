@@ -180,6 +180,8 @@ export function StronaAkcji({
         ))}
       </ul>
 
+      {adres && k.akcjaWlaczona && <Widzet adres={adres} />}
+
       {podpisy && podpisy.zrodla.length > 0 && (
         <div className="mt-5 rounded-lg border border-slate-200 p-4">
           <p className="text-xs font-medium text-slate-500">{t("akcjaPanel.skad")}</p>
@@ -350,5 +352,36 @@ export function StronaAkcji({
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Widżet (blok B, 12.10): kod do wklejenia na stronę klienta. Strona akcji w trybie osadzonym (?osadzona=1)
+ * nie ma przełącznika języka ani stopki; utm_source=widzet pokazuje w panelu "Skąd przyszli", ile podpisów dał widżet.
+ */
+function Widzet({ adres }: { adres: string }) {
+  const { t } = useT();
+  const [skopiowano, setSkopiowano] = useState(false);
+  const kod = `<iframe src="${adres}?osadzona=1&utm_source=widzet" title="WinOver" style="width:100%;min-height:900px;border:0" loading="lazy"></iframe>`;
+  return (
+    <details className="mt-5 rounded-lg border border-slate-200 p-4">
+      <summary className="cursor-pointer text-sm font-medium text-slate-800">{t("akcjaPanel.widzet")}</summary>
+      <p className="mt-2 text-sm text-slate-600">{t("akcjaPanel.widzet.opis")}</p>
+      <textarea readOnly value={kod} rows={3} className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-xs text-slate-700" />
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(kod);
+            setSkopiowano(true);
+          } catch {
+            setSkopiowano(false);
+          }
+        }}
+        className="mt-2 text-sm text-slate-600 hover:text-slate-900"
+      >
+        {skopiowano ? t("akcjaPanel.skopiowano") : t("akcjaPanel.widzet.kopiuj")}
+      </button>
+    </details>
   );
 }

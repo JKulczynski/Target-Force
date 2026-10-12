@@ -357,7 +357,10 @@ export function AkcjaFormularz({
           </button>
 
           <p className="text-xs leading-relaxed text-slate-500">
-            {t("akcja.rodo", { administrator: administrator || t("akcja.organizator") })}
+            {t("akcja.rodo", { administrator: administrator || t("akcja.organizator") })}{" "}
+            <a href="/prywatnosc" target="_blank" rel="noreferrer" className="underline hover:text-slate-700">
+              {t("prawne.prywatnosc")}
+            </a>
           </p>
         </form>
       )}
