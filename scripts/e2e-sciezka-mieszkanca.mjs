@@ -83,6 +83,34 @@ try {
     await s.getByText("Dziękujemy, zapisaliśmy, że adresat odpisał.").waitFor({ timeout: 15000 });
   });
 
+  let linkPolecenia = null;
+  await krok("link-polecenia", async () => {
+    linkPolecenia = await s.getByText("Wróć do strony akcji i udostępnij ją dalej").getAttribute("href");
+    if (!linkPolecenia?.includes("?od=")) throw new Error(`brak kodu polecenia w linku: ${linkPolecenia}`);
+  });
+
+  let linkBartka = null;
+  await krok("drugi-mieszkaniec-z-polecenia", async () => {
+    const b = await kontekst.newPage();
+    await b.goto(`${adres}${linkPolecenia}`, { waitUntil: "load" });
+    await b.getByLabel("Imię").fill("Bartek");
+    await b.getByLabel("Nazwisko").fill("Polecony");
+    const gmina = b.getByRole("combobox");
+    await gmina.click();
+    await gmina.fill("Krak");
+    await b.getByRole("option").first().click();
+    await b.getByLabel("E-mail").fill("bartek.polecony@example.com");
+    await b.getByText("Chcę dostać wiadomość, co dała ta akcja.").click();
+    await b.getByText("Zgadzam się na przetwarzanie podanych danych").click();
+    await b.getByRole("button", { name: "Przygotuj moją wiadomość" }).click();
+    await b.getByRole("button", { name: "Wyślij", exact: true }).click();
+    linkBartka = await b.locator("[data-link-probny]").getAttribute("href");
+    await b.goto(linkBartka, { waitUntil: "load" });
+    await b.getByRole("button", { name: "Potwierdzam i wysyłam" }).click();
+    await b.getByText("Wiadomość wysłana.").waitFor({ timeout: 20000 });
+    await b.close();
+  });
+
   await krok("ponowne-otwarcie-linku", async () => {
     // Drugie kliknięcie w link z maila nie wysyła drugi raz.
     await s.goto(link, { waitUntil: "load" });
@@ -110,7 +138,53 @@ try {
       if (/adresat odpisał/.test(tekst) === false) throw new Error("brak 'adresat odpisal'");
       if (/anna\.testowa@example\.com/.test(tekst)) throw new Error("e-mail widoczny bez zgody");
       if (!/facebook/.test(tekst)) throw new Error("brak zrodla wejscia");
+      const bartek = await tworca.locator("tr", { hasText: "Bartek Polecony" }).first().innerText();
+      if (!/bartek\.polecony@example\.com/.test(bartek)) throw new Error("e-mail ze zgoda niewidoczny");
+      await tworca.getByText("Z poleceń (link „zaproś znajomych”): 1").waitFor({ timeout: 10000 });
+      await tworca.getByText(/Anna Testowa.*: 1/).first().waitFor();
       await tworca.locator("#akcja").scrollIntoViewIfNeeded();
+    },
+    tworca,
+  );
+
+  await krok(
+    "eksport-csv",
+    async () => {
+      const [pobranie] = await Promise.all([tworca.waitForEvent("download"), tworca.getByRole("button", { name: "Pobierz listę (CSV)" }).click()]);
+      const plik = path.join(katalog, "eksport.csv");
+      await pobranie.saveAs(plik);
+      const csv = fs.readFileSync(plik, "utf8");
+      if (!csv.includes("Anna;Testowa") || !csv.includes("bartek.polecony@example.com")) throw new Error("CSV bez danych");
+      if (csv.includes("anna.testowa@example.com")) throw new Error("CSV zawiera e-mail bez zgody");
+    },
+    tworca,
+  );
+
+  await krok(
+    "mail-do-sympatykow",
+    async () => {
+      tworca.on("dialog", (d) => d.accept());
+      await tworca.getByPlaceholder("np. Poseł odpowiedział. Co dalej?").fill("Test automatu: co dalej");
+      await tworca.getByPlaceholder(/Dzień dobry \{imie\}/).fill("Dzień dobry {imie}, to wiadomość testowa automatu WinOver.");
+      await tworca.getByRole("button", { name: "Wyślij do 1 osób" }).click();
+      await tworca.getByText(/Tryb próbny: przygotowano 1 maili|Wysłano do 1 osób/).waitFor({ timeout: 20000 });
+    },
+    tworca,
+  );
+
+  await krok("wypisanie", async () => {
+    await s.goto(`${linkBartka}?wypisz=1`, { waitUntil: "load" });
+    await s.getByRole("button", { name: "Nie chcę więcej wiadomości od organizatora" }).click();
+    await s.getByText(/Wypisaliśmy Cię/).waitFor({ timeout: 15000 });
+  });
+
+  await krok(
+    "po-wypisaniu-brak-emaila",
+    async () => {
+      await tworca.reload({ waitUntil: "load" });
+      const bartek = tworca.locator("tr", { hasText: "Bartek Polecony" }).first();
+      await bartek.waitFor({ timeout: 20000 });
+      if (/bartek\.polecony@example\.com/.test(await bartek.innerText())) throw new Error("e-mail widoczny po wypisaniu");
     },
     tworca,
   );
