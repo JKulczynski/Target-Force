@@ -9,6 +9,7 @@ import {
   type ZgodaZespolu,
 } from "@/lib/oswiadczenie";
 import { ocenZgodnosc } from "@/lib/zgodnosc";
+import { powiadomAdminow } from "@/lib/powiadomienia";
 
 export const runtime = "nodejs";
 
@@ -77,6 +78,18 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
         .eq("id", id);
       if (!bladAuto) return NextResponse.json({ ok: true, zgodnosc: tresc.zgodnosc, zgoda: "zaakceptowana", powod: POWOD_AUTO });
     }
+  }
+  // Czeka na administratora: dajemy znać Janowi i Piotrowi (opcja 3: nie zaglądają do panelu codziennie).
+  const adminPowiadomien = createAdminClient();
+  if (adminPowiadomien) {
+    const { data: kk } = await supabase.from("kampanie").select("nazwa, organizacje(nazwa)").eq("id", id).maybeSingle();
+    const org = kk?.organizacje as { nazwa?: string } | { nazwa?: string }[] | null | undefined;
+    const nazwaOrg = (Array.isArray(org) ? org[0]?.nazwa : org?.nazwa) ?? "";
+    await powiadomAdminow(
+      adminPowiadomien,
+      `WinOver: kampania czeka na decyzję (${nazwaOrg})`,
+      `Klient: ${nazwaOrg}\nKampania: ${kk?.nazwa ?? id}\nOcena reguł: ${tresc.zgodnosc?.status ?? "brak"}\n\nDecyzja: ${req.nextUrl.origin}/kampanie/${id}#zleca\nWszystkie czekające: ${req.nextUrl.origin}/admin`,
+    );
   }
   // Nowe oświadczenie zeruje wcześniejszą decyzję: trzeba sprawdzić od nowa.
   await supabase

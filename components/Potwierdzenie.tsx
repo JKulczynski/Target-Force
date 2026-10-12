@@ -10,20 +10,27 @@ export function Potwierdzenie({
   wyslano,
   odpisal: poczatkowoOdpisal,
   linkAkcji,
+  wypisz = false,
+  zapisany = false,
 }: {
   token: string;
   status: string;
   wyslano: string | null;
   odpisal: boolean;
   linkAkcji: string | null;
+  /** Wejście z linku "wypisz się" w mailu do sympatyków. */
+  wypisz?: boolean;
+  /** Czy osoba ma zgodę na kontakt od organizatora (jest na liście mailowej). */
+  zapisany?: boolean;
 }) {
   const { t } = useT();
   const [status, setStatus] = useState(poczatkowy);
   const [odpisal, setOdpisal] = useState(poczatkowoOdpisal);
+  const [naLiscie, setNaLiscie] = useState(zapisany);
   const [pracuje, setPracuje] = useState(false);
   const [blad, setBlad] = useState<string | null>(null);
 
-  async function wyslij(co: "wyslij" | "odpisal") {
+  async function wyslij(co: "wyslij" | "odpisal" | "wypisz") {
     setPracuje(true);
     setBlad(null);
     try {
@@ -35,6 +42,7 @@ export function Potwierdzenie({
       const d = await odp.json().catch(() => ({}));
       if (!odp.ok) return setBlad(d.blad ?? t("potw.blad"));
       if (co === "odpisal") setOdpisal(true);
+      else if (co === "wypisz") setNaLiscie(false);
       else setStatus(d.status);
     } catch {
       setBlad(t("potw.blad"));
@@ -45,6 +53,20 @@ export function Potwierdzenie({
 
   const przycisk =
     "w-full rounded-lg bg-brand-600 px-5 py-3 text-[15px] font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300";
+
+  if (wypisz)
+    return (
+      <div className="mt-6 space-y-3">
+        {naLiscie ? (
+          <button type="button" disabled={pracuje} onClick={() => wyslij("wypisz")} className={przycisk}>
+            {t("potw.wypisz")}
+          </button>
+        ) : (
+          <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">{t("potw.wypisano")}</p>
+        )}
+        {blad && <p className="text-sm text-red-700">{blad}</p>}
+      </div>
+    );
 
   return (
     <div className="mt-6 space-y-4">

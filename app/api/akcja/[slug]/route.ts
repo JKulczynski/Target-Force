@@ -188,9 +188,16 @@ export async function POST(
   if (dlaczego) akapity.splice(Math.max(akapity.length - 1, 1), 0, dlaczego);
   const tresc = `${akapity.join("\n\n")}\n\n${podpis}\n${pola.gmina}`;
 
+  // Polecenie: kto przyprowadził (link "zaproś znajomych" z ?od={kod}). Tylko w tej samej kampanii.
+  const od = typeof body.od === "string" && /^[0-9a-f]{8}$/.test(body.od) ? body.od : null;
+  const { data: polecajacy } = od
+    ? await admin.from("podpisy").select("id").eq("kampania_id", k.id).eq("kod_polecenia", od).maybeSingle()
+    : { data: null };
+
   const { data: zapis, error } = await admin
     .from("podpisy")
     .insert({
+      polecil_id: polecajacy?.id ?? null,
       kampania_id: k.id,
       imie,
       nazwisko,
@@ -211,7 +218,7 @@ export async function POST(
       zrodlo,
       ip_hash: ipHash,
     })
-    .select("id")
+    .select("id, kod_polecenia")
     .single();
   if (error || !zapis)
     return NextResponse.json({ blad: t("api.akcja.nieZapisano") }, { status: 500 });
@@ -228,6 +235,7 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     podpisId: zapis.id,
+    kodPolecenia: zapis.kod_polecenia,
     odbiorca: {
       nazwa: nazwaOdbiorcy(odbiorca),
       email: odbiorca.email,

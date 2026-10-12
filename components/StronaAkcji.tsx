@@ -10,6 +10,7 @@ import {
 } from "@/lib/store";
 import type { Kampania } from "@/lib/types";
 import { KartaWariantu } from "@/components/Wiadomosci";
+import { Sympatycy } from "@/components/Sympatycy";
 import { useT } from "@/lib/i18n/klient";
 
 /**
@@ -276,6 +277,7 @@ export function StronaAkcji({
           </div>
         </div>
       )}
+      {podpisy && <Sympatycy kampaniaId={k.id} nazwa={k.nazwa} zgodyKontakt={podpisy.zgodyKontakt} />}
     </section>
   );
 }

@@ -344,6 +344,59 @@ function nazwaZrodla(z: Record<string, string>): string {
   return z.utm_source ? `${z.utm_source}${z.utm_medium ? ` / ${z.utm_medium}` : ""}` : z.ref || "bezpośrednio / nieznane";
 }
 
+/** Ambasadorzy: kto przyprowadził najwięcej osób linkiem "zaproś znajomych". */
+export async function ambasadorzy(kampaniaId: string): Promise<{ razem: number; lista: { nazwa: string; ile: number }[] }> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("podpisy")
+    .select("polecil_id")
+    .eq("kampania_id", kampaniaId)
+    .not("polecil_id", "is", null);
+  if (error) throw error;
+  const ile = new Map<string, number>();
+  for (const r of data ?? []) ile.set(r.polecil_id as string, (ile.get(r.polecil_id as string) ?? 0) + 1);
+  const top = [...ile.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  if (!top.length) return { razem: 0, lista: [] };
+  const { data: osoby } = await supabase.from("podpisy").select("id, imie, nazwisko, gmina_nazwa").in("id", top.map(([id]) => id));
+  const nazwa = new Map((osoby ?? []).map((o) => [o.id, `${o.imie} ${o.nazwisko}${o.gmina_nazwa ? ` (${o.gmina_nazwa})` : ""}`]));
+  return { razem: data?.length ?? 0, lista: top.map(([id, n]) => ({ nazwa: nazwa.get(id) ?? "?", ile: n })) };
+}
+
+/** Eksport CSV wszystkich podpisów kampanii. E-mail jest w bazie tylko przy zgodzie na kontakt (RODO, 12.10). */
+export async function eksportPodpisow(kampaniaId: string): Promise<string> {
+  const { data, error } = await createClient()
+    .from("podpisy")
+    .select("imie, nazwisko, gmina_nazwa, okreg_nr, odbiorca_nazwa, status_wysylki, utworzony, wyslano, zglosil_odpowiedz, zgoda_informacje, email, zrodlo")
+    .eq("kampania_id", kampaniaId)
+    .order("utworzony", { ascending: true });
+  if (error) throw error;
+  const pole = (v: unknown) => {
+    const s = v === null || v === undefined ? "" : String(v);
+    return /[;"\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
+  };
+  const naglowek = ["imie", "nazwisko", "gmina", "okreg", "do_kogo", "status_wysylki", "podpisal", "wyslano", "adresat_odpisal", "zgoda_na_kontakt", "email", "zrodlo"];
+  const wiersze = (data ?? []).map((p) => {
+    const z = (p.zrodlo ?? {}) as Record<string, string>;
+    return [
+      p.imie, p.nazwisko, p.gmina_nazwa, p.okreg_nr, p.odbiorca_nazwa, p.status_wysylki, p.utworzony, p.wyslano,
+      p.zglosil_odpowiedz ? "tak" : "", p.zgoda_informacje ? "tak" : "nie", p.email, nazwaZrodla(z),
+    ].map(pole).join(";");
+  });
+  return "\ufeff" + [naglowek.join(";"), ...wiersze].join("\n");
+}
+
+/** Historia maili do sympatyków. */
+export async function mailePrzeszle(kampaniaId: string): Promise<{ temat: string; odbiorcow: number; proba: boolean; wyslano: string }[]> {
+  const { data, error } = await createClient()
+    .from("maile_sympatykow")
+    .select("temat, odbiorcow, proba, wyslano")
+    .eq("kampania_id", kampaniaId)
+    .order("wyslano", { ascending: false })
+    .limit(5);
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** Rodzaje wydarzeń w raporcie wpływu (wartości w bazie). Etykieta: t(`typWydarzenia.${typ}`). */
 export const TYPY_WYDARZEN = ["odpowiedz", "spotkanie", "interpelacja", "zmiana_decyzji", "media", "inne"] as const;
 export type TypWydarzenia = (typeof TYPY_WYDARZEN)[number];

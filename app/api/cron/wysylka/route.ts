@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { wyslijKolejke } from "@/lib/wysylka-serwer";
 import { wyslijPodpis } from "@/lib/wysylka-sympatyka";
+import { powiadomAdminow } from "@/lib/powiadomienia";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -120,5 +121,13 @@ export async function GET(req: NextRequest) {
     else mieszkancy.dalej++;
   }
   console.log("cron wysylka", JSON.stringify({ raport, mieszkancy }));
+  // Błędy automatu idą mailem do administratorów, żeby nie trzeba było czytać logów Vercela.
+  const problemy = raport.filter((r) => !/^wysłano \d+$/.test(r.partia) || !/^wysłano \d+$/.test(r.przypomnienia));
+  if (problemy.length)
+    await powiadomAdminow(
+      supabase,
+      `WinOver: automat wysyłki zgłosił ${problemy.length} problem(y)`,
+      problemy.map((r) => `${r.kampania}: partia "${r.partia}", przypomnienia "${r.przypomnienia}"`).join("\n"),
+    );
   return NextResponse.json({ ok: true, raport, mieszkancy });
 }

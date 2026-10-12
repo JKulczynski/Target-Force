@@ -13,13 +13,18 @@ export async function POST(req: NextRequest) {
   const t = await tSerwer();
   const body = await req.json().catch(() => ({}));
   const token = String(body.token ?? "");
-  const co = body.co === "odpisal" ? "odpisal" : "wyslij";
+  const co = body.co === "odpisal" ? "odpisal" : body.co === "wypisz" ? "wypisz" : "wyslij";
   if (!/^[0-9a-f]{48}$/.test(token)) return NextResponse.json({ blad: t("potw.zlyLink") }, { status: 400 });
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ blad: t("api.akcja.nieDziala") }, { status: 500 });
   const { data: w } = await admin.from("podpisy_wysylka").select("podpis_id").eq("token", token).maybeSingle();
   if (!w) return NextResponse.json({ blad: t("potw.zlyLink") }, { status: 404 });
 
+  if (co === "wypisz") {
+    // Wypisanie z maili organizatora: zgoda wycofana, e-mail znika z listy organizatora.
+    await admin.from("podpisy").update({ zgoda_informacje: false, email: null }).eq("id", w.podpis_id);
+    return NextResponse.json({ ok: true, status: "wypisany" });
+  }
   if (co === "odpisal") {
     await admin.from("podpisy").update({ zglosil_odpowiedz: new Date().toISOString() }).eq("id", w.podpis_id).is("zglosil_odpowiedz", null);
     return NextResponse.json({ ok: true, status: "odpisal" });

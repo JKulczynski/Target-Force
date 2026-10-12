@@ -48,6 +48,43 @@ export async function wyslijPrzezWinOver(o: {
   }
 }
 
+type Mail = { doKogo: string; temat: string; tresc: string; nadawca: string; odpowiedzDo?: string };
+
+/** Wiele maili naraz (mail do sympatyków): endpoint wsadowy Resend, po 100 w paczce. W trybie próbnym tylko liczy. */
+export async function wyslijWiele(maile: Mail[]): Promise<{ wyslane: number; bledy: number }> {
+  const klucz = process.env.RESEND_API_KEY;
+  const adres = process.env.WINOVER_NADAWCA ?? "akcja@getwinover.com";
+  if (!klucz) {
+    console.log(`[poczta-winover PROBA] wsadowo ${maile.length} maili`);
+    return { wyslane: maile.length, bledy: 0 };
+  }
+  let wyslane = 0;
+  let bledy = 0;
+  for (let i = 0; i < maile.length; i += 100) {
+    const paczka = maile.slice(i, i + 100);
+    try {
+      const odp = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${klucz}`, "Content-Type": "application/json" },
+        body: JSON.stringify(
+          paczka.map((m) => ({
+            from: `${m.nadawca} <${adres}>`,
+            to: [m.doKogo],
+            ...(m.odpowiedzDo ? { reply_to: m.odpowiedzDo } : {}),
+            subject: m.temat.slice(0, 200),
+            text: m.tresc,
+          })),
+        ),
+      });
+      if (odp.ok) wyslane += paczka.length;
+      else bledy += paczka.length;
+    } catch {
+      bledy += paczka.length;
+    }
+  }
+  return { wyslane, bledy };
+}
+
 /** Ile wiadomości mieszkańców może dostać jeden odbiorca w ciągu doby; nadmiar czeka w kolejce na automat. */
 export const LIMIT_NA_ODBIORCE_DZIENNIE = 40;
 /** Ile maili z potwierdzeniem może dostać jeden adres w ciągu doby (ochrona przed zasypaniem cudzej skrzynki). */

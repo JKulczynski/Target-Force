@@ -13,6 +13,8 @@ type Wiadomosc = {
   odbiorca: { nazwa: string; email: string; okreg: string | null };
   temat: string;
   tresc: string;
+  /** Kod do linku "zaproś znajomych" (?od=kod): widać, kogo przyprowadził. */
+  kodPolecenia?: string;
   /** Kampania z zaakceptowanym oświadczeniem: można wysłać przez WinOver (z potwierdzeniem mailem). */
   wysylkaWinOver?: boolean;
 };
@@ -130,6 +132,7 @@ export function AkcjaFormularz({
           zgodaInformacje,
           gminaTeryt: gmina.t,
           www,
+          od: new URLSearchParams(window.location.search).get("od"),
         }),
       });
       const dane = await odp.json().catch(() => ({}));
@@ -196,7 +199,11 @@ export function AkcjaFormularz({
     }
   }
 
-  const linkStrony = typeof window !== "undefined" ? window.location.href : "";
+  // Link do udostępniania: strona akcji z kodem tej osoby, bez UTM z reklamy, którą przyszła.
+  const linkStrony =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/a/${slug}${w?.kodPolecenia ? `?od=${w.kodPolecenia}` : ""}`
+      : "";
   const tekstUdostepnienia = t("akcja.tekstUdostepnienia", { link: linkStrony });
 
   async function udostepnij() {
