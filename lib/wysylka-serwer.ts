@@ -3,6 +3,7 @@ import { odszyfruj } from "@/lib/szyfr";
 import { opiszBladSmtp, rodzajBleduSmtp, transport } from "@/lib/smtp";
 import { personalizuj, polaKontaktu } from "@/lib/personalizacja";
 import { tlumacz, type Jezyk } from "@/lib/i18n";
+import { stopkaNadawcy, type TrescOswiadczenia } from "@/lib/oswiadczenie";
 
 /**
  * Silnik wysyłki wspólny dla przycisku w aplikacji i automatu (cron w dni robocze rano).
@@ -212,6 +213,16 @@ export async function wyslijKolejke(
       blad: t("api.brakZgody"),
       status: 403,
     };
+  // Stopka nadawcy (legal etap 1, 12.10): w każdym mailu organizacji jawny zleceniodawca, finansowanie i kontakt.
+  // Bierze ostatnie oświadczenie (to, które zespół zaakceptował). Maile sympatyków ze strony akcji jej nie mają.
+  const { data: oswiadczenie } = await supabase
+    .from("oswiadczenia")
+    .select("tresc")
+    .eq("kampania_id", id)
+    .order("utworzone", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const stopka = oswiadczenie ? stopkaNadawcy(oswiadczenie.tresc as TrescOswiadczenia) : "";
   const zatwierdzone = warianty.filter((w) => w.krok === 0);
   if (o.tryb === "partia" && zatwierdzone.length === 0)
     return {
@@ -349,7 +360,7 @@ export async function wyslijKolejke(
         from: od,
         to: p.kontakt.email!,
         subject: temat,
-        text: zLinkamiSledzacymi(tresc, o.baza, wiersz.kod),
+        text: zLinkamiSledzacymi(tresc, o.baza, wiersz.kod) + (stopka ? `\n\n--\n${stopka}` : ""),
         // Wypisanie jednym kliknięciem (RFC 8058): Gmail i Outlook pokazują "Wypisz się" przy nadawcy
         // i nie karzą domeny za zgłoszenia spamu. W treści nie ma stopki, żeby mail wyglądał osobiście.
         headers: {

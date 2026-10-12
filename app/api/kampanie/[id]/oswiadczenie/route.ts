@@ -7,6 +7,7 @@ import {
   type TrescOswiadczenia,
   type ZgodaZespolu,
 } from "@/lib/oswiadczenie";
+import { ocenZgodnosc } from "@/lib/zgodnosc";
 
 export const runtime = "nodejs";
 
@@ -26,7 +27,10 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   return NextResponse.json({ oswiadczenie: data });
 }
 
-/** Złożenie oświadczenia. Serwer dopisuje IP i przeglądarkę, kampania przechodzi do "czeka na weryfikację". */
+/**
+ * Złożenie oświadczenia. Serwer dopisuje IP, przeglądarkę i wynik silnika reguł (lib/zgodnosc.ts),
+ * kampania przechodzi do "czeka na weryfikację". Silnik nie decyduje; decyduje zespół w PATCH.
+ */
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const t = await tSerwer();
@@ -39,11 +43,16 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const { data: uzytkownik } = await supabase.auth.getUser();
   if (!uzytkownik.user) return NextResponse.json({ blad: t("api.zalogujSie") }, { status: 401 });
 
+  // Wynik liczy serwer (nie ufamy polu z formularza) i zapisuje w treści jako ślad z datą oceny.
+  const { zgodnosc: _odrzucone, ...czyste } = body;
+  void _odrzucone;
+  const tresc: TrescOswiadczenia = { ...czyste, zgodnosc: ocenZgodnosc(czyste) };
+
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
   const { error } = await supabase.from("oswiadczenia").insert({
     kampania_id: id,
     user_id: uzytkownik.user.id,
-    tresc: body,
+    tresc,
     wersja_tresci: WERSJA_OSWIADCZENIA,
     ip,
     user_agent: req.headers.get("user-agent"),
@@ -51,11 +60,17 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if (error) return NextResponse.json({ blad: t("api.nieudanoZapisacOswiadczenie") }, { status: 500 });
 
   // Nowe oświadczenie zeruje wcześniejszą decyzję: trzeba sprawdzić od nowa.
-  await supabase.from("kampanie").update({ zgoda_zespolu: "czeka", zgoda_powod: "" }).eq("id", id);
-  return NextResponse.json({ ok: true });
+  await supabase
+    .from("kampanie")
+    .update({ zgoda_zespolu: "czeka", zgoda_powod: "", zgoda_kto: null, zgoda_kiedy: null })
+    .eq("id", id);
+  return NextResponse.json({ ok: true, zgodnosc: tresc.zgodnosc });
 }
 
-/** Decyzja zespołu: zaakceptowana albo odrzucona (z powodem). Tylko gdy oświadczenie istnieje. */
+/**
+ * Decyzja zespołu: zaakceptowana albo odrzucona (z powodem). Tylko gdy oświadczenie istnieje.
+ * Gdy silnik dał "niedozwolone lub prawnik", akceptacja też wymaga powodu (ślad: np. opinia prawnika).
+ */
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const t = await tSerwer();
@@ -68,16 +83,29 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return NextResponse.json({ blad: t("osw.podajPowod") }, { status: 400 });
 
   const supabase = await createClient();
-  const { count } = await supabase
+  const { data: uzytkownik } = await supabase.auth.getUser();
+  if (!uzytkownik.user) return NextResponse.json({ blad: t("api.zalogujSie") }, { status: 401 });
+  const { data: ostatnie } = await supabase
     .from("oswiadczenia")
-    .select("id", { count: "exact", head: true })
-    .eq("kampania_id", id);
-  if (!count)
+    .select("tresc")
+    .eq("kampania_id", id)
+    .order("utworzone", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!ostatnie)
     return NextResponse.json({ blad: t("api.najpierwOswiadczenie") }, { status: 400 });
+  const status = (ostatnie.tresc as TrescOswiadczenia).zgodnosc?.status;
+  if (zgoda === "zaakceptowana" && status === "niedozwolone_lub_prawnik" && !powod)
+    return NextResponse.json({ blad: t("osw.akceptujaPowod") }, { status: 400 });
 
   const { error } = await supabase
     .from("kampanie")
-    .update({ zgoda_zespolu: zgoda, zgoda_powod: zgoda === "odrzucona" ? powod : "" })
+    .update({
+      zgoda_zespolu: zgoda,
+      zgoda_powod: powod,
+      zgoda_kto: uzytkownik.user.id,
+      zgoda_kiedy: new Date().toISOString(),
+    })
     .eq("id", id);
   if (error) return NextResponse.json({ blad: t("osw.nieZapisanoDecyzji") }, { status: 500 });
   return NextResponse.json({ ok: true, zgoda, powod });

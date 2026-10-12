@@ -5,6 +5,7 @@ import { youtubeId } from "@/lib/akcja";
 import { AkcjaFormularz } from "@/components/AkcjaFormularz";
 import { tlumacz } from "@/lib/i18n";
 import { jezykZCookie } from "@/lib/i18n/serwer";
+import type { TrescOswiadczenia } from "@/lib/oswiadczenie";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,14 @@ type Akcja = {
   film: string;
   podpisy: number;
   gotowa: boolean;
+  /** Z zaakceptowanego oświadczenia zleceniodawcy; null, gdy go nie ma. */
+  prowadzi: {
+    zleceniodawca: string;
+    forma: TrescOswiadczenia["formaPrawna"];
+    zrodlo: TrescOswiadczenia["zrodlo"];
+    zrodloOpis: string;
+    naZlecenie: string;
+  } | null;
 };
 
 async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null> {
@@ -30,12 +39,12 @@ async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null>
   const { data: k } = await admin
     .from("kampanie")
     .select(
-      "id, nadawca, link_film, akcja_wlaczona, akcja_tytul, akcja_opis, akcja_administrator",
+      "id, nadawca, link_film, akcja_wlaczona, akcja_tytul, akcja_opis, akcja_administrator, zgoda_zespolu",
     )
     .eq("akcja_slug", slug)
     .maybeSingle();
   if (!k || !k.akcja_wlaczona) return null;
-  const [{ count: podpisy }, { count: warianty }, { count: odbiorcy }] =
+  const [{ count: podpisy }, { count: warianty }, { count: odbiorcy }, { data: osw }] =
     await Promise.all([
       admin
         .from("podpisy")
@@ -53,8 +62,28 @@ async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null>
         .eq("kampania_id", k.id)
         .eq("wypisany", false)
         .not("email", "is", null),
+      // Stopka "Kampanię prowadzi ..." (legal etap 1): tylko gdy zespół zaakceptował oświadczenie.
+      k.zgoda_zespolu === "zaakceptowana"
+        ? admin
+            .from("oswiadczenia")
+            .select("tresc")
+            .eq("kampania_id", k.id)
+            .order("utworzone", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
+  const o = (osw?.tresc ?? null) as TrescOswiadczenia | null;
   return {
+    prowadzi: o
+      ? {
+          zleceniodawca: o.zleceniodawca,
+          forma: o.formaPrawna,
+          zrodlo: o.zrodlo,
+          zrodloOpis: o.zrodloOpis,
+          naZlecenie: o.rola === "zlecenie" ? o.naZlecenieKogo : "",
+        }
+      : null,
     tytul: String(k.akcja_tytul || domyslnyTytul),
     opis: String(k.akcja_opis ?? ""),
     nadawca: String(k.nadawca ?? ""),
@@ -139,6 +168,16 @@ export default async function StronaAkcjiPubliczna({
               <p className="text-slate-500">{t("akcja.opisWkrotce")}</p>
             )}
           </div>
+          {a.prowadzi && (
+            <p className="mt-6 text-xs leading-relaxed text-slate-500">
+              {t("akcja.prowadzi", {
+                zleceniodawca: a.prowadzi.zleceniodawca,
+                forma: t(`formaPrawna.${a.prowadzi.forma}`),
+                zrodlo: `${t(`zrodloFin.${a.prowadzi.zrodlo}`)}${a.prowadzi.zrodloOpis ? `: ${a.prowadzi.zrodloOpis}` : ""}`,
+              })}
+              {a.prowadzi.naZlecenie && ` ${t("stopka.naZlecenie", { kto: a.prowadzi.naZlecenie })}`}
+            </p>
+          )}
           <div className="mt-8 rounded-xl bg-slate-100 p-5 text-sm text-slate-600">
             <p className="font-medium text-slate-800">{t("akcja.jakDziala")}</p>
             <ol className="mt-2 list-decimal space-y-1 pl-5">

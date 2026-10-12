@@ -113,6 +113,8 @@ export type Kampania = {
   /** Weryfikacja oświadczenia zleceniodawcy przez zespół (null = oświadczenie nie złożone). Zapisuje API /oswiadczenie. */
   zgodaZespolu: "czeka" | "zaakceptowana" | "odrzucona" | null;
   zgodaPowod: string;
+  /** Kiedy zespół podjął decyzję (ISO) albo null. */
+  zgodaKiedy: string | null;
 };
 
 export type FiltrOdbiorcow = {
@@ -146,5 +148,6 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     filtrOdbiorcow: {},
     zgodaZespolu: null,
     zgodaPowod: "",
+    zgodaKiedy: null,
   };
 }

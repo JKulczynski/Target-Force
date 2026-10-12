@@ -53,7 +53,7 @@ export default function RaportKampanii() {
   const [k, setK] = useState<Kampania | null | undefined>(undefined);
   const [lista, setLista] = useState<Odbiorca[] | null>(null);
   const [wplyw, setWplyw] = useState<Wydarzenie[]>([]);
-  const [oswiadczenie, setOswiadczenie] = useState<{ tresc: TrescOswiadczenia; utworzone: string } | null>(null);
+  const [oswiadczenie, setOswiadczenie] = useState<{ tresc: TrescOswiadczenia; utworzone: string; wersja_tresci: number } | null>(null);
   const [akcja, setAkcja] = useState<{
     razem: number;
     otworzyli: number;
@@ -361,6 +361,42 @@ export default function RaportKampanii() {
           </table>
         )}
       </section>
+
+      {oswiadczenie && (
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
+          <h2 className="text-base font-semibold tracking-tight text-slate-900">{t("raport.zgodnosc")}</h2>
+          <dl className="mt-3 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-medium text-slate-500">{t("raport.zgodnosc.status")}</dt>
+              <dd className="mt-0.5 text-slate-800">
+                {oswiadczenie.tresc.zgodnosc ? t(`zgodnosc.${oswiadczenie.tresc.zgodnosc.status}`) : t("wspolne.brak")}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">{t("raport.zgodnosc.decyzja")}</dt>
+              <dd className="mt-0.5 text-slate-800">
+                {k.zgodaZespolu ? t(`zgoda.${k.zgodaZespolu}`) : t("wspolne.brak")}
+                {k.zgodaZespolu === "zaakceptowana" && k.zgodaKiedy && `, ${t("raport.zgodnosc.zaakceptowano", { data: data(k.zgodaKiedy) })}`}
+                {k.zgodaPowod && ` (${k.zgodaPowod})`}
+              </dd>
+            </div>
+          </dl>
+          {oswiadczenie.tresc.zgodnosc && oswiadczenie.tresc.zgodnosc.obowiazki.length > 0 && (
+            <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-700">
+              {oswiadczenie.tresc.zgodnosc.obowiazki.map((o) => (
+                <li key={o}>{t(`obowiazek.${o}`)}</li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-4 text-xs text-slate-500">
+            {t("raport.zgodnosc.wersja", { wersja: oswiadczenie.wersja_tresci })}
+            {" · "}
+            <a href={`/api/kampanie/${id}/oswiadczenie/pakiet`} className="underline hover:text-slate-900 print:hidden">
+              {t("raport.zgodnosc.pakiet")}
+            </a>
+          </p>
+        </section>
+      )}
 
       <p className="mt-6 text-xs text-slate-400">{t("raport.stopka")}</p>
     </>

@@ -4,8 +4,15 @@
  * Teksty a-e do potwierdzenia przez prawnika, nie przez nas.
  */
 import { tlumacz, type Tlumacz } from "@/lib/i18n";
+import type { WynikZgodnosci } from "@/lib/zgodnosc";
 
-export const WERSJA_OSWIADCZENIA = 1;
+/** Wersja 2 (12.10): pola pod silnik reguł (lib/zgodnosc.ts): rodzaj sprawy, wybory, kraj odbiorców, siedziba, płatność, stopka. */
+export const WERSJA_OSWIADCZENIA = 2;
+
+export const RODZAJE_SPRAW = ["ustawa", "rozporzadzenie", "lokalna", "budzet", "inna"] as const;
+export type RodzajSprawy = (typeof RODZAJE_SPRAW)[number];
+export const KRAJE_ODBIORCOW = ["pl", "pe", "nl", "inny"] as const;
+export type KrajOdbiorcow = (typeof KRAJE_ODBIORCOW)[number];
 
 export const FORMY_PRAWNE = [
   "fundacja",
@@ -58,6 +65,20 @@ export type TrescOswiadczenia = {
   zrodlo: ZrodloFinansowania;
   zrodloOpis: string;
   potwierdzenia: Record<KluczOswiadczenia, boolean>;
+  /** Pola wersji 2. Opcjonalne w typie, bo wiersze z wersji 1 ich nie mają; walidacja ich wymaga. */
+  rodzajSprawy?: RodzajSprawy;
+  /** Czy sprawa łączy się z wyborami albo referendum (data w `wyboryData`, YYYY-MM-DD). */
+  wybory?: "nie" | "tak";
+  wyboryData?: string;
+  krajOdbiorcow?: KrajOdbiorcow;
+  /** Zleceniodawca (albo podmiot, na którego zlecenie działa) ma siedzibę poza UE. */
+  siedzibaPozaUE?: boolean;
+  /** Kampania jest opłacana przez podmiot trzeci i prowadzona w jego interesie (flaga lobbingu zawodowego). */
+  platneNaRzeczTrzeciego?: boolean;
+  /** Zgoda na stopkę nadawcy w mailach organizacji i na stronie akcji (decyzja Jana 12.10: zawsze). */
+  zgodaStopka?: boolean;
+  /** Wynik silnika reguł w chwili złożenia (ślad; liczy serwer, nie formularz). */
+  zgodnosc?: WynikZgodnosci;
 };
 
 export function pusteOswiadczenie(): TrescOswiadczenia {
@@ -73,7 +94,19 @@ export function pusteOswiadczenie(): TrescOswiadczenia {
     zrodlo: "wlasne",
     zrodloOpis: "",
     potwierdzenia: { prawdziwe: false, jawnosc: false, lobbing: false, pe: false, odmowa: false },
+    rodzajSprawy: "ustawa",
+    wybory: "nie",
+    wyboryData: "",
+    krajOdbiorcow: "pl",
+    siedzibaPozaUE: false,
+    platneNaRzeczTrzeciego: false,
+    zgodaStopka: false,
   };
+}
+
+/** NIP albo KRS jest wymagany, gdy zleca spółka albo płaci zleceniodawca komercyjny. */
+export function wymagaNipKrs(t: TrescOswiadczenia): boolean {
+  return t.formaPrawna === "spółka" || t.zrodlo === "komercyjny";
 }
 
 /**
@@ -89,9 +122,30 @@ export function sprawdzOswiadczenie(t: TrescOswiadczenia, tl: Tlumacz = tlumacz(
   if (!(t.zrodlo in ZRODLA_FINANSOWANIA)) return tl("osw.walidacja.zrodlo");
   if ((ZRODLA_Z_OPISEM.includes(t.zrodlo) || t.rola === "zlecenie") && !t.zrodloOpis.trim())
     return tl("osw.walidacja.opis");
+  if (!t.rodzajSprawy || !RODZAJE_SPRAW.includes(t.rodzajSprawy)) return tl("osw.walidacja.rodzaj");
+  if (t.wybory !== "nie" && t.wybory !== "tak") return tl("osw.walidacja.wybory");
+  if (t.wybory === "tak" && !/^\d{4}-\d{2}-\d{2}$/.test(t.wyboryData ?? "")) return tl("osw.walidacja.wyboryData");
+  if (!t.krajOdbiorcow || !KRAJE_ODBIORCOW.includes(t.krajOdbiorcow)) return tl("osw.walidacja.kraj");
+  if (wymagaNipKrs(t) && !t.nipKrs.trim()) return tl("osw.walidacja.nipKrs");
   for (const k of Object.keys(OSWIADCZENIA) as KluczOswiadczenia[])
     if (!t.potwierdzenia?.[k]) return tl("osw.walidacja.zaznacz");
+  if (!t.zgodaStopka) return tl("osw.walidacja.stopka");
   return null;
+}
+
+/**
+ * Stopka nadawcy do maili organizacji i na stronę akcji (pkt 3 spec, decyzja 12.10: w mailach organizacji tak,
+ * w mailach sympatyków nie). Język: polski dla odbiorców w PL, angielski dla PE / NL / innych, chyba że podano `tl`.
+ */
+export function stopkaNadawcy(t: TrescOswiadczenia, tl?: Tlumacz): string {
+  const f = tl ?? tlumacz(!t.krajOdbiorcow || t.krajOdbiorcow === "pl" ? "pl" : "en");
+  const zrodlo = `${f(`zrodloFin.${t.zrodlo}`)}${t.zrodloOpis ? `: ${t.zrodloOpis}` : ""}`;
+  const czesci = [
+    f("stopka.prowadzi", { zleceniodawca: t.zleceniodawca, forma: f(`formaPrawna.${t.formaPrawna}`), zrodlo }),
+  ];
+  if (t.rola === "zlecenie" && t.naZlecenieKogo) czesci.push(f("stopka.naZlecenie", { kto: t.naZlecenieKogo }));
+  czesci.push(f("stopka.kontakt", { osoba: t.osoba, email: t.email }));
+  return czesci.join(" ");
 }
 
 /** Decyzja zespołu: wartość w bazie zostaje, etykietę daje t(`zgoda.${zgoda}`). */

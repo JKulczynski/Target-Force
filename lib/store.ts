@@ -35,11 +35,12 @@ type Wiersz = {
   filtr_odbiorcow: Kampania["filtrOdbiorcow"];
   zgoda_zespolu: Kampania["zgodaZespolu"];
   zgoda_powod: string;
+  zgoda_kiedy: string | null;
 };
 
 // Jeden literał, bo klient Supabase wyprowadza typ wyniku z treści tego napisu.
 const KOLUMNY =
-  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator, filtr_odbiorcow, zgoda_zespolu, zgoda_powod";
+  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator, filtr_odbiorcow, zgoda_zespolu, zgoda_powod, zgoda_kiedy";
 
 function zWiersza(w: Wiersz): Kampania {
   return {
@@ -67,6 +68,7 @@ function zWiersza(w: Wiersz): Kampania {
     filtrOdbiorcow: w.filtr_odbiorcow ?? {},
     zgodaZespolu: w.zgoda_zespolu ?? null,
     zgodaPowod: w.zgoda_powod ?? "",
+    zgodaKiedy: w.zgoda_kiedy ?? null,
   };
 }
 
