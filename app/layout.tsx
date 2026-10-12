@@ -32,13 +32,17 @@ export async function generateMetadata(): Promise<Metadata> {
 async function statusDostepu(): Promise<{
   email: string;
   wZespole: boolean;
+  admin: boolean;
 } | null> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const email = data?.claims?.email as string | undefined;
   if (!data?.claims || !email) return null;
-  const { data: wZespole } = await supabase.rpc("czy_w_zespole");
-  return { email, wZespole: Boolean(wZespole) };
+  const [{ data: wZespole }, { data: admin }] = await Promise.all([
+    supabase.rpc("czy_w_zespole"),
+    supabase.rpc("czy_admin"),
+  ]);
+  return { email, wZespole: Boolean(wZespole), admin: Boolean(admin) };
 }
 
 export default async function RootLayout({
@@ -106,6 +110,7 @@ export default async function RootLayout({
                     <NavLink href="/">{t("nav.kampanie")}</NavLink>
                     <NavLink href="/zrodla">{t("nav.zrodla")}</NavLink>
                     <NavLink href="/ustawienia">{t("nav.ustawienia")}</NavLink>
+                    {dostep.admin && <NavLink href="/admin">{t("nav.admin")}</NavLink>}
                     <span className="mx-2 h-5 w-px bg-white/15" aria-hidden />
                     <span className="hidden max-w-48 truncate text-xs text-slate-400 md:inline">
                       {dostep.email}

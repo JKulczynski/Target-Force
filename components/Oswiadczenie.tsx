@@ -48,6 +48,15 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
   const [powod, setPowod] = useState("");
   const [zapisuje, setZapisuje] = useState(false);
   const [blad, setBlad] = useState<string | null>(null);
+  // Decyzję widzi i podejmuje tylko administrator WinOver (opcja 3, 12.10); klient widzi status.
+  const [jestAdmin, setJestAdmin] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/ja")
+      .then((o) => (o.ok ? o.json() : null))
+      .then((d) => setJestAdmin(Boolean(d?.admin)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let aktualny = true;
@@ -79,7 +88,13 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
       if (!odp.ok) return setBlad(d.blad ?? tl("wspolne.nieZapisano"));
       setZlozone({ tresc: { ...t, zgodnosc: d.zgodnosc }, utworzone: new Date().toISOString() });
       setEdycja(false);
-      onZmiana({ ...k, zgodaZespolu: "czeka", zgodaPowod: "", zgodaKiedy: null });
+      const auto = d.zgoda === "zaakceptowana";
+      onZmiana({
+        ...k,
+        zgodaZespolu: auto ? "zaakceptowana" : "czeka",
+        zgodaPowod: d.powod ?? "",
+        zgodaKiedy: auto ? new Date().toISOString() : null,
+      });
     } catch {
       setBlad(tl("wspolne.nieZapisano"));
     } finally {
@@ -196,7 +211,17 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
             </p>
           )}
 
-          {k.zgodaZespolu === "czeka" && (
+          {k.zgodaZespolu === "zaakceptowana" && k.zgodaPowod && (
+            <p className="mt-4 text-sm text-slate-600">{tl("osw.powodDecyzji", { powod: k.zgodaPowod })}</p>
+          )}
+
+          {k.zgodaZespolu === "czeka" && !jestAdmin && (
+            <p className="mt-5 rounded-lg bg-amber-50 px-3.5 py-3 text-sm text-amber-900 ring-1 ring-amber-100">
+              {tl("osw.czekaNaWinOver")}
+            </p>
+          )}
+
+          {k.zgodaZespolu === "czeka" && jestAdmin && (
             <div className="mt-5 rounded-lg bg-slate-50 p-4 ring-1 ring-slate-200">
               <p className="text-sm font-medium text-slate-800">{tl("osw.decyzja")}</p>
               <p className="mt-1 text-sm text-slate-600">{tl("osw.decyzja.opis")}</p>

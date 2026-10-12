@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { tSerwer } from "@/lib/i18n/serwer";
 import {
   sprawdzOswiadczenie,
@@ -59,13 +60,34 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   });
   if (error) return NextResponse.json({ blad: t("api.nieudanoZapisacOswiadczenie") }, { status: 500 });
 
+  // Opcja 3 (decyzja Jana 12.10): "poza zakresem" = organizacja za własne pieniądze, bez wyborów, odbiorcy znani,
+  // akceptuje automat. Reszta czeka na administratora WinOver. Strażnik w bazie pozwala klientowi tylko na "czeka",
+  // więc automatyczną akceptację zapisuje klient serwisowy (dostęp do kampanii potwierdził już insert pod RLS).
+  if (tresc.zgodnosc?.status === "poza_zakresem") {
+    const admin = createAdminClient();
+    if (admin) {
+      const { error: bladAuto } = await admin
+        .from("kampanie")
+        .update({
+          zgoda_zespolu: "zaakceptowana",
+          zgoda_powod: POWOD_AUTO,
+          zgoda_kto: null,
+          zgoda_kiedy: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (!bladAuto) return NextResponse.json({ ok: true, zgodnosc: tresc.zgodnosc, zgoda: "zaakceptowana", powod: POWOD_AUTO });
+    }
+  }
   // Nowe oświadczenie zeruje wcześniejszą decyzję: trzeba sprawdzić od nowa.
   await supabase
     .from("kampanie")
     .update({ zgoda_zespolu: "czeka", zgoda_powod: "", zgoda_kto: null, zgoda_kiedy: null })
     .eq("id", id);
-  return NextResponse.json({ ok: true, zgodnosc: tresc.zgodnosc });
+  return NextResponse.json({ ok: true, zgodnosc: tresc.zgodnosc, zgoda: "czeka", powod: "" });
 }
+
+/** Zapis w bazie (dane, po polsku), interfejs pokazuje go jak każdy powód decyzji. */
+const POWOD_AUTO = "automatycznie: poza zakresem szczególnych obowiązków";
 
 /**
  * Decyzja zespołu: zaakceptowana albo odrzucona (z powodem). Tylko gdy oświadczenie istnieje.
@@ -85,6 +107,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const supabase = await createClient();
   const { data: uzytkownik } = await supabase.auth.getUser();
   if (!uzytkownik.user) return NextResponse.json({ blad: t("api.zalogujSie") }, { status: 401 });
+  const { data: jestAdmin } = await supabase.rpc("czy_admin");
+  if (!jestAdmin) return NextResponse.json({ blad: t("api.tylkoAdmin") }, { status: 403 });
   const { data: ostatnie } = await supabase
     .from("oswiadczenia")
     .select("tresc")

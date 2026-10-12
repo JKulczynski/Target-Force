@@ -201,6 +201,10 @@ export async function wyslijKolejke(
 ): Promise<Wynik> {
   const { kampaniaId: id, skrzynka: s, warianty } = o;
   const t = tlumacz(o.jezyk ?? "pl");
+  // Globalny wyłącznik (blok D, 12.10): WYSYLKA_WSTRZYMANA=1 w Vercel zatrzymuje wszystkie maile, ręczne i z automatu.
+  // Test na własny adres idzie inną ścieżką (lib/smtp), więc dalej działa.
+  if (process.env.WYSYLKA_WSTRZYMANA === "1")
+    return { ok: false, blad: t("api.wysylkaWstrzymana"), status: 503 };
   // Blokada (punkt 1 Piotra): bez zaakceptowanego oświadczenia zleceniodawcy nic nie wychodzi, ani ręcznie, ani z automatu.
   const { data: zgoda } = await supabase
     .from("kampanie")

@@ -10,6 +10,15 @@ export default function Kampanie() {
   const { t } = useT();
   const [kampanie, setKampanie] = useState<Kampania[] | null>(null);
   const [blad, setBlad] = useState(false);
+  // Administrator widzi kampanie wszystkich klientów, więc przy każdej pokazujemy, czyja jest.
+  const [jestAdmin, setJestAdmin] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/ja")
+      .then((o) => (o.ok ? o.json() : null))
+      .then((d) => setJestAdmin(Boolean(d?.admin)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     wszystkieKampanie()
@@ -118,6 +127,9 @@ export default function Kampanie() {
                       <p className="mt-0.5 truncate text-sm text-slate-500">
                         {k.kogoSzukamy || t("lista.odbiorcaNieopisany")}
                       </p>
+                      {jestAdmin && k.organizacja && (
+                        <p className="mt-0.5 truncate text-xs text-slate-400">{t("lista.organizacja", { nazwa: k.organizacja })}</p>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {k.zrodla.length === 0 ? (

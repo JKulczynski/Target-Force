@@ -115,6 +115,8 @@ export type Kampania = {
   zgodaPowod: string;
   /** Kiedy zespół podjął decyzję (ISO) albo null. */
   zgodaKiedy: string | null;
+  /** Nazwa organizacji (klienta), do której należy kampania; tylko do odczytu. */
+  organizacja: string;
 };
 
 export type FiltrOdbiorcow = {
@@ -149,5 +151,6 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     zgodaZespolu: null,
     zgodaPowod: "",
     zgodaKiedy: null,
+    organizacja: "",
   };
 }

@@ -36,11 +36,13 @@ type Wiersz = {
   zgoda_zespolu: Kampania["zgodaZespolu"];
   zgoda_powod: string;
   zgoda_kiedy: string | null;
+  /** Relacja wiele-do-jednego: w praktyce obiekt, ale bez wygenerowanych typów klient Supabase widzi tablicę. */
+  organizacje: { nazwa: string } | { nazwa: string }[] | null;
 };
 
 // Jeden literał, bo klient Supabase wyprowadza typ wyniku z treści tego napisu.
 const KOLUMNY =
-  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator, filtr_odbiorcow, zgoda_zespolu, zgoda_powod, zgoda_kiedy";
+  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator, filtr_odbiorcow, zgoda_zespolu, zgoda_powod, zgoda_kiedy, organizacje(nazwa)";
 
 function zWiersza(w: Wiersz): Kampania {
   return {
@@ -69,6 +71,7 @@ function zWiersza(w: Wiersz): Kampania {
     zgodaZespolu: w.zgoda_zespolu ?? null,
     zgodaPowod: w.zgoda_powod ?? "",
     zgodaKiedy: w.zgoda_kiedy ?? null,
+    organizacja: (Array.isArray(w.organizacje) ? w.organizacje[0]?.nazwa : w.organizacje?.nazwa) ?? "",
   };
 }
 
