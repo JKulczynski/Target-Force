@@ -19,6 +19,7 @@ type Propozycja = {
   komisje: { kod: string; nazwa: string; dlaczego: string }[];
   kogoSzukamy: string;
   uzasadnienie: string;
+  osobyWplywu?: { kto: string; dlaczego: string; gdzieSzukac: string }[];
 };
 
 
@@ -388,6 +389,25 @@ export default function NowaKampania() {
                     ))}
                   </ul>
                 )}
+                {propozycja.osobyWplywu && propozycja.osobyWplywu.length > 0 && (
+                  <div className="mt-3 border-t border-brand-100 pt-3">
+                    <p className="font-medium">{t("kreator.osobyWplywu")}</p>
+                    <ul className="mt-1 space-y-1.5 text-brand-800">
+                      {propozycja.osobyWplywu.map((o) => (
+                        <li key={o.kto}>
+                          <span className="font-medium">{o.kto}</span>: {o.dlaczego}
+                          <span className="block text-xs text-brand-700">{o.gdzieSzukac}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-brand-700">
+                      {t("kreator.osobyWplywu.jak")}{" "}
+                      <a href="/szablon-odbiorcow.csv" download className="font-medium underline">
+                        {t("kreator.szablonCsv")}
+                      </a>
+                    </p>
+                  </div>
+                )}
                 <p className="mt-2 text-xs text-brand-700">{t("kreator.propozycjaUwaga")}</p>
               </div>
             )}
@@ -414,7 +434,10 @@ export default function NowaKampania() {
               <p className="text-sm text-slate-500">
                 {t("kreator.wlasnaLista.opis1")}{" "}
                 <span className="font-medium text-slate-700">email</span>{" "}
-                {t("kreator.wlasnaLista.opis2")}
+                {t("kreator.wlasnaLista.opis2")}{" "}
+                <a href="/szablon-odbiorcow.csv" download className="underline hover:text-slate-900">
+                  {t("kreator.szablonCsv")}
+                </a>
               </p>
               <input
                 type="file"
@@ -534,6 +557,7 @@ export default function NowaKampania() {
             {dane.zrodla.includes("sejm") && (
               <MomentSejmu
                 start={dane.start}
+                komisje={dane.filtrOdbiorcow.komisje ?? []}
                 onWybierz={(start) => setDane({ ...dane, start })}
               />
             )}

@@ -18,6 +18,7 @@ import { StronaAkcji } from "@/components/StronaAkcji";
 import { Wplyw } from "@/components/Wplyw";
 import { MomentSejmu } from "@/components/MomentSejmu";
 import { Oswiadczenie } from "@/components/Oswiadczenie";
+import { PismoFormalne } from "@/components/PismoFormalne";
 import { useT } from "@/lib/i18n/klient";
 
 export default function SzczegolyKampanii() {
@@ -242,6 +243,12 @@ export default function SzczegolyKampanii() {
             <Oswiadczenie k={k} onZmiana={setK} />
           </div>
 
+          {k.zrodla.includes("samorzady") && (
+            <div id="pismo" className="scroll-mt-20">
+              <PismoFormalne k={k} onZmiana={setK} />
+            </div>
+          )}
+
           <div id="wiadomosci" className="scroll-mt-20">
             <Wiadomosci
               kampaniaId={k.id}
@@ -368,7 +375,7 @@ export default function SzczegolyKampanii() {
           </section>
           {k.zrodla.includes("sejm") && (
             <div className="mt-4">
-              <MomentSejmu start={k.start} />
+              <MomentSejmu start={k.start} komisje={k.filtrOdbiorcow.komisje ?? []} />
             </div>
           )}
         </aside>

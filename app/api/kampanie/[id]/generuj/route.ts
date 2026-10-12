@@ -56,7 +56,7 @@ export async function POST(
   const { data: k } = await supabase
     .from("kampanie")
     .select(
-      "id, nazwa, zrodla, kogo_szukamy, cel, nadawca, link_film, materialy, liczba_wariantow, liczba_followupow",
+      "id, nazwa, zrodla, kogo_szukamy, cel, nadawca, link_film, materialy, liczba_wariantow, liczba_followupow, pismo",
     )
     .eq("id", id)
     .maybeSingle();
@@ -69,8 +69,11 @@ export async function POST(
     rola === "sympatyk"
       ? 5
       : Math.min(Math.max(k.liczba_wariantow ?? 3, 1), 10);
+  const pismo = (k.pismo ?? {}) as { rodzaj?: string; wnoszacy?: string; adres?: string; email?: string };
+  // Petycja (blok C, 12.10): tylko wiadomości nadawcy do samorządów; bez przypomnień, organ ma 3 miesiące.
+  const petycja = rola === "nadawca" && pismo.rodzaj === "petycja" && zrodla.includes("samorzady");
   const liczbaPrzypomnien =
-    rola === "sympatyk"
+    rola === "sympatyk" || petycja
       ? 0
       : Math.min(Math.max(k.liczba_followupow ?? 0, 0), 5);
 
@@ -92,6 +95,11 @@ export async function POST(
     ...(zrodla.includes("samorzady")
       ? [
           "Odbiorcami są urzędy samorządowe (gminy, powiaty, województwa), mail trafia na ogólny adres urzędu. Zwracaj się do urzędu, np. „Szanowni Państwo”, i poproś o przekazanie wiadomości wójtowi, burmistrzowi, prezydentowi miasta albo staroście. W jednym zdaniu użyj pola {okreg} (nazwa gminy, powiatu albo województwa), np. „Piszę do Państwa w sprawie, która dotyczy mieszkańców {okreg}”. Nie używaj pól {imie} ani {nazwisko}.",
+        ]
+      : []),
+    ...(petycja
+      ? [
+          `TRYB PETYCJI (ustawa z 11 lipca 2014 r. o petycjach, składana e-mailem). Każdy wariant to formalna petycja, nie zwykły list. Temat zaczyna się od „Petycja:” i krótko nazywa przedmiot. W treści, w tej kolejności: (1) zdanie, że na podstawie ustawy z 11 lipca 2014 r. o petycjach wnoszący składa petycję do {okreg}; (2) PRZEDMIOT PETYCJI: jedno-dwa zdania, czego dokładnie wnoszący żąda (zmiana przepisu prawa miejscowego, podjęcie rozstrzygnięcia albo działania w sprawie dotyczącej wnoszącego, życia zbiorowego lub wartości wymagających ochrony w imię dobra wspólnego, w zakresie zadań adresata); (3) UZASADNIENIE z materiałów, bez faktów spoza nich; (4) blok wnoszącego na końcu: „Wnoszący: ${pismo.wnoszacy || k.nadawca || "(nazwa)"}, adres do korespondencji: ${pismo.adres || "(adres)"}${pismo.email ? `, e-mail: ${pismo.email}` : ""}”. Ton urzędowy, ale prosty. Bez próśb o przekazanie wójtowi (petycja trafia do organu). Warianty mogą różnić się uzasadnieniem, przedmiot ten sam. Przypomnienia: pusta lista (organ ma 3 miesiące).`,
         ]
       : []),
     ...(zrodla.includes("ministerstwa")

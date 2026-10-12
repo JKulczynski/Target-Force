@@ -117,7 +117,12 @@ export type Kampania = {
   zgodaKiedy: string | null;
   /** Nazwa organizacji (klienta), do której należy kampania; tylko do odczytu. */
   organizacja: string;
+  /** Formalne pismo do samorządów; {} = zwykła wiadomość. */
+  pismo: Pismo;
 };
+
+/** Petycja z ustawy z 11 lipca 2014 r. o petycjach (art. 4 ust. 2: wnoszący, adres, adresat, przedmiot). */
+export type Pismo = { rodzaj?: "petycja"; wnoszacy?: string; adres?: string; email?: string };
 
 export type FiltrOdbiorcow = {
   komisje?: string[];
@@ -152,5 +157,6 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     zgodaPowod: "",
     zgodaKiedy: null,
     organizacja: "",
+    pismo: {},
   };
 }

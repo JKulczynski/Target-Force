@@ -27,6 +27,15 @@ const Propozycja = z.object({
   uzasadnienie: z
     .string()
     .describe("2-3 zdania dla nadawcy: kto decyduje w tej sprawie i dlaczego do nich piszemy. Bez ogólników."),
+  osobyWplywu: z
+    .array(
+      z.object({
+        kto: z.string().describe("Kategoria osób wpływu, konkretnie, np. „dziennikarze działów lokalnych w Małopolsce” albo „publicyści piszący o transporcie”. Bez nazwisk."),
+        dlaczego: z.string().describe("Jedno zdanie: jak ta grupa wpływa na decydenta w tej sprawie"),
+        gdzieSzukac: z.string().describe("Jedno zdanie: skąd nadawca weźmie ich kontakty (redakcje, stopki artykułów, izby, stowarzyszenia)"),
+      }),
+    )
+    .describe("1-3 grupy osób, które mają wpływ na decydenta, ale same nie decydują: media lokalne i branżowe, publicyści, eksperci, organizacje. Nie wymyślaj nazwisk ani adresów."),
 });
 
 /**
@@ -72,7 +81,7 @@ export async function POST(req: NextRequest) {
     "Komisje Sejmu (kod: nazwa):",
     ...stale.map((k) => `${k.code}: ${k.name}`),
     "",
-    "Zadanie: wskaż, kto realnie decyduje albo ma wpływ w tej sprawie, i dobierz źródła oraz komisje. Zasady: sprawy lokalne (drogi, szkoły, komunikacja miejska) to przede wszystkim samorządy, a Sejm tylko gdy chodzi o ustawę, budżet państwa albo program rządowy; sprawy europejskie (regulacje UE, fundusze) to parlament_ue; sprawy ustawowe i budżet państwa to sejm plus właściwa komisja; sprawy wykonawcze (rozporządzenia, programy resortowe) to ministerstwa. Komisje tylko z listy, po kodzie. Nie dodawaj źródeł „na wszelki wypadek”.",
+    "Zadanie: wskaż, kto realnie decyduje albo ma wpływ w tej sprawie, i dobierz źródła oraz komisje. Zasady: sprawy lokalne (drogi, szkoły, komunikacja miejska) to przede wszystkim samorządy, a Sejm tylko gdy chodzi o ustawę, budżet państwa albo program rządowy; sprawy europejskie (regulacje UE, fundusze) to parlament_ue; sprawy ustawowe i budżet państwa to sejm plus właściwa komisja; sprawy wykonawcze (rozporządzenia, programy resortowe) to ministerstwa. Komisje tylko z listy, po kodzie. Nie dodawaj źródeł „na wszelki wypadek”. Osobno wskaż osoby wpływu (wizja pkt 2: decydent i wszyscy, którzy mają na niego wpływ), jako kategorie, bez nazwisk.",
   ].join("\n");
 
   const client = new Anthropic();
@@ -94,6 +103,7 @@ export async function POST(req: NextRequest) {
         .map((k) => ({ kod: k.kod, nazwa: znane.get(k.kod)!, dlaczego: k.dlaczego })),
       kogoSzukamy: p.kogoSzukamy,
       uzasadnienie: p.uzasadnienie,
+      osobyWplywu: p.osobyWplywu.slice(0, 3),
     });
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError)
