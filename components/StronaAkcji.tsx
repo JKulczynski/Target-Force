@@ -1,55 +1,39 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   podpisyKampanii,
   warianty,
-  zmienKampanie,
   type Podpis,
   type Wariant,
 } from "@/lib/store";
 import type { Kampania } from "@/lib/types";
-import { POPRAWNY_SLUG, slugZNazwy } from "@/lib/akcja";
 import { KartaWariantu } from "@/components/Wiadomosci";
-import { POLE } from "@/components/ui";
 import { useT } from "@/lib/i18n/klient";
 
-const pole = `mt-1.5 ${POLE}`;
-
 /**
- * Panel strony akcji na stronie kampanii (wariant A, decyzja 07.10): treść strony, wiadomości dla sympatyków
- * z tym samym etapem zatwierdzania co wiadomości nadawcy, link publiczny i podpisy.
+ * Panel strony akcji na stronie kampanii: wejście do kreatora strony (12.10), wiadomości dla sympatyków
+ * z tym samym etapem zatwierdzania co wiadomości nadawcy, link publiczny, widżet i podpisy ze statusem wysyłki.
  */
 export function StronaAkcji({
   k,
   odbiorcy,
   fakty,
-  onZmiana,
 }: {
   k: Kampania;
   odbiorcy: number;
   fakty: string;
-  onZmiana: (k: Kampania) => void;
+  /** Nieużywane od kreatora strony (12.10): treść strony zapisuje /kampanie/{id}/strona. */
+  onZmiana?: (k: Kampania) => void;
 }) {
   const { t } = useT();
-  const [wlaczona, setWlaczona] = useState(k.akcjaWlaczona);
-  const [slug, setSlug] = useState(k.akcjaSlug ?? slugZNazwy(k.nazwa));
-  const [tytul, setTytul] = useState(k.akcjaTytul);
-  const [opis, setOpis] = useState(k.akcjaOpis);
-  const [administrator, setAdministrator] = useState(k.akcjaAdministrator);
-  const [zapisuje, setZapisuje] = useState(false);
   const [blad, setBlad] = useState<string | null>(null);
   const [lista, setLista] = useState<Wariant[] | null>(null);
   const [generuje, setGeneruje] = useState(false);
   const [podpisy, setPodpisy] = useState<Awaited<ReturnType<typeof podpisyKampanii>> | null>(null);
   const [skopiowano, setSkopiowano] = useState(false);
 
-  const zmienione =
-    wlaczona !== k.akcjaWlaczona ||
-    slug !== (k.akcjaSlug ?? "") ||
-    tytul !== k.akcjaTytul ||
-    opis !== k.akcjaOpis ||
-    administrator !== k.akcjaAdministrator;
 
   async function wczytaj() {
     const [w, p] = await Promise.all([
@@ -75,27 +59,7 @@ export function StronaAkcji({
     };
   }, [k.id]);
 
-  async function zapisz() {
-    setBlad(null);
-    const s = slug.trim();
-    if (!POPRAWNY_SLUG.test(s)) return setBlad(t("akcjaPanel.bladSlug"));
-    if (wlaczona && !tytul.trim()) return setBlad(t("akcjaPanel.bladTytul"));
-    setZapisuje(true);
-    try {
-      const nowa = await zmienKampanie(k.id, {
-        akcjaWlaczona: wlaczona,
-        akcjaSlug: s,
-        akcjaTytul: tytul.trim(),
-        akcjaOpis: opis.trim(),
-        akcjaAdministrator: administrator.trim(),
-      });
-      if (nowa) onZmiana(nowa);
-    } catch (e) {
-      setBlad(String(e).includes("duplicate") ? t("akcjaPanel.slugZajety") : t("wspolne.nieZapisano"));
-    } finally {
-      setZapisuje(false);
-    }
-  }
+
 
   async function generuj() {
     setGeneruje(true);
@@ -219,70 +183,17 @@ export function StronaAkcji({
         </dl>
       )}
 
-      <div className="mt-6 grid gap-5 sm:grid-cols-2">
-        <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-slate-700">{t("akcjaPanel.tytulStrony")}</span>
-          <input
-            className={pole}
-            value={tytul}
-            onChange={(e) => setTytul(e.target.value)}
-            placeholder={t("akcjaPanel.tytulStrony.ph")}
-          />
-        </label>
-        <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-slate-700">{t("akcjaPanel.oCoChodzi")}</span>
-          <textarea
-            className={`${pole} min-h-32 resize-y`}
-            value={opis}
-            onChange={(e) => setOpis(e.target.value)}
-            placeholder={t("akcjaPanel.oCoChodzi.ph")}
-          />
-          <span className="mt-1 block text-xs text-slate-500">{t("akcjaPanel.filmNadOpisem")}</span>
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700">{t("akcjaPanel.adres")}</span>
-          <div className="mt-1.5 flex items-center gap-1 text-sm text-slate-500">
-            <span className="shrink-0">/a/</span>
-            <input
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase())}
-            />
-          </div>
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700">{t("akcjaPanel.administrator")}</span>
-          <input
-            className={pole}
-            value={administrator}
-            onChange={(e) => setAdministrator(e.target.value)}
-            placeholder={t("akcjaPanel.administrator.ph")}
-          />
-        </label>
-        <label className="flex items-start gap-3 sm:col-span-2">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-slate-300"
-            checked={wlaczona}
-            onChange={(e) => setWlaczona(e.target.checked)}
-          />
-          <span className="text-sm">
-            <span className="font-medium text-slate-700">{t("akcjaPanel.wlaczona")}</span>
-            <span className="block text-slate-500">{t("akcjaPanel.wlaczona.opis")}</span>
-          </span>
-        </label>
-      </div>
-      <div className="mt-4 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={zapisz}
-          disabled={zapisuje || !zmienione}
-          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
-        >
-          {zapisuje ? t("akcjaPanel.zapisuje") : t("akcjaPanel.zapiszStrone")}
-        </button>
-        {blad && <p className="text-sm text-red-700">{blad}</p>}
-      </div>
+      <Link
+        href={`/kampanie/${k.id}/strona`}
+        className="mt-6 flex items-center justify-between gap-4 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 transition-colors duration-150 hover:bg-brand-100"
+      >
+        <span>
+          <span className="block text-sm font-medium text-slate-900">{t("akcjaPanel.zaprojektuj")}</span>
+          <span className="block text-xs text-slate-600">{t("akcjaPanel.zaprojektuj.opis")}</span>
+        </span>
+        <span aria-hidden className="text-brand-700">→</span>
+      </Link>
+      {blad && <p className="mt-3 text-sm text-red-700">{blad}</p>}
 
       <div className="mt-8 border-t border-slate-200 pt-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

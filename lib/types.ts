@@ -1,3 +1,4 @@
+import type { WygladAkcji } from "@/lib/wyglad";
 /** Model danych. Kampania jest pojemnikiem na wszystko, zgodnie z ustaleniem z 24.09. */
 
 /**
@@ -119,6 +120,8 @@ export type Kampania = {
   organizacja: string;
   /** Formalne pismo do samorządów; {} = zwykła wiadomość. */
   pismo: Pismo;
+  /** Wygląd strony akcji z kreatora (lib/wyglad.ts). */
+  akcjaWyglad: WygladAkcji;
 };
 
 /** Petycja z ustawy z 11 lipca 2014 r. o petycjach (art. 4 ust. 2: wnoszący, adres, adresat, przedmiot). */
@@ -158,5 +161,6 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     zgodaKiedy: null,
     organizacja: "",
     pismo: {},
+    akcjaWyglad: {},
   };
 }

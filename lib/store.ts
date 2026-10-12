@@ -39,11 +39,12 @@ type Wiersz = {
   /** Relacja wiele-do-jednego: w praktyce obiekt, ale bez wygenerowanych typów klient Supabase widzi tablicę. */
   organizacje: { nazwa: string } | { nazwa: string }[] | null;
   pismo: Kampania["pismo"];
+  akcja_wyglad: Kampania["akcjaWyglad"];
 };
 
 // Jeden literał, bo klient Supabase wyprowadza typ wyniku z treści tego napisu.
 const KOLUMNY =
-  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator, filtr_odbiorcow, zgoda_zespolu, zgoda_powod, zgoda_kiedy, organizacje(nazwa), pismo";
+  "id, nazwa, status, utworzona, zrodla, kogo_szukamy, cel, nadawca, psychografia, liczba_wariantow, link_film, materialy, liczba_followupow, odstep_dni, start, skrzynka_id, akcja_wlaczona, akcja_slug, akcja_tytul, akcja_opis, akcja_administrator, filtr_odbiorcow, zgoda_zespolu, zgoda_powod, zgoda_kiedy, organizacje(nazwa), pismo, akcja_wyglad";
 
 function zWiersza(w: Wiersz): Kampania {
   return {
@@ -74,6 +75,7 @@ function zWiersza(w: Wiersz): Kampania {
     zgodaKiedy: w.zgoda_kiedy ?? null,
     organizacja: (Array.isArray(w.organizacje) ? w.organizacje[0]?.nazwa : w.organizacje?.nazwa) ?? "",
     pismo: w.pismo ?? {},
+    akcjaWyglad: w.akcja_wyglad ?? {},
   };
 }
 
@@ -100,6 +102,7 @@ function doWiersza(k: Partial<Kampania>): Partial<Wiersz> {
   if (k.akcjaAdministrator !== undefined) w.akcja_administrator = k.akcjaAdministrator;
   if (k.filtrOdbiorcow !== undefined) w.filtr_odbiorcow = k.filtrOdbiorcow;
   if (k.pismo !== undefined) w.pismo = k.pismo;
+  if (k.akcjaWyglad !== undefined) w.akcja_wyglad = k.akcjaWyglad;
   return w;
 }
 

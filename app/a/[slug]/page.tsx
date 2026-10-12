@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { youtubeId } from "@/lib/akcja";
 import { AkcjaFormularz } from "@/components/AkcjaFormularz";
+import { WidokAkcji } from "@/components/WidokAkcji";
+import { oczyscWyglad, type WygladAkcji } from "@/lib/wyglad";
 import { tlumacz } from "@/lib/i18n";
 import { jezykZCookie } from "@/lib/i18n/serwer";
 import type { TrescOswiadczenia } from "@/lib/oswiadczenie";
@@ -23,6 +24,7 @@ type Akcja = {
   film: string;
   podpisy: number;
   gotowa: boolean;
+  wyglad: WygladAkcji;
   /** Z zaakceptowanego oświadczenia zleceniodawcy; null, gdy go nie ma. */
   prowadzi: {
     zleceniodawca: string;
@@ -39,7 +41,7 @@ async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null>
   const { data: k } = await admin
     .from("kampanie")
     .select(
-      "id, nadawca, link_film, akcja_wlaczona, akcja_tytul, akcja_opis, akcja_administrator, zgoda_zespolu",
+      "id, nadawca, link_film, akcja_wlaczona, akcja_tytul, akcja_opis, akcja_administrator, zgoda_zespolu, akcja_wyglad",
     )
     .eq("akcja_slug", slug)
     .maybeSingle();
@@ -91,6 +93,7 @@ async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null>
     film: String(k.link_film ?? ""),
     podpisy: podpisy ?? 0,
     gotowa: (warianty ?? 0) > 0 && (odbiorcy ?? 0) > 0,
+    wyglad: oczyscWyglad(k.akcja_wyglad),
   };
 }
 
@@ -119,84 +122,33 @@ export default async function StronaAkcjiPubliczna({
   const t = tlumacz(await jezykZCookie());
   const a = await akcja(slug, t("akcja.domyslnyTytul"));
   if (!a) notFound();
-  const yt = a.film ? youtubeId(a.film) : null;
-  const akapity = a.opis
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+  const prowadzi = a.prowadzi
+    ? `${t("akcja.prowadzi", {
+        zleceniodawca: a.prowadzi.zleceniodawca,
+        forma: t(`formaPrawna.${a.prowadzi.forma}`),
+        zrodlo: `${t(`zrodloFin.${a.prowadzi.zrodlo}`)}${a.prowadzi.zrodloOpis ? `: ${a.prowadzi.zrodloOpis}` : ""}`,
+      })}${a.prowadzi.naZlecenie ? ` ${t("stopka.naZlecenie", { kto: a.prowadzi.naZlecenie })}` : ""}`
+    : "";
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14">
-        <article>
-          {a.nadawca && (
-            <p className="text-sm font-medium text-brand-700">{a.nadawca}</p>
-          )}
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            {a.tytul}
-          </h1>
-          {yt ? (
-            <div className="mt-6 aspect-video overflow-hidden rounded-xl bg-slate-900">
-              <iframe
-                className="h-full w-full"
-                src={`https://www.youtube-nocookie.com/embed/${yt}`}
-                title={t("akcja.film")}
-                allow="accelerometer; encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          ) : (
-            a.film && (
-              <a
-                href={a.film}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-6 inline-block text-sm font-medium text-brand-700 underline-offset-4 hover:underline"
-              >
-                {t("akcja.zobaczFilm")}
-              </a>
-            )
-          )}
-          <div className="mt-6 space-y-4 text-[17px] leading-relaxed text-slate-700">
-            {akapity.length ? (
-              akapity.map((p, i) => (
-                <p key={i} className="whitespace-pre-line">
-                  {p}
-                </p>
-              ))
-            ) : (
-              <p className="text-slate-500">{t("akcja.opisWkrotce")}</p>
-            )}
-          </div>
-          {a.prowadzi && (
-            <p className="mt-6 text-xs leading-relaxed text-slate-500">
-              {t("akcja.prowadzi", {
-                zleceniodawca: a.prowadzi.zleceniodawca,
-                forma: t(`formaPrawna.${a.prowadzi.forma}`),
-                zrodlo: `${t(`zrodloFin.${a.prowadzi.zrodlo}`)}${a.prowadzi.zrodloOpis ? `: ${a.prowadzi.zrodloOpis}` : ""}`,
-              })}
-              {a.prowadzi.naZlecenie && ` ${t("stopka.naZlecenie", { kto: a.prowadzi.naZlecenie })}`}
-            </p>
-          )}
-          <div className="mt-8 rounded-xl bg-slate-100 p-5 text-sm text-slate-600">
-            <p className="font-medium text-slate-800">{t("akcja.jakDziala")}</p>
-            <ol className="mt-2 list-decimal space-y-1 pl-5">
-              <li>{t("akcja.jak1")}</li>
-              <li>{t("akcja.jak2")}</li>
-              <li>{t("akcja.jak3")}</li>
-            </ol>
-          </div>
-        </article>
-
-        <aside className="lg:sticky lg:top-20 lg:self-start">
-          <AkcjaFormularz
-            slug={slug}
-            razem={a.podpisy}
-            gotowa={a.gotowa}
-            administrator={a.administrator}
-          />
-        </aside>
-      </div>
-    </div>
+    <WidokAkcji
+      nadawca={a.nadawca}
+      tytul={a.tytul}
+      opis={a.opis}
+      film={a.film}
+      prowadzi={prowadzi}
+      wyglad={a.wyglad}
+      formularz={
+        <AkcjaFormularz
+          slug={slug}
+          razem={a.podpisy}
+          gotowa={a.gotowa}
+          administrator={a.administrator}
+          cel={a.wyglad.cel}
+          przycisk={a.wyglad.przycisk}
+          dziekujemy={a.wyglad.dziekujemy}
+        />
+      }
+    />
   );
 }

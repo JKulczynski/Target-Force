@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { etykietaGminy, type Gmina } from "@/lib/akcja";
 import { POLE } from "@/components/ui";
 import { useT } from "@/lib/i18n/klient";
+import { PasekCelu } from "@/components/WidokAkcji";
 
 const pole = `mt-1.5 text-[15px] ${POLE}`;
 
@@ -54,11 +55,18 @@ export function AkcjaFormularz({
   razem: razemStart,
   gotowa,
   administrator,
+  cel,
+  przycisk,
+  dziekujemy,
 }: {
   slug: string;
   razem: number;
   gotowa: boolean;
   administrator: string;
+  /** Z kreatora strony: cel liczbowy (pasek), własny tekst przycisku i podziękowania. */
+  cel?: number;
+  przycisk?: string;
+  dziekujemy?: string;
 }) {
   const { t } = useT();
   const [krok, setKrok] = useState<"dane" | "wiadomosc" | "potwierdz" | "dzieki">("dane");
@@ -217,6 +225,7 @@ export function AkcjaFormularz({
         </span>{" "}
         {t.n("akcja.juzNapisalo", razem)}
       </p>
+      {cel && <PasekCelu razem={razem} cel={cel} />}
 
       {!gotowa && krok === "dane" && (
         <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-100">
@@ -382,7 +391,7 @@ export function AkcjaFormularz({
             disabled={wysyla || !gotowa}
             className="w-full rounded-lg bg-brand-600 px-5 py-3 text-[15px] font-medium text-white transition-colors duration-150 hover:bg-brand-700 disabled:bg-slate-300"
           >
-            {wysyla ? t("akcja.przygotowuje") : t("akcja.przygotuj")}
+            {wysyla ? t("akcja.przygotowuje") : przycisk || t("akcja.przygotuj")}
           </button>
 
           <p className="text-xs leading-relaxed text-slate-500">
@@ -476,6 +485,7 @@ export function AkcjaFormularz({
         <div className="mt-5 space-y-4">
           <h2 className="text-lg font-semibold tracking-tight">{t("akcja.sprawdzSkrzynke")}</h2>
           <p className="text-sm text-slate-700">{t("akcja.sprawdzSkrzynke.opis", { email })}</p>
+          {dziekujemy && <p className="whitespace-pre-line text-sm text-slate-700">{dziekujemy}</p>}
           {linkProbny && (
             <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-100">
               {t("akcja.trybProbny")}{" "}
@@ -497,7 +507,7 @@ export function AkcjaFormularz({
       {krok === "dzieki" && (
         <div className="mt-5 space-y-4">
           <h2 className="text-lg font-semibold tracking-tight">{t("akcja.dziekujemy")}</h2>
-          <p className="text-sm text-slate-700">{t("akcja.dziekujemy.opis")}</p>
+          <p className="whitespace-pre-line text-sm text-slate-700">{dziekujemy || t("akcja.dziekujemy.opis")}</p>
           <button
             type="button"
             onClick={udostepnij}
