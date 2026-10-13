@@ -4,12 +4,15 @@ import type { Jezyk } from "@/lib/i18n";
  * Regulamin i polityka prywatności (blok B, 12.10). WERSJE ROBOCZE do weryfikacji prawnika.
  * Zasada nadrzędna (Jan 12.10): WinOver to platforma pośrednicząca, nie strona kampanii; odpowiedzialność
  * za treść, finansowanie i zgodność z prawem ponosi zleceniodawca (oświadczenie "Kto zleca").
- * Dane usługodawcy: do uzupełnienia, gdy Jan i Piotr ustalą podmiot (pytanie otwarte od 12.10).
+ * Usługodawca (Jan 13.10): na razie spółka TAK BARDZO GROUP. KRS i kapitał z bizraport.pl, do sprawdzenia w ekrs.
  */
 export const USLUGODAWCA = {
-  nazwa: "[nazwa usługodawcy - do uzupełnienia]",
-  adres: "[adres - do uzupełnienia]",
-  nip: "[NIP - do uzupełnienia]",
+  nazwa: "TAK BARDZO GROUP sp. z o.o.",
+  adres: "Aleja Jana Pawła II 27, 00-867 Warszawa",
+  nip: "5272788016",
+  krs: "0000649014",
+  sad: "Sąd Rejonowy dla m.st. Warszawy w Warszawie",
+  kapital: "6 500 zł",
   email: "[e-mail kontaktowy - do uzupełnienia]",
 };
 export const WERSJA_PRAWNA = "wersja robocza z 12.10.2026";
@@ -22,7 +25,7 @@ const u = USLUGODAWCA;
 const REGULAMIN: Record<Jezyk, Dokument> = {
   pl: {
     tytul: "Regulamin WinOver",
-    wstep: `Regulamin określa zasady korzystania z platformy WinOver. Usługodawca: ${u.nazwa}, ${u.adres}, NIP ${u.nip}, kontakt: ${u.email}.`,
+    wstep: `Regulamin określa zasady korzystania z platformy WinOver. Usługodawca: ${u.nazwa}, ${u.adres}, wpisana do rejestru przedsiębiorców KRS pod numerem ${u.krs} przez ${u.sad}, NIP ${u.nip}, kapitał zakładowy ${u.kapital}, kontakt: ${u.email}.`,
     sekcje: [
       {
         tytul: "1. Czym jest WinOver",
@@ -83,7 +86,7 @@ const REGULAMIN: Record<Jezyk, Dokument> = {
   },
   en: {
     tytul: "WinOver terms of service",
-    wstep: `These terms govern the use of the WinOver platform. Provider: ${u.nazwa}, ${u.adres}, tax ID ${u.nip}, contact: ${u.email}.`,
+    wstep: `These terms govern the use of the WinOver platform. Provider: ${u.nazwa}, ${u.adres}, entered in the Polish National Court Register (KRS) under no. ${u.krs}, tax ID ${u.nip}, share capital PLN 6,500, contact: ${u.email}.`,
     sekcje: [
       {
         tytul: "1. What WinOver is",
@@ -150,7 +153,7 @@ const PRYWATNOSC: Record<Jezyk, Dokument> = {
       {
         tytul: "1. Kto jest administratorem",
         akapity: [
-          `Dane użytkowników kont WinOver (klientów i ich zespołów) przetwarza ${u.nazwa}, ${u.adres}, NIP ${u.nip}.`,
+          `Dane użytkowników kont WinOver (klientów i ich zespołów) przetwarza ${u.nazwa}, ${u.adres}, KRS ${u.krs}, NIP ${u.nip}.`,
           "Dane odbiorców kampanii i sympatyków, którzy podpisują się na stronie akcji, przetwarza organizator danej kampanii jako administrator. Jego nazwa i kontakt są na stronie akcji i w stopce wiadomości. WinOver przetwarza te dane w jego imieniu, na podstawie umowy powierzenia.",
         ],
       },
@@ -195,7 +198,7 @@ const PRYWATNOSC: Record<Jezyk, Dokument> = {
       {
         tytul: "1. Who the controller is",
         akapity: [
-          `Data of WinOver account users (clients and their teams) is processed by ${u.nazwa}, ${u.adres}, tax ID ${u.nip}.`,
+          `Data of WinOver account users (clients and their teams) is processed by ${u.nazwa}, ${u.adres}, KRS ${u.krs}, tax ID ${u.nip}.`,
           "Data of campaign recipients and of supporters who sign on an action page is processed by the organiser of that campaign as controller. Their name and contact are on the action page and in the message footer. WinOver processes this data on their behalf under a data processing agreement.",
         ],
       },
