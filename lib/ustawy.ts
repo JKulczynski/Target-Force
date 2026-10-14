@@ -35,16 +35,12 @@ export async function szukajUstaw(slowa: string): Promise<Ustawa[]> {
 
 type Etap = { date?: string; stageName?: string; children?: Etap[] };
 
+/** Ostatni etap główny (np. "Skierowano do I czytania w komisjach"), z najświeższą datą z jego podetapów. */
 function ostatniEtap(etapy: Etap[]): Etap | null {
-  const plaskie: Etap[] = [];
-  const zbierz = (lista: Etap[]) => {
-    for (const e of lista) {
-      plaskie.push(e);
-      zbierz(e.children ?? []);
-    }
-  };
-  zbierz(etapy);
-  return plaskie.filter((e) => e.date).sort((a, b) => (a.date! < b.date! ? -1 : 1)).at(-1) ?? null;
+  const najnowsza = (e: Etap): string =>
+    [e.date ?? "", ...(e.children ?? []).map(najnowsza)].sort().at(-1) ?? "";
+  const glowny = etapy.filter((e) => najnowsza(e)).sort((a, b) => (najnowsza(a) < najnowsza(b) ? -1 : 1)).at(-1);
+  return glowny ? { stageName: glowny.stageName, date: najnowsza(glowny) } : null;
 }
 
 /** Projekty zmian ustawy w Sejmie, najświeższa aktywność pierwsza. */
