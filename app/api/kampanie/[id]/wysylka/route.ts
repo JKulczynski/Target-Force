@@ -183,7 +183,7 @@ export async function POST(
 
   const { data: wszystkieZatw } = await supabase
     .from("warianty")
-    .select("id, krok, numer, temat, tresc")
+    .select("id, krok, numer, temat, tresc, dla_klubu")
     // Tylko wiadomości organizacji: warianty "sympatyk" (pisane jak od mieszkańca) są dla strony akcji.
     .eq("rola", "nadawca")
     .eq("kampania_id", id)

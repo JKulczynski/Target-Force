@@ -1123,4 +1123,6 @@ export const en: Record<keyof typeof pl, string> = {
   "druk.drukuj": "Print / save PDF",
   "druk.wiadomosci": "messages",
   "druk.brak": "No confirmed messages yet.",
+  "klub.dla": "Send to:",
+  "klub.wszystkie": "all clubs",
 };

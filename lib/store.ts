@@ -205,6 +205,8 @@ export type Wariant = {
   status: "szkic" | "zatwierdzony" | "odrzucony";
   /** nadawca = wiadomości kampanii, sympatyk = wiadomości dla strony akcji (pisane jak od mieszkańca). */
   rola: RolaWariantu;
+  /** Wersja tylko dla posłów tego klubu (14.10); null = dla wszystkich. */
+  dla_klubu: string | null;
 };
 
 export type RolaWariantu = "nadawca" | "sympatyk";
@@ -213,7 +215,7 @@ export type RolaWariantu = "nadawca" | "sympatyk";
 export async function warianty(kampaniaId: string, rola: RolaWariantu = "nadawca"): Promise<Wariant[]> {
   const { data, error } = await createClient()
     .from("warianty")
-    .select("id, krok, numer, temat, tresc, status, rola")
+    .select("id, krok, numer, temat, tresc, status, rola, dla_klubu")
     .eq("kampania_id", kampaniaId)
     .eq("rola", rola)
     .order("krok")
@@ -222,7 +224,7 @@ export async function warianty(kampaniaId: string, rola: RolaWariantu = "nadawca
   return data as Wariant[];
 }
 
-export async function zmienWariant(id: string, zmiany: Partial<Pick<Wariant, "temat" | "tresc" | "status">>) {
+export async function zmienWariant(id: string, zmiany: Partial<Pick<Wariant, "temat" | "tresc" | "status" | "dla_klubu">>) {
   const { error } = await createClient()
     .from("warianty")
     .update({ ...zmiany, zmieniony: new Date().toISOString() })

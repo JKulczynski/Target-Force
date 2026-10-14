@@ -174,7 +174,20 @@ export type Wariant = {
   numer: number;
   temat: string;
   tresc: string;
+  /** Wersja tylko dla posłów tego klubu (kontakty.organizacja); null = dla wszystkich. */
+  dla_klubu?: string | null;
 };
+
+/**
+ * Wariant pierwszej wiadomości dla odbiorcy (14.10): najpierw warianty jego klubu, potem ogólne (bez klubu),
+ * a gdy nie ma żadnego ogólnego, wszystkie. W puli po kolei, żeby sąsiedni odbiorcy dostali różne teksty.
+ */
+export function wariantDla(zatwierdzone: Wariant[], klub: string | null | undefined, n: number): Wariant {
+  const klubowe = klub ? zatwierdzone.filter((w) => w.dla_klubu === klub) : [];
+  const ogolne = zatwierdzone.filter((w) => !w.dla_klubu);
+  const pula = klubowe.length ? klubowe : ogolne.length ? ogolne : zatwierdzone;
+  return pula[n % pula.length];
+}
 
 type Wynik =
   | { ok: true; wyslane: number; bledy: string[] }
@@ -279,7 +292,7 @@ export async function wyslijKolejke(
     const pominac = new Set((juz ?? []).map((w) => w.kontakt_id));
     const { data: kontakty } = await supabase
       .from("kontakty")
-      .select("id, email, imie, nazwisko, dane, zewnetrzne_id")
+      .select("id, email, imie, nazwisko, dane, zewnetrzne_id, organizacja")
       .eq("kampania_id", id)
       .eq("wypisany", false)
       .not("email", "is", null)
@@ -290,7 +303,7 @@ export async function wyslijKolejke(
       .slice(0, ile)
       .map((c, i) => {
         // Warianty po kolei: każdy odbiorca dostaje inny tekst, co zmniejsza ryzyko filtra antyspamowego.
-        const w = zatwierdzone[(pominac.size + i) % zatwierdzone.length];
+        const w = wariantDla(zatwierdzone, c.organizacja, pominac.size + i);
         return {
           kontakt: c,
           krok: 0,

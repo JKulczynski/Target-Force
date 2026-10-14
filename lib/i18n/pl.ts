@@ -1125,4 +1125,6 @@ export const pl = {
   "druk.drukuj": "Drukuj / zapisz PDF",
   "druk.wiadomosci": "wiadomości",
   "druk.brak": "Nie ma jeszcze potwierdzonych wiadomości.",
+  "klub.dla": "Wysyłaj do:",
+  "klub.wszystkie": "wszystkich klubów",
 };

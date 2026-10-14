@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { kontrolaWiadomosci } from "@/lib/kontrola";
 import { WskazowkiPrawne } from "@/components/WskazowkiPrawne";
+import { createClient } from "@/lib/supabase/client";
 import { POLE } from "@/components/ui";
 import { useT } from "@/lib/i18n/klient";
 import {
@@ -33,6 +34,18 @@ export function Wiadomosci({
   const [psychografia, setPsychografia] = useState<string | null>(null);
   const [jezyk, setJezyk] = useState<string | null>(null);
   const [generuje, setGeneruje] = useState(false);
+  const [kluby, setKluby] = useState<string[]>([]);
+
+  // Kluby posłów z listy odbiorców: do przypisania wersji wiadomości do klubu (14.10).
+  useEffect(() => {
+    createClient()
+      .from("kontakty")
+      .select("organizacja")
+      .eq("kampania_id", kampaniaId)
+      .eq("zrodlo", "sejm")
+      .limit(1000)
+      .then(({ data }) => setKluby([...new Set((data ?? []).map((r) => r.organizacja as string).filter(Boolean))].sort()));
+  }, [kampaniaId]);
   const [blad, setBlad] = useState<string | null>(null);
 
   async function wczytaj() {
@@ -148,7 +161,7 @@ export function Wiadomosci({
 
       <div className="mt-5 space-y-4">
         {aktywne.map((w) => (
-          <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} kampaniaId={kampaniaId} />
+          <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} kampaniaId={kampaniaId} kluby={kluby} />
         ))}
       </div>
     </section>
@@ -161,6 +174,7 @@ export function KartaWariantu({
   onZmiana,
   kampaniaId,
   rola = "nadawca",
+  kluby = [],
 }: {
   w: Wariant;
   fakty: string;
@@ -168,6 +182,8 @@ export function KartaWariantu({
   /** Gdy podane: wskazówki prawne pod treścią (14.10). */
   kampaniaId?: string;
   rola?: "nadawca" | "sympatyk";
+  /** Kluby posłów z listy odbiorców; gdy są, pierwszą wiadomość można przypisać do klubu. */
+  kluby?: string[];
 }) {
   const { t, jezyk } = useT();
   const [temat, setTemat] = useState(w.temat);
@@ -255,6 +271,26 @@ export function KartaWariantu({
             ))}
           </ul>
         </div>
+      )}
+      {kluby.length > 1 && w.krok === 0 && rola === "nadawca" && (
+        <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+          {t("klub.dla")}
+          <select
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs"
+            value={w.dla_klubu ?? ""}
+            onChange={async (e) => {
+              await zmienWariant(w.id, { dla_klubu: e.target.value || null });
+              await onZmiana();
+            }}
+          >
+            <option value="">{t("klub.wszystkie")}</option>
+            {kluby.map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
       {kampaniaId && <WskazowkiPrawne kampaniaId={kampaniaId} temat={temat} tresc={tresc} rola={rola} />}
       <div className="mt-3 flex flex-wrap gap-3">
