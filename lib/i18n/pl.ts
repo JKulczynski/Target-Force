@@ -1050,6 +1050,7 @@ export const pl = {
   "api.akcja.nieDziala": "Strona akcji chwilowo nie działa.",
   "api.akcja.nieMa": "Nie ma takiej akcji.",
   "api.akcja.zaDuzo": "Za dużo podpisów z tego adresu. Spróbuj za godzinę.",
+  "api.akcja.adresZablokowany": "Na ten adres e-mail nie możemy wysłać potwierdzenia (wcześniejsze odbicie albo zgłoszenie spamu). Podaj inny adres albo wyślij wiadomość ze swojej poczty.",
   "api.akcja.wPrzygotowaniu": "Akcja jest jeszcze w przygotowaniu. Wróć za chwilę.",
   "api.akcja.nieZapisano": "Nie udało się zapisać podpisu.",
 

@@ -1,3 +1,4 @@
+import { zablokowane } from "@/lib/blokady";
 import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -39,6 +40,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
   if (!p || !w) return NextResponse.json({ blad: t("api.akcja.nieMa") }, { status: 404 });
   if (p.status_wysylki === "wyslany" || p.status_wysylki === "w_kolejce")
     return NextResponse.json({ ok: true, juz: true });
+
+  if ((await zablokowane(admin, [w.email])).size)
+    return NextResponse.json({ blad: t("api.akcja.adresZablokowany") }, { status: 409 });
 
   const odDoby = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count } = await admin

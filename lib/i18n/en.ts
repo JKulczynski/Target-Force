@@ -1048,6 +1048,7 @@ export const en: Record<keyof typeof pl, string> = {
   "api.akcja.nieDziala": "The action page is temporarily unavailable.",
   "api.akcja.nieMa": "No such action.",
   "api.akcja.zaDuzo": "Too many signatures from this address. Try again in an hour.",
+  "api.akcja.adresZablokowany": "We cannot send a confirmation to this address (earlier bounce or spam report). Use another address or send the message from your own mailbox.",
   "api.akcja.wPrzygotowaniu": "The action is still being prepared. Come back in a moment.",
   "api.akcja.nieZapisano": "Could not save the signature.",
 

@@ -1,3 +1,4 @@
+import { zablokowane } from "@/lib/blokady";
 import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -65,7 +66,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       .limit(1)
       .maybeSingle(),
   ]);
-  const lista = odbiorcy ?? [];
+  const blok = await zablokowane(admin, (odbiorcy ?? []).map((p) => p.email as string));
+  const lista = (odbiorcy ?? []).filter((p) => !blok.has((p.email as string).trim().toLowerCase()));
   if (lista.length === 0) return NextResponse.json({ blad: t("sympatycy.brakOdbiorcow") }, { status: 400 });
   const { data: tokeny } = await admin
     .from("podpisy_wysylka")

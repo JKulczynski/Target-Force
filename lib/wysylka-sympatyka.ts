@@ -1,3 +1,4 @@
+import { zablokowane } from "@/lib/blokady";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { LIMIT_NA_ODBIORCE_DZIENNIE, nazwaNadawcy, wyslijPrzezWinOver } from "@/lib/poczta-winover";
 
@@ -24,6 +25,15 @@ export async function wyslijPodpis(
     admin.from("podpisy_wysylka").select("email").eq("podpis_id", p.id).maybeSingle(),
   ]);
   if (k?.zgoda_zespolu !== "zaakceptowana" || !w) return "blad";
+
+  // Adres decydenta odbił się albo zgłosił spam: nie wysyłamy (opis błędu dla twórcy akcji).
+  if ((await zablokowane(admin, [p.odbiorca_email])).size) {
+    await Promise.all([
+      admin.from("podpisy").update({ status_wysylki: "blad" }).eq("id", p.id),
+      admin.from("podpisy_wysylka").update({ blad: "Adres odbiorcy zablokowany (odbicie albo zgloszenie spamu)" }).eq("podpis_id", p.id),
+    ]);
+    return "blad";
+  }
 
   const odDoby = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count } = await admin
