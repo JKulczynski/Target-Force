@@ -1110,4 +1110,5 @@ export const en: Record<keyof typeof pl, string> = {
   "raport.odp.kolAdresat": "Recipient",
   "raport.odp.kolWyslane": "Messages",
   "raport.odp.kolOdpowiedzi": "Real replies",
+  "api.akcja.kopia": "Several people have already sent this exact message to this recipient. Add one sentence of your own (e.g. why the issue matters to you), because offices set identical emails aside.",
 };

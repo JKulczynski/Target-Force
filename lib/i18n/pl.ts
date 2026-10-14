@@ -1112,4 +1112,5 @@ export const pl = {
   "raport.odp.kolAdresat": "Adresat",
   "raport.odp.kolWyslane": "Wiadomości",
   "raport.odp.kolOdpowiedzi": "Odpowiedzi w sprawie",
+  "api.akcja.kopia": "Taką samą wiadomość wysłało już do tego adresata kilka osób. Dopisz jedno zdanie od siebie (np. dlaczego sprawa jest dla Ciebie ważna), bo identyczne maile biura poselskie odkładają na bok.",
 };

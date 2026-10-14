@@ -65,6 +65,7 @@ try {
     await gmina.fill("Krak");
     await s.getByRole("option").first().click();
     await s.getByLabel("E-mail").fill(emailAnny);
+    await s.getByLabel(/Dlaczego to dla Ciebie ważne/).fill(`Test automatu ${znak}: przechodzę tędy codziennie z dziećmi o siódmej rano.`);
     await s.getByText("Zgadzam się na przetwarzanie podanych danych").click();
     await s.getByRole("button", { name: "Przygotuj moją wiadomość" }).click();
     await s.getByRole("button", { name: "Wyślij", exact: true }).waitFor({ timeout: 20000 });
@@ -105,6 +106,7 @@ try {
     await gmina.fill("Krak");
     await b.getByRole("option").first().click();
     await b.getByLabel("E-mail").fill(emailBartka);
+    await b.getByLabel(/Dlaczego to dla Ciebie ważne/).fill(`Test automatu ${znak}: Bartek jeździ tędy rowerem do pracy.`);
     await b.getByText("Chcę dostać wiadomość, co dała ta akcja.").click();
     await b.getByText("Zgadzam się na przetwarzanie podanych danych").click();
     await b.getByRole("button", { name: "Przygotuj moją wiadomość" }).click();

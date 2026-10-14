@@ -3,6 +3,7 @@ import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { tSerwer } from "@/lib/i18n/serwer";
+import { ileKopii } from "@/lib/podobienstwo";
 import { LIMIT_POTWIERDZEN_NA_ADRES, trybProbny, wyslijPrzezWinOver } from "@/lib/poczta-winover";
 
 export const runtime = "nodejs";
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
     return NextResponse.json({ blad: t("api.akcja.wysylkaNiedostepna") }, { status: 409 });
 
   const [{ data: p }, { data: w }] = await Promise.all([
-    admin.from("podpisy").select("id, imie, odbiorca_nazwa, status_wysylki").eq("id", podpisId).eq("kampania_id", k.id).maybeSingle(),
+    admin.from("podpisy").select("id, imie, odbiorca_nazwa, status_wysylki, kontakt_id").eq("id", podpisId).eq("kampania_id", k.id).maybeSingle(),
     admin.from("podpisy_wysylka").select("email, token").eq("podpis_id", podpisId).maybeSingle(),
   ]);
   if (!p || !w) return NextResponse.json({ blad: t("api.akcja.nieMa") }, { status: 404 });
@@ -52,6 +53,21 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
     .gte("potwierdzenie_wyslane", odDoby);
   if ((count ?? 0) >= LIMIT_POTWIERDZEN_NA_ADRES)
     return NextResponse.json({ blad: t("api.akcja.zaDuzo") }, { status: 429 });
+
+  // Kopie (14.10): ta sama treść do tego samego adresata od co najmniej 2 osób w ostatnim tygodniu = prośba o własne zdanie.
+  // Biura poselskie odkładają masowe kopie, a jedno zdanie od siebie wystarcza, żeby wiadomość była inna.
+  const odTygodnia = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const { data: inne } = await admin
+    .from("podpisy")
+    .select("tresc")
+    .eq("kontakt_id", p.kontakt_id)
+    .neq("id", p.id)
+    .in("status_wysylki", ["wyslany", "w_kolejce", "czeka_na_potwierdzenie"])
+    .gte("utworzony", odTygodnia)
+    .not("tresc", "is", null)
+    .limit(300);
+  if (ileKopii(tresc, (inne ?? []).map((i) => String(i.tresc))) >= 2)
+    return NextResponse.json({ blad: t("api.akcja.kopia"), kopia: true }, { status: 409 });
 
   await admin.from("podpisy").update({ temat, tresc, status_wysylki: "czeka_na_potwierdzenie" }).eq("id", p.id);
 
