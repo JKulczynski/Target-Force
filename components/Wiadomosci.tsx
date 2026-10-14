@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { kontrolaWiadomosci } from "@/lib/kontrola";
+import { WskazowkiPrawne } from "@/components/WskazowkiPrawne";
 import { POLE } from "@/components/ui";
 import { useT } from "@/lib/i18n/klient";
 import {
@@ -147,7 +148,7 @@ export function Wiadomosci({
 
       <div className="mt-5 space-y-4">
         {aktywne.map((w) => (
-          <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} />
+          <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} kampaniaId={kampaniaId} />
         ))}
       </div>
     </section>
@@ -158,10 +159,15 @@ export function KartaWariantu({
   w,
   fakty,
   onZmiana,
+  kampaniaId,
+  rola = "nadawca",
 }: {
   w: Wariant;
   fakty: string;
   onZmiana: () => Promise<void>;
+  /** Gdy podane: wskazówki prawne pod treścią (14.10). */
+  kampaniaId?: string;
+  rola?: "nadawca" | "sympatyk";
 }) {
   const { t, jezyk } = useT();
   const [temat, setTemat] = useState(w.temat);
@@ -250,6 +256,7 @@ export function KartaWariantu({
           </ul>
         </div>
       )}
+      {kampaniaId && <WskazowkiPrawne kampaniaId={kampaniaId} temat={temat} tresc={tresc} rola={rola} />}
       <div className="mt-3 flex flex-wrap gap-3">
         {w.status !== "zatwierdzony" ? (
           <button

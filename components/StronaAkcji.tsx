@@ -228,7 +228,7 @@ export function StronaAkcji({
         </div>
         <div className="mt-4 space-y-4">
           {aktywne.map((w) => (
-            <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} />
+            <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} kampaniaId={k.id} rola="sympatyk" />
           ))}
         </div>
       </div>

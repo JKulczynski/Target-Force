@@ -1089,4 +1089,11 @@ export const pl = {
   "ustawa.brakDanych": "Dane o projektach są chwilowo niedostępne. Spróbuj za kilka minut.",
   "ustawa.zleDane": "Niepoprawny adres ustawy.",
   "ustawa.szukalem": "Szukałem: {slowa}.",
+  "wskazowki.tytul": "Wskazówki prawne",
+  "wskazowki.zastrzezenie": "To automatyczna wskazówka, nie opinia prawna. Przepisy w brzmieniu obowiązującym dziś (Dziennik Ustaw przez sejmdiff.pl). W razie wątpliwości zapytaj prawnika.",
+  "wskazowki.zrodlo": "Tekst ustawy w ISAP",
+  "wskazowki.cisza": "CISZA WYBORCZA:",
+  "wskazowki.artykulyTytul": "Sprawdź, czy dobrze cytujesz ustawę",
+  "wskazowki.artykulyOpis": "Wiadomość powołuje się na artykuły ustawy tej kampanii. Poniżej ich aktualne brzmienie.",
+  "wskazowki.brakArtykulu": "Nie ma takiego artykułu w aktualnym tekście ustawy (może uchylony albo inny numer).",
 };

@@ -1087,4 +1087,11 @@ export const en: Record<keyof typeof pl, string> = {
   "ustawa.brakDanych": "Bill data is temporarily unavailable. Try again in a few minutes.",
   "ustawa.zleDane": "Invalid act reference.",
   "ustawa.szukalem": "Searched for: {slowa}.",
+  "wskazowki.tytul": "Legal hints",
+  "wskazowki.zastrzezenie": "This is an automatic hint, not legal advice. Provisions as in force today (Polish Journal of Laws via sejmdiff.pl). If in doubt, ask a lawyer.",
+  "wskazowki.zrodlo": "Act text in ISAP",
+  "wskazowki.cisza": "ELECTION SILENCE:",
+  "wskazowki.artykulyTytul": "Check that you quote the act correctly",
+  "wskazowki.artykulyOpis": "The message cites articles of this campaign's act. Their current wording is below.",
+  "wskazowki.brakArtykulu": "No such article in the current text of the act (maybe repealed or a different number).",
 };
