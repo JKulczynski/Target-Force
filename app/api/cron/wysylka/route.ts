@@ -65,6 +65,8 @@ export async function GET(req: NextRequest) {
         supabase
           .from("warianty")
           .select("id, krok, numer, temat, tresc")
+          // Tylko wiadomości organizacji: warianty "sympatyk" (pisane jak od mieszkańca) są dla strony akcji.
+          .eq("rola", "nadawca")
           .eq("kampania_id", k.id)
           .eq("status", "zatwierdzony")
           .order("krok")
