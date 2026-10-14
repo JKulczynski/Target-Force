@@ -1,13 +1,14 @@
 /**
- * Pola personalizacji w temacie i treści: {imie}, {nazwisko}, {okreg}, {wojewodztwo}, {gmina} (gmina sympatyka ze strony akcji).
+ * Pola personalizacji w temacie i treści: {imie}, {nazwisko}, {okreg}, {wojewodztwo}, {gmina} (gmina sympatyka ze strony akcji),
+ * {glosowanie} (głos posła w wybranym głosowaniu Sejmu, lib/glosowania.ts).
  * Lokalny argument z formuły Piotra (30.09): poseł czyta "jako poseł z okręgu Kraków", nie ogólnik.
  * Gdy dla danej osoby brakuje wartości (np. własna lista bez okręgu), całe zdanie z tym polem znika,
  * zamiast zostawiać dziurę w tekście.
  */
-export const POLA = ["imie", "nazwisko", "okreg", "wojewodztwo", "gmina"] as const;
+export const POLA = ["imie", "nazwisko", "okreg", "wojewodztwo", "gmina", "glosowanie"] as const;
 export type Pola = Partial<Record<(typeof POLA)[number], string>>;
 
-const WZOR = /\{(imie|nazwisko|okreg|wojewodztwo|gmina)\}/g;
+const WZOR = /\{(imie|nazwisko|okreg|wojewodztwo|gmina|glosowanie)\}/g;
 
 function wstaw(fragment: string, pola: Pola): string | null {
   let brak = false;
@@ -37,13 +38,17 @@ export function personalizuj(tekst: string, pola: Pola): string {
 }
 
 /** Pola z rekordu kontaktu w bazie. */
-export function polaKontaktu(k: { imie?: string | null; nazwisko?: string | null; dane?: unknown }): Pola {
+export function polaKontaktu(
+  k: { imie?: string | null; nazwisko?: string | null; dane?: unknown },
+  glosowanie?: string,
+): Pola {
   const d = (k.dane ?? {}) as Record<string, unknown>;
   return {
     imie: k.imie ?? undefined,
     nazwisko: k.nazwisko ?? undefined,
     okreg: typeof d.okreg === "string" ? d.okreg : undefined,
     wojewodztwo: typeof d.wojewodztwo === "string" ? d.wojewodztwo : undefined,
+    glosowanie,
   };
 }
 

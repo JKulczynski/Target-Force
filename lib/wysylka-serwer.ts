@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { odszyfruj } from "@/lib/szyfr";
 import { opiszBladSmtp, rodzajBleduSmtp, transport } from "@/lib/smtp";
 import { personalizuj, polaKontaktu } from "@/lib/personalizacja";
+import { polaGlosowania, type Glosowanie } from "@/lib/glosowania";
 import { tlumacz, type Jezyk } from "@/lib/i18n";
 import { stopkaNadawcy, type TrescOswiadczenia } from "@/lib/oswiadczenie";
 
@@ -138,7 +139,7 @@ export async function gotowiDoPrzypomnienia(
   if (kandydaci.length === 0) return [];
   const { data: kontakty } = await supabase
     .from("kontakty")
-    .select("id, email, imie, nazwisko, dane, odpowiedzial, wypisany")
+    .select("id, email, imie, nazwisko, dane, odpowiedzial, wypisany, zewnetrzne_id")
     .in(
       "id",
       kandydaci.map(([kid]) => kid),
@@ -208,7 +209,7 @@ export async function wyslijKolejke(
   // Blokada (punkt 1 Piotra): bez zaakceptowanego oświadczenia zleceniodawcy nic nie wychodzi, ani ręcznie, ani z automatu.
   const { data: zgoda } = await supabase
     .from("kampanie")
-    .select("zgoda_zespolu")
+    .select("zgoda_zespolu, glosowanie")
     .eq("id", id)
     .maybeSingle();
   if (zgoda?.zgoda_zespolu !== "zaakceptowana")
@@ -257,6 +258,7 @@ export async function wyslijKolejke(
     imie: string | null;
     nazwisko: string | null;
     dane: unknown;
+    zewnetrzne_id?: string | null;
   };
   type Pozycja = {
     kontakt: Kontakt;
@@ -277,7 +279,7 @@ export async function wyslijKolejke(
     const pominac = new Set((juz ?? []).map((w) => w.kontakt_id));
     const { data: kontakty } = await supabase
       .from("kontakty")
-      .select("id, email, imie, nazwisko, dane")
+      .select("id, email, imie, nazwisko, dane, zewnetrzne_id")
       .eq("kampania_id", id)
       .eq("wypisany", false)
       .not("email", "is", null)
@@ -337,11 +339,16 @@ export async function wyslijKolejke(
   });
   const od = { name: s.nazwa, address: s.email_nadawcy };
 
+  // Głosowanie jako argument (14.10): głos każdego posła w wybranym głosowaniu, jednym zapytaniem do API Sejmu.
+  const glosowania = /\{glosowanie\}/.test(kolejka.map((p) => p.temat + p.tresc).join(""))
+    ? await polaGlosowania(zgoda?.glosowanie as Glosowanie | null, kolejka.map((p) => p.kontakt))
+    : new Map<string, string>();
+
   let wyslane = 0;
   const bledy: string[] = [];
   for (const [i, p] of kolejka.entries()) {
     if (o.koniec && Date.now() > o.koniec) break;
-    const pola = polaKontaktu(p.kontakt);
+    const pola = polaKontaktu(p.kontakt, glosowania.get(p.kontakt.id));
     const temat = personalizuj(p.temat, pola);
     const tresc = personalizuj(p.tresc, pola);
     const { data: wiersz, error } = await supabase

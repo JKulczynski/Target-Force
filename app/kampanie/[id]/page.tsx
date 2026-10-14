@@ -17,6 +17,7 @@ import { Odbiorcy } from "@/components/Odbiorcy";
 import { StronaAkcji } from "@/components/StronaAkcji";
 import { Wplyw } from "@/components/Wplyw";
 import { MomentSejmu } from "@/components/MomentSejmu";
+import { GlosowanieArgument } from "@/components/GlosowanieArgument";
 import { Oswiadczenie } from "@/components/Oswiadczenie";
 import { PismoFormalne } from "@/components/PismoFormalne";
 import { useT } from "@/lib/i18n/klient";
@@ -376,6 +377,11 @@ export default function SzczegolyKampanii() {
           {k.zrodla.includes("sejm") && (
             <div className="mt-4">
               <MomentSejmu start={k.start} komisje={k.filtrOdbiorcow.komisje ?? []} />
+            </div>
+          )}
+          {k.zrodla.includes("sejm") && (
+            <div className="mt-4">
+              <GlosowanieArgument kampaniaId={k.id} />
             </div>
           )}
         </aside>

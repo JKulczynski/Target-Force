@@ -6,6 +6,7 @@ import { odszyfruj } from "@/lib/szyfr";
 import { opiszBladSmtp, transport } from "@/lib/smtp";
 import { przygotujOdbiorcow } from "@/lib/odbiorcy-serwer";
 import { personalizuj, POLA_TESTOWE } from "@/lib/personalizacja";
+import { poleGlosowania, type Glosowanie } from "@/lib/glosowania";
 import { tSerwer } from "@/lib/i18n/serwer";
 import {
   gotowiDoPrzypomnienia,
@@ -204,6 +205,10 @@ export async function POST(
       return NextResponse.json({ blad: t("api.zlyAdresTestu") }, { status: 400 });
     // Test: wszystkie zatwierdzone teksty (pierwsza wiadomość i przypomnienia) z przykładowymi polami personalizacji.
     const doTestu = wszystkieZatw ?? [];
+    // {glosowanie} w teście: przykład głosu "za" z wybranego głosowania kampanii.
+    const { data: kg } = await supabase.from("kampanie").select("glosowanie").eq("id", id).maybeSingle();
+    const g = kg?.glosowanie as Glosowanie | null;
+    const polaTestu = { ...POLA_TESTOWE, glosowanie: g ? poleGlosowania(g, "YES") : undefined };
     try {
       for (const w of doTestu) {
         const etykieta =
@@ -211,8 +216,8 @@ export async function POST(
         await poczta.sendMail({
           from: od,
           to: doKogo,
-          subject: `[${etykieta}] ${personalizuj(w.temat, POLA_TESTOWE)}`,
-          text: personalizuj(w.tresc, POLA_TESTOWE),
+          subject: `[${etykieta}] ${personalizuj(w.temat, polaTestu)}`,
+          text: personalizuj(w.tresc, polaTestu),
         });
       }
     } catch (e) {

@@ -7,6 +7,7 @@ import { ZRODLA, type ZrodloId } from "@/lib/types";
 import { WARSZTAT } from "@/lib/prompty/pisanie";
 import { psychografiaDla } from "@/lib/prompty/odbiorcy";
 import { tSerwer } from "@/lib/i18n/serwer";
+import { dataSlownie, type Glosowanie } from "@/lib/glosowania";
 
 export const runtime = "nodejs";
 // Generowanie kilku wariantów z myśleniem trwa zwykle 1-2 minuty.
@@ -56,7 +57,7 @@ export async function POST(
   const { data: k } = await supabase
     .from("kampanie")
     .select(
-      "id, nazwa, zrodla, kogo_szukamy, cel, nadawca, link_film, materialy, liczba_wariantow, liczba_followupow, pismo",
+      "id, nazwa, zrodla, kogo_szukamy, cel, nadawca, link_film, materialy, liczba_wariantow, liczba_followupow, pismo, glosowanie",
     )
     .eq("id", id)
     .maybeSingle();
@@ -90,6 +91,11 @@ export async function POST(
     ...(zrodla.includes("sejm")
       ? [
           "Lokalny argument: odbiorcami są posłowie na Sejm. W jednym zdaniu każdej wiadomości naturalnie użyj pola {okreg} (miasto okręgu wyborczego posła, np. Kraków), najlepiej w zdaniu o skutku sprawy dla mieszkańców, np. „...a w {okreg} dotyczy to kilkuset rodzin”. Nie pisz formułki w stylu „piszę do Pana/Pani jako posła z okręgu”. Pola wstawimy automatycznie, nie wpisuj za nie żadnych nazw. Nie używaj zwrotów zależnych od płci poza formą „Pan/Pani”.",
+        ]
+      : []),
+    ...(zrodla.includes("sejm") && k.glosowanie && rola === "nadawca"
+      ? [
+          `Głosowanie jako argument: nadawca wybrał głosowanie Sejmu z ${dataSlownie((k.glosowanie as Glosowanie).data)} (${(k.glosowanie as Glosowanie).tytul}). W jednym zdaniu każdego wariantu użyj pola {glosowanie}; wstawimy tam głos posła, np. „za ${(k.glosowanie as Glosowanie).za} w głosowaniu z ${dataSlownie((k.glosowanie as Glosowanie).data)}” albo „przeciw ${(k.glosowanie as Glosowanie).przeciw} w głosowaniu z ...”. Zdanie musi pasować do obu wersji i do Pana/Pani, np. „Widzimy, że głosował(a) Pan/Pani {glosowanie}, dlatego...” jest ZŁE (forma zależna od płci); dobrze: „Pana/Pani głos w Sejmie: {glosowanie}. Dlatego piszemy...” albo „W rejestrze głosowań przy Pana/Pani nazwisku jest {glosowanie}.”. Gdy poseł nie głosował, całe zdanie z polem zniknie, więc reszta wiadomości musi mieć sens bez niego. Nie oceniaj głosu i nie pouczaj; użyj go jako punktu zaczepienia (np. „skoro ta ustawa przechodziła przez Pana/Pani ręce”).`,
         ]
       : []),
     ...(zrodla.includes("samorzady")
