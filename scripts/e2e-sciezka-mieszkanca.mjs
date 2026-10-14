@@ -1,7 +1,9 @@
 // Test sciezki mieszkanca (wysylka w imieniu mieszkanca, 12.10): strona akcji bez logowania -> podpis ->
 // "Wyslij" -> link potwierdzenia (w trybie probnym zwracany na stronie) -> "Potwierdzam i wysylam" ->
 // "Adresat mi odpisal" -> panel tworcy akcji (konto Organizacji testowej) widzi status "wyslane", bez e-maila.
-// Wymaga kampanii testowej z wlaczona strona akcji (slug ponizej) i trybu probnego (bez RESEND_API_KEY).
+// Wymaga kampanii testowej z wlaczona strona akcji (slug ponizej). Dziala w trybie probnym i z prawdziwym Resend:
+// mieszkancy maja adresy testowe Resend (delivered+...@resend.dev), dla nich serwer zwraca link potwierdzenia.
+// Odbiorca kampanii testowej tez musi byc adresem @resend.dev (14.10: delivered@resend.dev).
 //
 // Uzycie: node scripts/e2e-sciezka-mieszkanca.mjs <katalog> <plik_z_haslem> <id_kampanii> [slug] [adres]
 import fs from "node:fs";
@@ -46,6 +48,9 @@ async function krok(nazwa, fn, strona = s) {
 }
 
 let link = null;
+const znak = Date.now();
+const emailAnny = `delivered+anna-${znak}@resend.dev`;
+const emailBartka = `delivered+bartek-${znak}@resend.dev`;
 try {
   await krok("strona-akcji", async () => {
     await s.goto(`${adres}/a/${slug}?utm_source=facebook&utm_medium=reklama`, { waitUntil: "load" });
@@ -59,7 +64,7 @@ try {
     await gmina.click();
     await gmina.fill("Krak");
     await s.getByRole("option").first().click();
-    await s.getByLabel("E-mail").fill("anna.testowa@example.com");
+    await s.getByLabel("E-mail").fill(emailAnny);
     await s.getByText("Zgadzam się na przetwarzanie podanych danych").click();
     await s.getByRole("button", { name: "Przygotuj moją wiadomość" }).click();
     await s.getByRole("button", { name: "Wyślij", exact: true }).waitFor({ timeout: 20000 });
@@ -69,7 +74,7 @@ try {
     await s.getByRole("button", { name: "Wyślij", exact: true }).click();
     await s.getByText("Sprawdź skrzynkę i potwierdź").waitFor({ timeout: 20000 });
     link = await s.locator("[data-link-probny]").getAttribute("href");
-    if (!link) throw new Error("brak linku probnego (czy wlaczony jest prawdziwy Resend?)");
+    if (!link) throw new Error("brak linku potwierdzenia (adres mieszkanca musi byc @resend.dev)");
   });
 
   await krok("potwierdzenie", async () => {
@@ -99,7 +104,7 @@ try {
     await gmina.click();
     await gmina.fill("Krak");
     await b.getByRole("option").first().click();
-    await b.getByLabel("E-mail").fill("bartek.polecony@example.com");
+    await b.getByLabel("E-mail").fill(emailBartka);
     await b.getByText("Chcę dostać wiadomość, co dała ta akcja.").click();
     await b.getByText("Zgadzam się na przetwarzanie podanych danych").click();
     await b.getByRole("button", { name: "Przygotuj moją wiadomość" }).click();
@@ -136,10 +141,10 @@ try {
       const tekst = await wiersz.innerText();
       if (!/wysłane/.test(tekst)) throw new Error(`status w panelu: ${tekst}`);
       if (/adresat odpisał/.test(tekst) === false) throw new Error("brak 'adresat odpisal'");
-      if (/anna\.testowa@example\.com/.test(tekst)) throw new Error("e-mail widoczny bez zgody");
+      if (tekst.includes(emailAnny)) throw new Error("e-mail widoczny bez zgody");
       if (!/facebook/.test(tekst)) throw new Error("brak zrodla wejscia");
       const bartek = await tworca.locator("tr", { hasText: "Bartek Polecony" }).first().innerText();
-      if (!/bartek\.polecony@example\.com/.test(bartek)) throw new Error("e-mail ze zgoda niewidoczny");
+      if (!bartek.includes(emailBartka)) throw new Error("e-mail ze zgoda niewidoczny");
       await tworca.getByText("Z poleceń (link „zaproś znajomych”): 1").waitFor({ timeout: 10000 });
       await tworca.getByText(/Anna Testowa.*: 1/).first().waitFor();
       await tworca.locator("#akcja").scrollIntoViewIfNeeded();
@@ -154,8 +159,8 @@ try {
       const plik = path.join(katalog, "eksport.csv");
       await pobranie.saveAs(plik);
       const csv = fs.readFileSync(plik, "utf8");
-      if (!csv.includes("Anna;Testowa") || !csv.includes("bartek.polecony@example.com")) throw new Error("CSV bez danych");
-      if (csv.includes("anna.testowa@example.com")) throw new Error("CSV zawiera e-mail bez zgody");
+      if (!csv.includes("Anna;Testowa") || !csv.includes(emailBartka)) throw new Error("CSV bez danych");
+      if (csv.includes(emailAnny)) throw new Error("CSV zawiera e-mail bez zgody");
     },
     tworca,
   );
@@ -184,7 +189,7 @@ try {
       await tworca.reload({ waitUntil: "load" });
       const bartek = tworca.locator("tr", { hasText: "Bartek Polecony" }).first();
       await bartek.waitFor({ timeout: 20000 });
-      if (/bartek\.polecony@example\.com/.test(await bartek.innerText())) throw new Error("e-mail widoczny po wypisaniu");
+      if ((await bartek.innerText()).includes(emailBartka)) throw new Error("e-mail widoczny po wypisaniu");
     },
     tworca,
   );
