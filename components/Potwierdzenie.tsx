@@ -9,6 +9,8 @@ export function Potwierdzenie({
   status: poczatkowy,
   wyslano,
   odpisal: poczatkowoOdpisal,
+  rodzaj: poczatkowyRodzaj = null,
+  odbiorca = "",
   linkAkcji,
   wypisz = false,
   zapisany = false,
@@ -17,6 +19,9 @@ export function Potwierdzenie({
   status: string;
   wyslano: string | null;
   odpisal: boolean;
+  /** Rodzaj odpowiedzi zgłoszony przez mieszkańca (14.10): merytoryczna / szablonowa / brak. */
+  rodzaj?: string | null;
+  odbiorca?: string;
   linkAkcji: string | null;
   /** Wejście z linku "wypisz się" w mailu do sympatyków. */
   wypisz?: boolean;
@@ -25,23 +30,25 @@ export function Potwierdzenie({
 }) {
   const { t } = useT();
   const [status, setStatus] = useState(poczatkowy);
-  const [odpisal, setOdpisal] = useState(poczatkowoOdpisal);
+  const [rodzaj, setRodzaj] = useState<string | null>(poczatkowyRodzaj ?? (poczatkowoOdpisal ? "merytoryczna" : null));
   const [naLiscie, setNaLiscie] = useState(zapisany);
   const [pracuje, setPracuje] = useState(false);
   const [blad, setBlad] = useState<string | null>(null);
 
-  async function wyslij(co: "wyslij" | "odpisal" | "wypisz") {
+  async function wyslij(co: "wyslij" | "odpisal" | "wypisz" | "odpowiedz", rodzajOdp?: string) {
     setPracuje(true);
     setBlad(null);
     try {
       const odp = await fetch("/api/potwierdz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, co }),
+        body: JSON.stringify({ token, co, rodzaj: rodzajOdp }),
       });
       const d = await odp.json().catch(() => ({}));
       if (!odp.ok) return setBlad(d.blad ?? t("potw.blad"));
-      if (co === "odpisal") setOdpisal(true);
+      if (co === "odpisal" || co === "odpowiedz") {
+        setRodzaj(d.rodzaj ?? rodzajOdp ?? null);
+      }
       else if (co === "wypisz") setNaLiscie(false);
       else setStatus(d.status);
     } catch {
@@ -88,19 +95,27 @@ export function Potwierdzenie({
           <p className="mt-1">{t("potw.odpowiedzTrafi")}</p>
         </div>
       )}
-      {status === "wyslany" &&
-        (odpisal ? (
-          <p className="text-sm text-slate-600">{t("potw.dziekiZaOdpowiedz")}</p>
-        ) : (
-          <button
-            type="button"
-            disabled={pracuje}
-            onClick={() => wyslij("odpisal")}
-            className="text-sm font-medium text-brand-700 underline-offset-4 hover:underline"
-          >
-            {t("potw.odpisal")}
-          </button>
-        ))}
+      {status === "wyslany" && (
+        <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm">
+          <p className="font-medium text-slate-900">{t("potw.pytanie", { odbiorca: odbiorca || t("potw.adresat") })}</p>
+          {rodzaj && <p className="mt-1 text-slate-600">{t("potw.dziekiZaOdpowiedz")}</p>}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(["merytoryczna", "szablonowa", "brak"] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                disabled={pracuje}
+                onClick={() => wyslij("odpowiedz", r)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-colors duration-150 ${
+                  rodzaj === r ? "bg-brand-600 text-white ring-brand-600" : "bg-white text-slate-700 ring-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                {t(`potw.rodzaj.${r}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {blad && <p className="text-sm text-red-700">{blad}</p>}
       {linkAkcji && (status === "wyslany" || status === "w_kolejce") && (
         <a href={linkAkcji} className="block text-sm text-slate-500 underline-offset-4 hover:underline">

@@ -84,7 +84,7 @@ try {
   });
 
   await krok("adresat-odpisal", async () => {
-    await s.getByRole("button", { name: "Adresat mi odpisał" }).click();
+    await s.getByRole("button", { name: "Tak, odpowiedział(a) w sprawie" }).click();
     await s.getByText("Dziękujemy, zapisaliśmy, że adresat odpisał.").waitFor({ timeout: 15000 });
   });
 

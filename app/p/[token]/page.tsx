@@ -29,7 +29,7 @@ export default async function Strona({
   if (!w) notFound();
   const { data: p } = await admin
     .from("podpisy")
-    .select("imie, nazwisko, odbiorca_nazwa, temat, tresc, status_wysylki, wyslano, zglosil_odpowiedz, kampania_id, kod_polecenia, zgoda_informacje")
+    .select("imie, nazwisko, odbiorca_nazwa, temat, tresc, status_wysylki, wyslano, zglosil_odpowiedz, odpowiedz_rodzaj, kampania_id, kod_polecenia, zgoda_informacje")
     .eq("id", w.podpis_id)
     .maybeSingle();
   if (!p) notFound();
@@ -63,6 +63,8 @@ export default async function Strona({
         status={p.status_wysylki}
         wyslano={p.wyslano}
         odpisal={Boolean(p.zglosil_odpowiedz)}
+        rodzaj={p.odpowiedz_rodzaj ?? null}
+        odbiorca={p.odbiorca_nazwa ?? ""}
         linkAkcji={k?.akcja_slug ? `/a/${k.akcja_slug}${p.kod_polecenia ? `?od=${p.kod_polecenia}` : ""}` : null}
         wypisz={wypisz === "1"}
         zapisany={Boolean(p.zgoda_informacje)}

@@ -12,6 +12,7 @@ import {
 import type { Kampania } from "@/lib/types";
 import type { TrescOswiadczenia } from "@/lib/oswiadczenie";
 import { useT } from "@/lib/i18n/klient";
+import { OdpowiedziMieszkancow } from "@/components/OdpowiedziMieszkancow";
 
 type Odbiorca = {
   id: string;
@@ -273,6 +274,7 @@ export default function RaportKampanii() {
           )}
         </section>
       )}
+      {k.akcjaSlug && <OdpowiedziMieszkancow kampaniaId={k.id} />}
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 break-inside-avoid">
         <h2 className="text-base font-semibold tracking-tight text-slate-900">
