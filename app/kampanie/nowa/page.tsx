@@ -10,6 +10,7 @@ import { SZABLONY, daneSzablonu, type SzablonId } from "@/lib/szablony";
 import { MomentSejmu } from "@/components/MomentSejmu";
 import { POLE } from "@/components/ui";
 import { useT } from "@/lib/i18n/klient";
+import { AgentKampanii } from "@/components/AgentKampanii";
 import type { Klucz } from "@/lib/i18n";
 
 type Licznik = { razem: number; zEmailem: number } | "blad" | "laduje";
@@ -242,6 +243,9 @@ export default function NowaKampania() {
         {t("nav.kampanie")}
       </Link>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{t("kreator.tytul")}</h1>
+      <div className="mt-5">
+        <AgentKampanii />
+      </div>
 
       <ol className="mt-6 flex gap-2">
         {KROKI.map((klucz, i) => (
