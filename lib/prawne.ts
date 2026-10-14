@@ -13,7 +13,7 @@ export const USLUGODAWCA = {
   krs: "0000649014",
   sad: "Sąd Rejonowy dla m.st. Warszawy w Warszawie",
   kapital: "6 500 zł",
-  email: "[e-mail kontaktowy - do uzupełnienia]",
+  email: "kontakt@getwinover.com",
 };
 export const WERSJA_PRAWNA = "wersja robocza z 12.10.2026";
 
