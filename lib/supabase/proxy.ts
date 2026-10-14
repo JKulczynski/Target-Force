@@ -63,7 +63,8 @@ export async function updateSession(request: NextRequest) {
     sciezka.startsWith("/auth") ||
     sciezka.startsWith("/r/") ||
     sciezka.startsWith("/w/") ||
-    sciezka.startsWith("/api/cron/");
+    sciezka.startsWith("/api/cron/") ||
+    sciezka.startsWith("/api/resend/");
   if (!zalogowany && !publiczna) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
