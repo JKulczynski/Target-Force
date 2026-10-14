@@ -6,6 +6,7 @@ import { wyslijPodpis } from "@/lib/wysylka-sympatyka";
 import { powiadomAdminow } from "@/lib/powiadomienia";
 import { wyslijPytaniaOOdpowiedz } from "@/lib/pytanie-odpowiedz";
 import { wyslijZestawienia } from "@/lib/zestawienie";
+import { wyslijRaportyTygodniowe } from "@/lib/raport-tygodniowy";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -132,7 +133,12 @@ export async function GET(req: NextRequest) {
     process.env.WYSYLKA_WSTRZYMANA === "1" || Date.now() > koniec
       ? { wyslane: 0, bledy: 0 }
       : await wyslijPytaniaOOdpowiedz(supabase, adresAplikacji(req.nextUrl.origin));
-  console.log("cron wysylka", JSON.stringify({ raport, mieszkancy, pytania, zestawienia }));
+  // Poniedziałek: raport tygodniowy dla członków organizacji (lib/raport-tygodniowy.ts).
+  const tygodniowe =
+    new Date().getUTCDay() === 1 && Date.now() < koniec
+      ? await wyslijRaportyTygodniowe(supabase, adresAplikacji(req.nextUrl.origin))
+      : null;
+  console.log("cron wysylka", JSON.stringify({ raport, mieszkancy, pytania, zestawienia, tygodniowe }));
   // Błędy automatu idą mailem do administratorów, żeby nie trzeba było czytać logów Vercela.
   const problemy = raport.filter((r) => !/^wysłano \d+$/.test(r.partia) || !/^wysłano \d+$/.test(r.przypomnienia));
   if (problemy.length)
@@ -141,5 +147,5 @@ export async function GET(req: NextRequest) {
       `WinOver: automat wysyłki zgłosił ${problemy.length} problem(y)`,
       problemy.map((r) => `${r.kampania}: partia "${r.partia}", przypomnienia "${r.przypomnienia}"`).join("\n"),
     );
-  return NextResponse.json({ ok: true, raport, mieszkancy, pytania, zestawienia });
+  return NextResponse.json({ ok: true, raport, mieszkancy, pytania, zestawienia, tygodniowe });
 }
