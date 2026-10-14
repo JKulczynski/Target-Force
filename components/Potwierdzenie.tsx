@@ -11,6 +11,7 @@ export function Potwierdzenie({
   odpisal: poczatkowoOdpisal,
   rodzaj: poczatkowyRodzaj = null,
   odbiorca = "",
+  zestawienie = false,
   linkAkcji,
   wypisz = false,
   zapisany = false,
@@ -22,6 +23,8 @@ export function Potwierdzenie({
   /** Rodzaj odpowiedzi zgłoszony przez mieszkańca (14.10): merytoryczna / szablonowa / brak. */
   rodzaj?: string | null;
   odbiorca?: string;
+  /** Kampania wysyła wiadomości mieszkańców w dziennym zestawieniu (14.10). */
+  zestawienie?: boolean;
   linkAkcji: string | null;
   /** Wejście z linku "wypisz się" w mailu do sympatyków. */
   wypisz?: boolean;
@@ -86,7 +89,7 @@ export function Potwierdzenie({
         </>
       )}
       {status === "w_kolejce" && (
-        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">{t("potw.kolejka")}</p>
+        <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">{t(zestawienie ? "potw.zestawienie" : "potw.kolejka")}</p>
       )}
       {status === "wyslany" && (
         <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900 ring-1 ring-emerald-100">

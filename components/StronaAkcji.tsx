@@ -7,6 +7,7 @@ import {
   warianty,
   type Podpis,
   type Wariant,
+  zmienKampanie,
 } from "@/lib/store";
 import type { Kampania } from "@/lib/types";
 import { KartaWariantu } from "@/components/Wiadomosci";
@@ -34,6 +35,7 @@ export function StronaAkcji({
   const [generuje, setGeneruje] = useState(false);
   const [podpisy, setPodpisy] = useState<Awaited<ReturnType<typeof podpisyKampanii>> | null>(null);
   const [skopiowano, setSkopiowano] = useState(false);
+  const [dostarczanie, setDostarczanie] = useState(k.akcjaDostarczanie);
 
 
   async function wczytaj() {
@@ -146,6 +148,33 @@ export function StronaAkcji({
       </ul>
 
       {adres && k.akcjaWlaczona && <Widzet adres={adres} />}
+
+      <div className="mt-5 rounded-lg border border-slate-200 p-4 text-sm">
+        <p className="text-xs font-medium text-slate-500">{t("dostarczanie.tytul")}</p>
+        <div className="mt-2 space-y-1.5">
+          {(["od_razu", "zestawienie"] as const).map((tryb) => (
+            <label key={tryb} className="flex items-start gap-2">
+              <input
+                type="radio"
+                name="dostarczanie"
+                className="mt-1"
+                checked={dostarczanie === tryb}
+                onChange={async () => {
+                  setDostarczanie(tryb);
+                  await zmienKampanie(k.id, { akcjaDostarczanie: tryb });
+                }}
+              />
+              <span>
+                <span className="font-medium text-slate-800">{t(`dostarczanie.${tryb}`)}</span>
+                <span className="block text-xs text-slate-500">{t(`dostarczanie.${tryb}.opis`)}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        <Link href={`/kampanie/${k.id}/podpisy-druk`} className="mt-3 inline-block text-xs font-medium text-brand-700 underline-offset-2 hover:underline">
+          {t("dostarczanie.druk")}
+        </Link>
+      </div>
 
       {podpisy && podpisy.zrodla.length > 0 && (
         <div className="mt-5 rounded-lg border border-slate-200 p-4">

@@ -33,7 +33,7 @@ export default async function Strona({
     .eq("id", w.podpis_id)
     .maybeSingle();
   if (!p) notFound();
-  const { data: k } = await admin.from("kampanie").select("akcja_slug, akcja_tytul, nazwa").eq("id", p.kampania_id).maybeSingle();
+  const { data: k } = await admin.from("kampanie").select("akcja_slug, akcja_tytul, nazwa, akcja_dostarczanie").eq("id", p.kampania_id).maybeSingle();
   const t = tlumacz(await jezykZCookie());
 
   return (
@@ -64,6 +64,7 @@ export default async function Strona({
         wyslano={p.wyslano}
         odpisal={Boolean(p.zglosil_odpowiedz)}
         rodzaj={p.odpowiedz_rodzaj ?? null}
+        zestawienie={k?.akcja_dostarczanie === "zestawienie"}
         odbiorca={p.odbiorca_nazwa ?? ""}
         linkAkcji={k?.akcja_slug ? `/a/${k.akcja_slug}${p.kod_polecenia ? `?od=${p.kod_polecenia}` : ""}` : null}
         wypisz={wypisz === "1"}

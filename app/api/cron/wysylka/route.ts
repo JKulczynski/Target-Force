@@ -5,6 +5,7 @@ import { wyslijKolejke } from "@/lib/wysylka-serwer";
 import { wyslijPodpis } from "@/lib/wysylka-sympatyka";
 import { powiadomAdminow } from "@/lib/powiadomienia";
 import { wyslijPytaniaOOdpowiedz } from "@/lib/pytanie-odpowiedz";
+import { wyslijZestawienia } from "@/lib/zestawienie";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -108,6 +109,8 @@ export async function GET(req: NextRequest) {
       przypomnienia: opis(przyp),
     });
   }
+  // Dzienne zestawienia dla adresatów w kampaniach z dostarczaniem "zestawienie" (lib/zestawienie.ts), przed kolejką.
+  const zestawienia = await wyslijZestawienia(supabase);
   // Kolejka wiadomości mieszkańców (wysyłka przez WinOver): to, co wczoraj przekroczyło dzienny limit na odbiorcę.
   const { data: kolejka } = await supabase
     .from("podpisy")
@@ -127,7 +130,7 @@ export async function GET(req: NextRequest) {
     process.env.WYSYLKA_WSTRZYMANA === "1" || Date.now() > koniec
       ? { wyslane: 0, bledy: 0 }
       : await wyslijPytaniaOOdpowiedz(supabase, adresAplikacji(req.nextUrl.origin));
-  console.log("cron wysylka", JSON.stringify({ raport, mieszkancy, pytania }));
+  console.log("cron wysylka", JSON.stringify({ raport, mieszkancy, pytania, zestawienia }));
   // Błędy automatu idą mailem do administratorów, żeby nie trzeba było czytać logów Vercela.
   const problemy = raport.filter((r) => !/^wysłano \d+$/.test(r.partia) || !/^wysłano \d+$/.test(r.przypomnienia));
   if (problemy.length)
@@ -136,5 +139,5 @@ export async function GET(req: NextRequest) {
       `WinOver: automat wysyłki zgłosił ${problemy.length} problem(y)`,
       problemy.map((r) => `${r.kampania}: partia "${r.partia}", przypomnienia "${r.przypomnienia}"`).join("\n"),
     );
-  return NextResponse.json({ ok: true, raport, mieszkancy, pytania });
+  return NextResponse.json({ ok: true, raport, mieszkancy, pytania, zestawienia });
 }

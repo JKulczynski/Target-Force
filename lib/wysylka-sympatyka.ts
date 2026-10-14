@@ -21,7 +21,7 @@ export async function wyslijPodpis(
   if (!p || !p.odbiorca_email) return "blad";
   if (p.status_wysylki === "wyslany") return "wyslany";
   const [{ data: k }, { data: w }] = await Promise.all([
-    admin.from("kampanie").select("zgoda_zespolu").eq("id", p.kampania_id).maybeSingle(),
+    admin.from("kampanie").select("zgoda_zespolu, akcja_dostarczanie").eq("id", p.kampania_id).maybeSingle(),
     admin.from("podpisy_wysylka").select("email").eq("podpis_id", p.id).maybeSingle(),
   ]);
   if (k?.zgoda_zespolu !== "zaakceptowana" || !w) return "blad";
@@ -33,6 +33,12 @@ export async function wyslijPodpis(
       admin.from("podpisy_wysylka").update({ blad: "Adres odbiorcy zablokowany (odbicie albo zgloszenie spamu)" }).eq("podpis_id", p.id),
     ]);
     return "blad";
+  }
+
+  // Tryb zestawienia (14.10): wiadomość czeka w kolejce na dzienne zestawienie dla adresata (lib/zestawienie.ts).
+  if (k?.akcja_dostarczanie === "zestawienie") {
+    await admin.from("podpisy").update({ status_wysylki: "w_kolejce" }).eq("id", p.id);
+    return "w_kolejce";
   }
 
   const odDoby = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

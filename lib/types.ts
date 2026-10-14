@@ -122,6 +122,8 @@ export type Kampania = {
   pismo: Pismo;
   /** Wygląd strony akcji z kreatora (lib/wyglad.ts). */
   akcjaWyglad: WygladAkcji;
+  /** Wiadomości mieszkańców: każda od razu albo jedno zestawienie dziennie na adresata (14.10). */
+  akcjaDostarczanie: "od_razu" | "zestawienie";
 };
 
 /** Petycja z ustawy z 11 lipca 2014 r. o petycjach (art. 4 ust. 2: wnoszący, adres, adresat, przedmiot). */
@@ -162,5 +164,6 @@ export function pustaKampania(): Omit<Kampania, "id" | "utworzona"> {
     organizacja: "",
     pismo: {},
     akcjaWyglad: {},
+    akcjaDostarczanie: "od_razu",
   };
 }
