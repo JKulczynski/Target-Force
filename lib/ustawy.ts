@@ -17,12 +17,19 @@ const SD = "https://sejmdiff.pl/api";
 
 /** Ustawy (akty bazowe, obowiązujące) pasujące do słów z tytułu; bez nowelizacji "o zmianie ustawy". */
 export async function szukajUstaw(slowa: string): Promise<Ustawa[]> {
-  const q = new URLSearchParams({ q: slowa, type: "Ustawa", in_force: "IN_FORCE" });
-  const odp = await fetch(`${SD}/acts?${q}`, { next: { revalidate: 60 * 60 * 24 }, signal: AbortSignal.timeout(10000) });
-  if (!odp.ok) throw new Error(`sejmdiff ${odp.status}`);
-  const d = (await odp.json()) as { results: { eli: string; title: string }[] };
-  return d.results
-    .filter((r) => !/o zmianie (ustawy|niektórych ustaw)|ogłoszenia jednolitego/i.test(r.title))
+  // Wyniki idą od najnowszych, więc sama ustawa ginie pod nowelizacjami: przeglądamy do 4 stron po 50.
+  type Strona = { pages: number; results: { eli: string; title: string }[] };
+  const strona = async (n: number) => {
+    const q = new URLSearchParams({ q: slowa, type: "Ustawa", in_force: "IN_FORCE", page: String(n) });
+    const odp = await fetch(`${SD}/acts?${q}`, { next: { revalidate: 60 * 60 * 24 }, signal: AbortSignal.timeout(10000) });
+    if (!odp.ok) throw new Error(`sejmdiff ${odp.status}`);
+    return (await odp.json()) as Strona;
+  };
+  const pierwsza = await strona(1);
+  const reszta = await Promise.all(Array.from({ length: Math.min(pierwsza.pages ?? 1, 4) - 1 }, (_, i) => strona(i + 2)));
+  return [pierwsza, ...reszta]
+    .flatMap((s) => s.results)
+    .filter((r) => !/o zmianie (ustaw|niektórych)|ogłoszenia jednolitego|przepisy wprowadzające|o ratyfikacji/i.test(r.title))
     .map((r) => ({ eli: r.eli, tytul: r.title }));
 }
 
