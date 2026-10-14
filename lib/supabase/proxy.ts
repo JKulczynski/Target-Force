@@ -11,6 +11,7 @@ export async function updateSession(request: NextRequest) {
     sciezka.startsWith("/api/akcja/") ||
     sciezka === "/prywatnosc" ||
     sciezka === "/regulamin" ||
+    sciezka === "/dla-biur" ||
     sciezka.startsWith("/p/") ||
     sciezka === "/api/potwierdz"
   ) {

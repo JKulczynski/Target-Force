@@ -236,5 +236,85 @@ const PRYWATNOSC: Record<Jezyk, Dokument> = {
   },
 };
 
-export const dokumentPrawny = (rodzaj: "regulamin" | "prywatnosc", jezyk: Jezyk): Dokument =>
-  (rodzaj === "regulamin" ? REGULAMIN : PRYWATNOSC)[jezyk];
+
+/**
+ * Strona dla biur poselskich i urzędów (14.10, wzorzec WriteToThem "for MPs"): jakie zasady gwarantuje WinOver
+ * po stronie odbiorcy. Link w stopce wiadomości mieszkańców i zestawień.
+ */
+const DLA_BIUR: Record<Jezyk, Dokument> = {
+  pl: {
+    tytul: "WinOver dla biur poselskich i urzędów",
+    wstep: `Dostali Państwo wiadomość wysłaną przez WinOver. Oto zasady, które obowiązują każdego nadawcę. Zgłoszenia i pytania: ${u.email}.`,
+    sekcje: [
+      {
+        tytul: "1. Piszą prawdziwi ludzie",
+        akapity: [
+          "Wiadomość mieszkańca wychodzi dopiero wtedy, gdy potwierdzi ją kliknięciem w link wysłany na jego skrzynkę. Nie da się wysłać wiadomości w czyimś imieniu bez dostępu do jego poczty.",
+          "Nadawca podaje imię, nazwisko i gminę. Odpowiedź na wiadomość trafia bezpośrednio do niego.",
+          "Gdy kilka osób próbuje wysłać do tego samego adresata identyczną treść, prosimy je o dopisanie własnego zdania.",
+        ],
+      },
+      {
+        tytul: "2. Organizacja jest jawna",
+        akapity: [
+          "Każda kampania ma złożone oświadczenie zleceniodawcy: kto ją prowadzi, z czego jest finansowana i czy działa na czyjeś zlecenie. Wiadomości organizacji mają stopkę z tymi danymi.",
+          "Treść przygotowaną z pomocą sztucznej inteligencji przed wysyłką czyta i zatwierdza człowiek po stronie organizacji.",
+        ],
+      },
+      {
+        tytul: "3. Nie zasypujemy skrzynek",
+        akapity: [
+          "Jeden adresat dostaje najwyżej 40 wiadomości mieszkańców na dobę; nadmiar czeka do następnego dnia.",
+          "Organizacja może wybrać jedno dzienne zestawienie zamiast pojedynczych maili: wtedy biuro dostaje jedną wiadomość ze wszystkimi opiniami mieszkańców.",
+          "Adresy, z których wiadomości wracają albo które zgłoszono jako spam, trafiają na listę blokad.",
+        ],
+      },
+      {
+        tytul: "4. Jak zgłosić problem",
+        akapity: [
+          `Jeśli wiadomość wygląda na nadużycie (fałszywy nadawca, nękanie, treść niezgodna z prawem), prosimy o mail na ${u.email} z przekazaną wiadomością. Możemy wstrzymać kampanię.`,
+          "Z wiadomości organizacji można się wypisać jednym kliknięciem (link w stopce i nagłówek wypisania).",
+        ],
+      },
+    ],
+  },
+  en: {
+    tytul: "WinOver for parliamentary and public offices",
+    wstep: `You received a message sent through WinOver. These are the rules every sender follows. Reports and questions: ${u.email}.`,
+    sekcje: [
+      {
+        tytul: "1. Real people write",
+        akapity: [
+          "A resident's message goes out only after they confirm it by clicking a link sent to their own mailbox. Nobody can send a message in someone else's name without access to their email.",
+          "The sender gives their name and municipality. Replies go straight to them.",
+          "When several people try to send identical text to the same recipient, we ask them to add a sentence of their own.",
+        ],
+      },
+      {
+        tytul: "2. The organisation is disclosed",
+        akapity: [
+          "Every campaign has a client declaration: who runs it, how it is funded and whether it acts on someone's behalf. Organisation emails carry a footer with these details.",
+          "A person on the organisation's side reads and approves any text prepared with the help of artificial intelligence before it is sent.",
+        ],
+      },
+      {
+        tytul: "3. We do not flood inboxes",
+        akapity: [
+          "One recipient gets at most 40 residents' messages a day; the rest waits until the next day.",
+          "An organisation can choose one daily digest instead of single emails: the office then gets one message with all residents' views.",
+          "Addresses that bounce or report spam are added to a block list.",
+        ],
+      },
+      {
+        tytul: "4. How to report a problem",
+        akapity: [
+          `If a message looks like abuse (fake sender, harassment, unlawful content), please forward it to ${u.email}. We can pause the campaign.`,
+          "Organisation emails have one-click unsubscribe (footer link and unsubscribe header).",
+        ],
+      },
+    ],
+  },
+};
+
+export const dokumentPrawny = (rodzaj: "regulamin" | "prywatnosc" | "dla-biur", jezyk: Jezyk): Dokument =>
+  (rodzaj === "regulamin" ? REGULAMIN : rodzaj === "dla-biur" ? DLA_BIUR : PRYWATNOSC)[jezyk];

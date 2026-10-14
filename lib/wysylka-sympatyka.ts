@@ -1,5 +1,6 @@
 import { zablokowane } from "@/lib/blokady";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DOMENA_PRODUKCYJNA } from "@/lib/adres";
 import { LIMIT_NA_ODBIORCE_DZIENNIE, nazwaNadawcy, wyslijPrzezWinOver } from "@/lib/poczta-winover";
 
 /**
@@ -55,7 +56,8 @@ export async function wyslijPodpis(
   const wynik = await wyslijPrzezWinOver({
     doKogo: p.odbiorca_email,
     temat: p.temat,
-    tresc: p.tresc,
+    // Jawność wobec biura (14.10): jedna linia, jak wiadomość powstała i gdzie są zasady.
+    tresc: `${p.tresc}\n\n--\nWysłane przez WinOver po potwierdzeniu nadawcy z jego skrzynki. Zasady: ${DOMENA_PRODUKCYJNA}/dla-biur`,
     nadawca: nazwaNadawcy(p.imie, p.nazwisko),
     odpowiedzDo: w.email,
   });

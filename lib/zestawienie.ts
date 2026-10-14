@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { wyslijPrzezWinOver } from "@/lib/poczta-winover";
+import { DOMENA_PRODUKCYJNA } from "@/lib/adres";
 import { zablokowane } from "@/lib/blokady";
 import { stopkaNadawcy, type TrescOswiadczenia } from "@/lib/oswiadczenie";
 
@@ -46,7 +47,7 @@ export function trescZestawienia(o: { sprawa: string; organizacja: string; data:
     ``,
     `----------`,
     ``,
-    `Odpowiedź na ten mail trafi do organizatora akcji (${o.organizacja}).`,
+    `Odpowiedź na ten mail trafi do organizatora akcji (${o.organizacja}). Zasady wysyłki: ${DOMENA_PRODUKCYJNA}/dla-biur`,
     ...(o.stopka ? [``, `--`, o.stopka] : []),
   ].join("\n");
 }
