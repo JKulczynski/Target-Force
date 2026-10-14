@@ -65,7 +65,7 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
       .flatMap((l) => l.slice(0, 3))
       .filter((u) => !widziane.has(u.eli) && !!widziane.add(u.eli))
       .slice(0, 6);
-    return NextResponse.json({ kandydaci });
+    return NextResponse.json({ kandydaci, slowa });
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) return NextResponse.json({ blad: t("api.brakKluczaAI") }, { status: 500 });
     if (e instanceof Anthropic.APIError)

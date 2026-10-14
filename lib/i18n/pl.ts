@@ -1088,4 +1088,5 @@ export const pl = {
   "ustawa.zmien": "Zmień ustawę",
   "ustawa.brakDanych": "Dane o projektach są chwilowo niedostępne. Spróbuj za kilka minut.",
   "ustawa.zleDane": "Niepoprawny adres ustawy.",
+  "ustawa.szukalem": "Szukałem: {slowa}.",
 };

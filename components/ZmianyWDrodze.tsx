@@ -25,6 +25,7 @@ export function ZmianyWDrodze({ kampaniaId }: { kampaniaId: string }) {
   const [ustawa, setUstawa] = useState<Ustawa | null>(null);
   const [projekty, setProjekty] = useState<Projekt[] | null>(null);
   const [kandydaci, setKandydaci] = useState<Ustawa[] | null>(null);
+  const [slowa, setSlowa] = useState<string[]>([]);
   const [laduje, setLaduje] = useState(false);
   const [blad, setBlad] = useState<string | null>(null);
   const url = `/api/kampanie/${kampaniaId}/ustawa`;
@@ -52,7 +53,10 @@ export function ZmianyWDrodze({ kampaniaId }: { kampaniaId: string }) {
       const o = await fetch(url, { method: "POST" });
       const d = await o.json();
       if (!o.ok) setBlad(d.blad ?? t("wspolne.nieZapisano"));
-      else setKandydaci(d.kandydaci ?? []);
+      else {
+        setKandydaci(d.kandydaci ?? []);
+        setSlowa(d.slowa ?? []);
+      }
     } catch {
       setBlad(t("wspolne.nieZapisano"));
     } finally {
@@ -117,7 +121,12 @@ export function ZmianyWDrodze({ kampaniaId }: { kampaniaId: string }) {
           </button>
         </>
       )}
-      {kandydaci && kandydaci.length === 0 && <p className="mt-2 text-xs text-slate-500">{t("ustawa.brak")}</p>}
+      {kandydaci && kandydaci.length === 0 && (
+        <p className="mt-2 text-xs text-slate-500">
+          {t("ustawa.brak")}
+          {slowa.length > 0 && ` ${t("ustawa.szukalem", { slowa: slowa.join(", ") })}`}
+        </p>
+      )}
       {kandydaci && kandydaci.length > 0 && (
         <ul className="mt-2 space-y-1.5 border-t border-slate-200 pt-2">
           {kandydaci.map((u) => (

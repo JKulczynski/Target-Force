@@ -1086,4 +1086,5 @@ export const en: Record<keyof typeof pl, string> = {
   "ustawa.zmien": "Change the act",
   "ustawa.brakDanych": "Bill data is temporarily unavailable. Try again in a few minutes.",
   "ustawa.zleDane": "Invalid act reference.",
+  "ustawa.szukalem": "Searched for: {slowa}.",
 };
