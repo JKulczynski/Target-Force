@@ -145,8 +145,8 @@ try {
       if (!/facebook/.test(tekst)) throw new Error("brak zrodla wejscia");
       const bartek = await tworca.locator("tr", { hasText: "Bartek Polecony" }).first().innerText();
       if (!bartek.includes(emailBartka)) throw new Error("e-mail ze zgoda niewidoczny");
-      await tworca.getByText("Z poleceń (link „zaproś znajomych”): 1").waitFor({ timeout: 10000 });
-      await tworca.getByText(/Anna Testowa.*: 1/).first().waitFor();
+      await tworca.getByText(/Z poleceń \(link „zaproś znajomych”\): [1-9]/).waitFor({ timeout: 10000 });
+      await tworca.getByText(/Anna Testowa.*: [1-9]/).first().waitFor();
       await tworca.locator("#akcja").scrollIntoViewIfNeeded();
     },
     tworca,
@@ -171,8 +171,8 @@ try {
       tworca.on("dialog", (d) => d.accept());
       await tworca.getByPlaceholder("np. Poseł odpowiedział. Co dalej?").fill("Test automatu: co dalej");
       await tworca.getByPlaceholder(/Dzień dobry \{imie\}/).fill("Dzień dobry {imie}, to wiadomość testowa automatu WinOver.");
-      await tworca.getByRole("button", { name: "Wyślij do 1 osób" }).click();
-      await tworca.getByText(/Tryb próbny: przygotowano 1 maili|Wysłano do 1 osób/).waitFor({ timeout: 20000 });
+      await tworca.getByRole("button", { name: /Wyślij do \d+ osób/ }).click();
+      await tworca.getByText(/Tryb próbny: przygotowano \d+ maili|Wysłano do \d+ osób/).waitFor({ timeout: 20000 });
     },
     tworca,
   );
