@@ -1,3 +1,4 @@
+import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { FiltrOdbiorcow as Filtr } from "@/lib/types";
@@ -229,7 +230,7 @@ export async function POST(
     skrzynka: s,
     hasloZaszyfrowane: sekret as string,
     warianty: wszystkieZatw ?? [],
-    baza: req.nextUrl.origin,
+    baza: adresAplikacji(req.nextUrl.origin),
     jezyk: t.jezyk,
   });
   if (!wynik.ok)

@@ -1,3 +1,4 @@
+import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     await powiadomAdminow(
       adminPowiadomien,
       `WinOver: kampania czeka na decyzję (${nazwaOrg})`,
-      `Klient: ${nazwaOrg}\nKampania: ${kk?.nazwa ?? id}\nOcena reguł: ${tresc.zgodnosc?.status ?? "brak"}\n\nDecyzja: ${req.nextUrl.origin}/kampanie/${id}#zleca\nWszystkie czekające: ${req.nextUrl.origin}/admin`,
+      `Klient: ${nazwaOrg}\nKampania: ${kk?.nazwa ?? id}\nOcena reguł: ${tresc.zgodnosc?.status ?? "brak"}\n\nDecyzja: ${adresAplikacji(req.nextUrl.origin)}/kampanie/${id}#zleca\nWszystkie czekające: ${adresAplikacji(req.nextUrl.origin)}/admin`,
     );
   }
   // Nowe oświadczenie zeruje wcześniejszą decyzję: trzeba sprawdzić od nowa.

@@ -1,3 +1,4 @@
+import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { wyslijKolejke } from "@/lib/wysylka-serwer";
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
       skrzynka: s,
       hasloZaszyfrowane: sekretSkrzynki.haslo_zaszyfrowane as string,
       warianty: warianty ?? [],
-      baza: req.nextUrl.origin,
+      baza: adresAplikacji(req.nextUrl.origin),
       koniec,
     };
     // Prosimy o cały dzienny limit; silnik sam przytnie do tego, co zostało dziś, i do czasu.

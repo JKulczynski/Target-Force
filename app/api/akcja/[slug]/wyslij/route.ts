@@ -1,3 +1,4 @@
+import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { tSerwer } from "@/lib/i18n/serwer";
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
 
   await admin.from("podpisy").update({ temat, tresc, status_wysylki: "czeka_na_potwierdzenie" }).eq("id", p.id);
 
-  const link = `${req.nextUrl.origin}/p/${w.token}`;
+  const link = `${adresAplikacji(req.nextUrl.origin)}/p/${w.token}`;
   const wynik = await wyslijPrzezWinOver({
     doKogo: w.email,
     temat: t("potw.mailTemat", { odbiorca: p.odbiorca_nazwa ?? "" }),

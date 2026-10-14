@@ -1,3 +1,4 @@
+import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       const stopka = t("sympatycy.stopka", {
         nadawca: k.nadawca || "organizator",
         sprawa,
-        link: token ? `${req.nextUrl.origin}/p/${token}?wypisz=1` : `${req.nextUrl.origin}/a/${k.akcja_slug ?? ""}`,
+        link: token ? `${adresAplikacji(req.nextUrl.origin)}/p/${token}?wypisz=1` : `${adresAplikacji(req.nextUrl.origin)}/a/${k.akcja_slug ?? ""}`,
       });
       return {
         doKogo: p.email as string,

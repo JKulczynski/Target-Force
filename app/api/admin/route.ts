@@ -1,3 +1,4 @@
+import { adresAplikacji } from "@/lib/adres";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ blad: t("api.brakKluczaSerwisowego") }, { status: 500 });
 
-  const konto = await znajdzLubZapros(admin, email, req.nextUrl.origin);
+  const konto = await znajdzLubZapros(admin, email, adresAplikacji(req.nextUrl.origin));
   if ("blad" in konto)
     return NextResponse.json(
       { blad: t(konto.blad === "konta" ? "api.nieudanoSprawdzicKont" : "api.nieudanoZaprosic") },
