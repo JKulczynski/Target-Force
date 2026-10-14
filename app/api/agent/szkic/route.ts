@@ -35,7 +35,33 @@ function bezpiecznyAdres(u: URL): boolean {
   return true;
 }
 
+/**
+ * Strony Sejmu (przebieg procesu, druk) składa przeglądarka, więc zwykłe pobranie nic nie daje.
+ * Dla nich czytamy oficjalne API Sejmu: tytuł, opis projektu i etapy.
+ */
+async function projektZSejmu(u: URL): Promise<string | null> {
+  if (!/(^|\.)sejm\.gov\.pl$/i.test(u.hostname)) return null;
+  const nr = u.searchParams.get("nr") ?? u.searchParams.get("druk") ?? u.pathname.match(/(?:druk|nr)[^\d]*(\d{1,5})/i)?.[1];
+  if (!nr || !/^\d{1,5}$/.test(nr)) return null;
+  const kadencja = u.pathname.match(/Sejm(\d{1,2})/i)?.[1] ?? "10";
+  const odp = await fetch(`https://api.sejm.gov.pl/sejm/term${kadencja}/processes/${nr}`, { signal: AbortSignal.timeout(10000) });
+  if (!odp.ok) return null;
+  type Etap = { date?: string; stageName?: string; children?: Etap[] };
+  const d = (await odp.json()) as { title?: string; description?: string; documentDate?: string; passed?: boolean; stages?: Etap[] };
+  const etapy: string[] = [];
+  const zbierz = (l: Etap[]) => l.forEach((e) => (e.stageName && etapy.push(`${e.date ?? ""} ${e.stageName}`), zbierz(e.children ?? [])));
+  zbierz(d.stages ?? []);
+  return [
+    `Projekt w Sejmie, druk nr ${nr} (kadencja ${kadencja}): ${d.title ?? ""}`,
+    `Data projektu: ${d.documentDate ?? ""}${d.passed ? " (uchwalony)" : ""}`,
+    `Opis: ${d.description ?? ""}`,
+    `Etapy: ${etapy.join("; ")}`,
+  ].join("\n");
+}
+
 async function trescStrony(u: URL): Promise<string> {
+  const zSejmu = await projektZSejmu(u).catch(() => null);
+  if (zSejmu) return zSejmu;
   const odp = await fetch(u, {
     redirect: "follow",
     signal: AbortSignal.timeout(15000),

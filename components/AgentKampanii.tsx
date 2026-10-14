@@ -42,6 +42,7 @@ export function AgentKampanii() {
     setBrakuje("");
     setKroki(KROKI.map((id) => ({ id, stan: "czeka" })));
     let id = "";
+    let komisje: string[] = [];
     try {
       ustaw("czytam", "trwa");
       const brief = await post("/api/agent/szkic", { wejscie });
@@ -64,6 +65,7 @@ export function AgentKampanii() {
         filtrOdbiorcow: { komisje: (prop.komisje ?? []).map((x: { kod: string }) => x.kod) },
       });
       id = k.id;
+      komisje = k.filtrOdbiorcow.komisje ?? [];
       ustaw("zapis", "ok");
     } catch (e) {
       setKroki((k) => (k ?? []).map((x) => (x.stan === "trwa" ? { ...x, stan: "blad", info: (e as Error).message } : x)));
@@ -82,7 +84,8 @@ export function AgentKampanii() {
       }
     };
     await krok("lista", async () => {
-      const d = await post(`/api/kampanie/${id}/wysylka`, { tryb: "odbiorcy" });
+      // Filtr z propozycji (komisje), inaczej lista bierze wszystkich posłów.
+      const d = await post(`/api/kampanie/${id}/wysylka`, { tryb: "odbiorcy", filtr: { komisje } });
       return t("agent.dodano", { n: d.dodane ?? 0 });
     });
     await krok("ustawa", async () => {
