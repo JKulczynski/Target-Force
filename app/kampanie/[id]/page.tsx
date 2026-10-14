@@ -18,6 +18,7 @@ import { StronaAkcji } from "@/components/StronaAkcji";
 import { Wplyw } from "@/components/Wplyw";
 import { MomentSejmu } from "@/components/MomentSejmu";
 import { GlosowanieArgument } from "@/components/GlosowanieArgument";
+import { ZmianyWDrodze } from "@/components/ZmianyWDrodze";
 import { Oswiadczenie } from "@/components/Oswiadczenie";
 import { PismoFormalne } from "@/components/PismoFormalne";
 import { useT } from "@/lib/i18n/klient";
@@ -382,6 +383,11 @@ export default function SzczegolyKampanii() {
           {k.zrodla.includes("sejm") && (
             <div className="mt-4">
               <GlosowanieArgument kampaniaId={k.id} />
+            </div>
+          )}
+          {(k.zrodla.includes("sejm") || k.zrodla.includes("ministerstwa")) && (
+            <div className="mt-4">
+              <ZmianyWDrodze kampaniaId={k.id} />
             </div>
           )}
         </aside>

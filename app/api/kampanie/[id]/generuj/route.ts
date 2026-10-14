@@ -8,6 +8,7 @@ import { WARSZTAT } from "@/lib/prompty/pisanie";
 import { psychografiaDla } from "@/lib/prompty/odbiorcy";
 import { tSerwer } from "@/lib/i18n/serwer";
 import { dataSlownie, type Glosowanie } from "@/lib/glosowania";
+import { projektyZmian, wRuchu, type Ustawa } from "@/lib/ustawy";
 
 export const runtime = "nodejs";
 // Generowanie kilku wariantów z myśleniem trwa zwykle 1-2 minuty.
@@ -57,7 +58,7 @@ export async function POST(
   const { data: k } = await supabase
     .from("kampanie")
     .select(
-      "id, nazwa, zrodla, kogo_szukamy, cel, nadawca, link_film, materialy, liczba_wariantow, liczba_followupow, pismo, glosowanie",
+      "id, nazwa, zrodla, kogo_szukamy, cel, nadawca, link_film, materialy, liczba_wariantow, liczba_followupow, pismo, glosowanie, ustawa",
     )
     .eq("id", id)
     .maybeSingle();
@@ -78,6 +79,10 @@ export async function POST(
       ? 0
       : Math.min(Math.max(k.liczba_followupow ?? 0, 0), 5);
 
+  // Zmiany w drodze (14.10): prawdziwe projekty zmian ustawy kampanii z etapem, żeby wiadomość mogła
+  // powołać się na numer druku i moment prac. Gdy źródło nie odpowiada, piszemy bez tego.
+  const ustawa = k.ustawa as Ustawa | null;
+  const projekty = ustawa ? (await projektyZmian(ustawa.eli).catch(() => [])).filter((p) => wRuchu(p)).slice(0, 3) : [];
   const brief = [
     `Kampania: ${k.nazwa}`,
     `Cel: ${k.cel}`,
@@ -96,6 +101,11 @@ export async function POST(
     ...(zrodla.includes("sejm") && k.glosowanie && rola === "nadawca"
       ? [
           `Głosowanie jako argument: nadawca wybrał głosowanie Sejmu z ${dataSlownie((k.glosowanie as Glosowanie).data)} (${(k.glosowanie as Glosowanie).tytul}). W jednym zdaniu każdego wariantu użyj pola {glosowanie}; wstawimy tam głos posła, np. „za ${(k.glosowanie as Glosowanie).za} w głosowaniu z ${dataSlownie((k.glosowanie as Glosowanie).data)}” albo „przeciw ${(k.glosowanie as Glosowanie).przeciw} w głosowaniu z ...”. Zdanie musi pasować do obu wersji i do Pana/Pani, np. „Widzimy, że głosował(a) Pan/Pani {glosowanie}, dlatego...” jest ZŁE (forma zależna od płci); dobrze: „Pana/Pani głos w Sejmie: {glosowanie}. Dlatego piszemy...” albo „W rejestrze głosowań przy Pana/Pani nazwisku jest {glosowanie}.”. Gdy poseł nie głosował, całe zdanie z polem zniknie, więc reszta wiadomości musi mieć sens bez niego. Nie oceniaj głosu i nie pouczaj; użyj go jako punktu zaczepienia (np. „skoro ta ustawa przechodziła przez Pana/Pani ręce”).`,
+        ]
+      : []),
+    ...(ustawa && projekty.length
+      ? [
+          `Projekty zmian ustawy „${ustawa.tytul}” w Sejmie (dane z Sejmu, możesz się na nie powołać): ${projekty.map((p) => `druk nr ${p.druk} „${p.tytul}”, ostatni etap: ${p.etap ?? "wpłynął"} (${p.etapData ?? p.wplynal})`).join("; ")}. Jeśli pasuje do sprawy, w jednym zdaniu powiąż prośbę z tym, że prace trwają teraz (np. przed posiedzeniem komisji). Nie wymyślaj etapów ani dat spoza tej listy.`,
         ]
       : []),
     ...(zrodla.includes("samorzady")
