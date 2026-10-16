@@ -78,7 +78,8 @@ export const pl = {
   "szablon.interwencja.cel":
     "W [miejsce] [co się dzieje i od kiedy]. Prosimy [urząd / posła z okręgu] o [interwencję, pytanie do instytucji, spotkanie], bo [skutek dla mieszkańców, liczby z materiałów].",
   "szablon.akcja.nazwa": "Akcja mieszkańców ze stroną",
-  "szablon.akcja.opis": "Mieszkańcy piszą do swoich posłów ze strony akcji, z własnej poczty.",
+  "szablon.akcja.opis":
+    "Mieszkańcy piszą do swoich posłów ze strony akcji: przez WinOver po potwierdzeniu mailem albo z własnej poczty.",
   "szablon.akcja.cel":
     "Chcemy, żeby mieszkańcy [skąd] napisali do swoich posłów w sprawie [sprawa], z prośbą o [jeden krok]. Najważniejszy fakt: [fakt z materiałów]. Po zapisaniu włącz stronę w sekcji „Strona akcji”.",
 
@@ -385,7 +386,7 @@ export const pl = {
   "akcjaPanel.slugZajety": "Ten adres strony jest już zajęty przez inną kampanię.",
   "akcjaPanel.tytul": "Strona akcji dla sympatyków",
   "akcjaPanel.opis":
-    "Publiczna strona, na której mieszkaniec podaje imię i gminę, dostaje gotową wiadomość do swojego posła albo urzędu i wysyła ją sam ze swojej poczty. Liczymy podpisy i kliknięcia „Otwórz w poczcie”.",
+    "Publiczna strona, na której mieszkaniec podaje imię, nazwisko, gminę i e-mail, dostaje gotową wiadomość do swojego posła albo urzędu i wysyła ją przez WinOver po potwierdzeniu mailem (albo sam ze swojej poczty). Liczymy podpisy, potwierdzone wysyłki i odpowiedzi.",
   "akcjaPanel.otworz": "Otwórz stronę",
   "akcjaPanel.skopiowano": "Skopiowano",
   "akcjaPanel.kopiuj": "Kopiuj link",
@@ -795,9 +796,9 @@ export const pl = {
   "raport.coSie.opis": "Reakcje decydentów i skutki kampanii, w kolejności od najnowszych.",
   "raport.akcja.tytul": "Strona akcji: głos mieszkańców",
   "raport.akcja.opis":
-    "Mieszkańcy pisali do swoich posłów z własnej poczty. Liczymy podpisy i kliknięcia „Otwórz w poczcie”, nie same maile, bo te wychodzą z ich skrzynek.",
+    "Mieszkańcy pisali do swoich posłów ze strony akcji. Wiadomości wysłane przez WinOver liczymy po potwierdzeniu mailem; wysyłki z własnej poczty liczymy jako kliknięcia „Otwórz w poczcie”.",
   "raport.akcja.podpisalo": "Podpisało",
-  "raport.akcja.otworzylo": "Otworzyło pocztę z gotowym mailem",
+  "raport.akcja.otworzylo": "Otworzyło własną pocztę z gotowym mailem",
   "raport.akcja.udostepnilo": "Udostępniło dalej",
   "raport.skad": "Skąd przyszli: ",
   "raport.porownanie": "Dla porównania",
@@ -814,7 +815,8 @@ export const pl = {
   "raport.niktNie": "Na razie nikt nie kliknął ani nie odpisał.",
   "raport.odpisal": "odpisał(a)",
   "raport.kliknal": "kliknął(a) w link",
-  "raport.stopka": "Kliknięcia liczone przez link śledzący w treści maila. Odpowiedzi oznacza nadawca, bo trafiają do jego skrzynki.",
+  "raport.stopka":
+    "Kliknięcia liczone przez link śledzący w treści maila. Odpowiedzi wykrywamy w skrzynce nadawcy albo oznacza je nadawca ręcznie.",
 
   // Ustawienia
   "ustawienia.bladDomeny": "Nie udało się sprawdzić domeny.",
