@@ -667,6 +667,7 @@ export const pl = {
   "kreator.osobyWplywu.jak": "Tych kontaktów nie ma w otwartych rejestrach. Zbierz je (stopki artykułów, strony redakcji, izby) i wgraj jako własną listę.",
   "kreator.szablonCsv": "Pobierz szablon listy (CSV)",
   "akcja.email.info": "Na ten adres wyślemy link do potwierdzenia i tam przyjdzie odpowiedź posła. Organizator go nie zobaczy, chyba że zaznaczysz zgodę niżej.",
+  "akcja.email.infoUrzad": "Na ten adres wyślemy link do potwierdzenia i tam przyjdzie odpowiedź adresata. Organizator go nie zobaczy, chyba że zaznaczysz zgodę niżej.",
   "akcja.wyslij": "Wyślij",
   "akcja.wysylam": "Wysyłam...",
   "akcja.wyslij.info": "Klikając „Wyślij”, zlecasz WinOver wysłanie tej wiadomości w Twoim imieniu. Odbiorca zobaczy Twoje imię i nazwisko jako nadawcę, a odpowiedź przyjdzie na {email}. Najpierw potwierdzisz wysyłkę linkiem z maila.",
@@ -896,6 +897,8 @@ export const pl = {
   "akcja.jakDziala": "Jak to działa",
   "akcja.jak1":
     "Podajesz imię, nazwisko, gminę i e-mail. Dobieramy posła z Twojego okręgu albo Twój urząd.",
+  "akcja.jak1Urzad":
+    "Podajesz imię, nazwisko, gminę i e-mail. Dobieramy adresata, który odpowiada za tę sprawę w Twojej okolicy.",
   "akcja.jak2":
     "Dostajesz gotową wiadomość. Możesz ją zmienić po swojemu.",
   "akcja.jak3":
@@ -906,11 +909,13 @@ export const pl = {
   "akcja.nieUdaloPolaczenie": "Nie udało się. Sprawdź połączenie i spróbuj ponownie.",
   "akcja.kopia": "Do: {email}\nTemat: {temat}\n\n{tresc}",
   "akcja.tekstUdostepnienia": "Napisałem do swojego posła w tej sprawie. Zajmuje to dwie minuty: {link}",
+  "akcja.tekstUdostepnieniaUrzad": "Napisałem w tej sprawie do urzędu. Zajmuje to dwie minuty: {link}",
   "akcja.juzNapisalo.1": "osoba już napisała",
   "akcja.juzNapisalo.few": "osoby już napisały",
   "akcja.juzNapisalo.many": "osób już napisało",
   "akcja.wPrzygotowaniu": "Akcja jest jeszcze w przygotowaniu. Wróć za chwilę.",
   "akcja.napiszDoPosla": "Napisz do swojego posła",
+  "akcja.napiszDoUrzedu": "Napisz w tej sprawie",
   "akcja.imie": "Imię",
   "akcja.nazwisko": "Nazwisko",
   "akcja.gmina": "Gmina, w której mieszkasz",
@@ -918,10 +923,12 @@ export const pl = {
   "akcja.wczytujeGminy": "Wczytuję gminy...",
   "akcja.nieZnaleziono": "Nie znaleziono. Spróbuj innej pisowni.",
   "akcja.poGminie": "Po gminie dobieramy posła z Twojego okręgu wyborczego.",
+  "akcja.poGminieUrzad": "Po gminie dobieramy adresata, który odpowiada za Twoją okolicę.",
   "akcja.dlaczego": "Dlaczego to dla Ciebie ważne",
   "akcja.dlaczego.opc": "(opcjonalnie, 1-2 zdania)",
   "akcja.dlaczego.ph": "np. Codziennie przeprowadzam tędy dwójkę dzieci do szkoły.",
   "akcja.dlaczego.info": "Własne zdanie trafi do wiadomości. Poseł czyta takie maile uważniej niż identyczne.",
+  "akcja.dlaczego.infoUrzad": "Własne zdanie trafi do wiadomości. Urząd czyta takie maile uważniej niż identyczne.",
   "akcja.email": "E-mail",
   "akcja.opcjonalnie": "(opcjonalnie)",
   "akcja.chceInfo": "Chcę dostać wiadomość, co dała ta akcja.",
@@ -942,6 +949,7 @@ export const pl = {
   "akcja.skopiowano": "Skopiowano",
   "akcja.skopiujTresc": "Skopiuj treść i adres",
   "akcja.wyjdzieZTwojej": "Wiadomość wyjdzie z Twojej skrzynki, od Ciebie. Odpowiedź posła przyjdzie na Twój adres.",
+  "akcja.wyjdzieZTwojejUrzad": "Wiadomość wyjdzie z Twojej skrzynki, od Ciebie. Odpowiedź adresata przyjdzie na Twój adres.",
   "akcja.dziekujemy": "Dziękujemy!",
   "akcja.dziekujemy.opis":
     "Jeśli poczta się nie otworzyła, wróć wyżej i skopiuj treść. Jeden mail od mieszkańca znaczy więcej niż sto od organizacji. Dwa znaczą jeszcze więcej.",

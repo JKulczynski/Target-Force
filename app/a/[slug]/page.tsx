@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AkcjaFormularz } from "@/components/AkcjaFormularz";
 import { WidokAkcji } from "@/components/WidokAkcji";
 import { oczyscWyglad, type WygladAkcji } from "@/lib/wyglad";
+import { doPoslow } from "@/lib/akcja";
 import { tlumacz } from "@/lib/i18n";
 import { jezykZCookie } from "@/lib/i18n/serwer";
 import type { TrescOswiadczenia } from "@/lib/oswiadczenie";
@@ -25,6 +26,7 @@ type Akcja = {
   podpisy: number;
   gotowa: boolean;
   wyglad: WygladAkcji;
+  doPoslow: boolean;
   /** Z zaakceptowanego oświadczenia zleceniodawcy; null, gdy go nie ma. */
   prowadzi: {
     zleceniodawca: string;
@@ -41,7 +43,7 @@ async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null>
   const { data: k } = await admin
     .from("kampanie")
     .select(
-      "id, nadawca, link_film, akcja_wlaczona, akcja_tytul, akcja_opis, akcja_administrator, zgoda_zespolu, akcja_wyglad",
+      "id, nadawca, link_film, akcja_wlaczona, akcja_tytul, akcja_opis, akcja_administrator, zgoda_zespolu, akcja_wyglad, zrodla",
     )
     .eq("akcja_slug", slug)
     .maybeSingle();
@@ -94,6 +96,7 @@ async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null>
     podpisy: podpisy ?? 0,
     gotowa: (warianty ?? 0) > 0 && (odbiorcy ?? 0) > 0,
     wyglad: oczyscWyglad(k.akcja_wyglad),
+    doPoslow: doPoslow(k.zrodla),
   };
 }
 
@@ -138,6 +141,7 @@ export default async function StronaAkcjiPubliczna({
       film={a.film}
       prowadzi={prowadzi}
       wyglad={a.wyglad}
+      doPoslow={a.doPoslow}
       formularz={
         <AkcjaFormularz
           slug={slug}
@@ -147,6 +151,7 @@ export default async function StronaAkcjiPubliczna({
           cel={a.wyglad.cel}
           przycisk={a.wyglad.przycisk}
           dziekujemy={a.wyglad.dziekujemy}
+          doPoslow={a.doPoslow}
         />
       }
     />

@@ -60,6 +60,7 @@ export function AkcjaFormularz({
   cel,
   przycisk,
   dziekujemy,
+  doPoslow = true,
 }: {
   slug: string;
   razem: number;
@@ -69,6 +70,8 @@ export function AkcjaFormularz({
   cel?: number;
   przycisk?: string;
   dziekujemy?: string;
+  /** Kampania do posłów (Sejm, PE, Tweede Kamer) czy do urzędów: zmienia słowo „poseł” w podpowiedziach. */
+  doPoslow?: boolean;
 }) {
   const { t } = useT();
   const [krok, setKrok] = useState<"dane" | "wiadomosc" | "potwierdz" | "dzieki">("dane");
@@ -204,7 +207,7 @@ export function AkcjaFormularz({
     typeof window !== "undefined"
       ? `${window.location.origin}/a/${slug}${w?.kodPolecenia ? `?od=${w.kodPolecenia}` : ""}`
       : "";
-  const tekstUdostepnienia = t("akcja.tekstUdostepnienia", { link: linkStrony });
+  const tekstUdostepnienia = t(doPoslow ? "akcja.tekstUdostepnienia" : "akcja.tekstUdostepnieniaUrzad", { link: linkStrony });
 
   async function udostepnij() {
     zapiszZdarzenie("udostepnil");
@@ -242,7 +245,7 @@ export function AkcjaFormularz({
 
       {krok === "dane" && (
         <form onSubmit={podpisz} className="mt-5 space-y-4" aria-busy={wysyla}>
-          <h2 className="text-lg font-semibold tracking-tight">{t("akcja.napiszDoPosla")}</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{t(doPoslow ? "akcja.napiszDoPosla" : "akcja.napiszDoUrzedu")}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-medium text-slate-700">{t("akcja.imie")}</span>
@@ -325,7 +328,7 @@ export function AkcjaFormularz({
                 )}
               </ul>
             )}
-            <span className="mt-1.5 block text-xs text-slate-500">{t("akcja.poGminie")}</span>
+            <span className="mt-1.5 block text-xs text-slate-500">{t(doPoslow ? "akcja.poGminie" : "akcja.poGminieUrzad")}</span>
           </div>
 
           <label className="block">
@@ -340,7 +343,7 @@ export function AkcjaFormularz({
               onChange={(e) => setDlaczego(e.target.value)}
               placeholder={t("akcja.dlaczego.ph")}
             />
-            <span className="mt-1.5 block text-xs text-slate-500">{t("akcja.dlaczego.info")}</span>
+            <span className="mt-1.5 block text-xs text-slate-500">{t(doPoslow ? "akcja.dlaczego.info" : "akcja.dlaczego.infoUrzad")}</span>
           </label>
 
           <label className="block">
@@ -356,7 +359,7 @@ export function AkcjaFormularz({
               onChange={(e) => setEmail(e.target.value)}
             />
           </label>
-          <span className="-mt-2 block text-xs text-slate-500">{t("akcja.email.info")}</span>
+          <span className="-mt-2 block text-xs text-slate-500">{t(doPoslow ? "akcja.email.info" : "akcja.email.infoUrzad")}</span>
           {email.trim() && (
             <label className="flex items-start gap-2.5 text-sm text-slate-700">
               <input
@@ -482,7 +485,7 @@ export function AkcjaFormularz({
                   {skopiowano ? t("akcja.skopiowano") : t("akcja.skopiujTresc")}
                 </button>
               </div>
-              <p className="text-xs leading-relaxed text-slate-500">{t("akcja.wyjdzieZTwojej")}</p>
+              <p className="text-xs leading-relaxed text-slate-500">{t(doPoslow ? "akcja.wyjdzieZTwojej" : "akcja.wyjdzieZTwojejUrzad")}</p>
             </div>
           </details>
         </div>

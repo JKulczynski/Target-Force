@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { POLE, PRZYCISK_DRUGI, PRZYCISK_GLOWNY } from "@/components/ui";
 import { PasekCelu, WidokAkcji } from "@/components/WidokAkcji";
+import { doPoslow } from "@/lib/akcja";
 import { kampania, zmienKampanie } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
 import { POPRAWNY_SLUG, slugZNazwy } from "@/lib/akcja";
@@ -116,7 +117,7 @@ export default function KreatorStrony() {
         <span className="text-2xl font-semibold tabular-nums text-slate-900">0</span> {t.n("akcja.juzNapisalo", 0)}
       </p>
       {w.cel && <PasekCelu razem={0} cel={w.cel} />}
-      <h2 className="mt-5 text-lg font-semibold tracking-tight">{t("akcja.napiszDoPosla")}</h2>
+      <h2 className="mt-5 text-lg font-semibold tracking-tight">{t(doPoslow(k.zrodla) ? "akcja.napiszDoPosla" : "akcja.napiszDoUrzedu")}</h2>
       <div className="mt-4 space-y-3" aria-hidden>
         {[t("akcja.imie"), t("akcja.nazwisko"), t("akcja.gmina"), t("akcja.email")].map((e) => (
           <div key={e}>
@@ -295,6 +296,7 @@ export default function KreatorStrony() {
               wyglad={oczyscWyglad(w)}
               formularz={atrapa}
               waski={widok === "telefon"}
+              doPoslow={doPoslow(k.zrodla)}
             />
           </div>
         </div>

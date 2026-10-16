@@ -90,4 +90,10 @@ export function slugZNazwy(nazwa: string): string {
 
 export const POPRAWNY_SLUG = /^[a-z0-9][a-z0-9-]{1,59}$/;
 
+/** Czy strona akcji pisze do posłów (Sejm, PE, Tweede Kamer), czy do urzędów: zmienia słowo „poseł” w podpowiedziach formularza. */
+export function doPoslow(zrodla: readonly string[] | null | undefined): boolean {
+  const parlamenty = ["sejm", "parlament_ue", "tweede_kamer"];
+  return !zrodla?.length || zrodla.some((z) => parlamenty.includes(z));
+}
+
 export { youtubeId } from "@/lib/youtube";

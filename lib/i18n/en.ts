@@ -666,6 +666,7 @@ export const en: Record<keyof typeof pl, string> = {
   "kreator.osobyWplywu.jak": "These contacts are not in open registers. Collect them (article bylines, newsroom pages, chambers) and upload them as your own list.",
   "kreator.szablonCsv": "Download list template (CSV)",
   "akcja.email.info": "We will send a confirmation link to this address, and the MP's reply will arrive there. The organiser will not see it unless you tick the consent below.",
+  "akcja.email.infoUrzad": "We will send a confirmation link to this address, and the recipient's reply will arrive there. The organiser will not see it unless you tick the consent below.",
   "akcja.wyslij": "Send",
   "akcja.wysylam": "Sending...",
   "akcja.wyslij.info":
@@ -896,6 +897,8 @@ export const en: Record<keyof typeof pl, string> = {
   "akcja.jakDziala": "How it works",
   "akcja.jak1":
     "You enter your name, municipality and email. We match the MP for your constituency or your local office.",
+  "akcja.jak1Urzad":
+    "You enter your name, municipality and email. We match the office responsible for this matter in your area.",
   "akcja.jak2":
     "You get a ready message. You can change it in your own words.",
   "akcja.jak3":
@@ -906,11 +909,13 @@ export const en: Record<keyof typeof pl, string> = {
   "akcja.nieUdaloPolaczenie": "Something went wrong. Check your connection and try again.",
   "akcja.kopia": "To: {email}\nSubject: {temat}\n\n{tresc}",
   "akcja.tekstUdostepnienia": "I wrote to my MP about this. It takes two minutes: {link}",
+  "akcja.tekstUdostepnieniaUrzad": "I wrote to the authorities about this. It takes two minutes: {link}",
   "akcja.juzNapisalo.1": "person has already written",
   "akcja.juzNapisalo.few": "people have already written",
   "akcja.juzNapisalo.many": "people have already written",
   "akcja.wPrzygotowaniu": "The action is still being prepared. Come back in a moment.",
   "akcja.napiszDoPosla": "Write to your MP",
+  "akcja.napiszDoUrzedu": "Write about this",
   "akcja.imie": "First name",
   "akcja.nazwisko": "Last name",
   "akcja.gmina": "Municipality where you live",
@@ -918,10 +923,12 @@ export const en: Record<keyof typeof pl, string> = {
   "akcja.wczytujeGminy": "Loading municipalities...",
   "akcja.nieZnaleziono": "Not found. Try a different spelling.",
   "akcja.poGminie": "We use your municipality to match the MP for your constituency.",
+  "akcja.poGminieUrzad": "We use your municipality to match the recipient responsible for your area.",
   "akcja.dlaczego": "Why this matters to you",
   "akcja.dlaczego.opc": "(optional, 1-2 sentences)",
   "akcja.dlaczego.ph": "e.g. I walk my two children to school this way every day.",
   "akcja.dlaczego.info": "Your own sentence goes into the message. MPs read such emails more carefully than identical ones.",
+  "akcja.dlaczego.infoUrzad": "Your own sentence goes into the message. Offices read such emails more carefully than identical ones.",
   "akcja.email": "Email",
   "akcja.opcjonalnie": "(optional)",
   "akcja.chceInfo": "I want to hear what this action achieved.",
@@ -942,6 +949,7 @@ export const en: Record<keyof typeof pl, string> = {
   "akcja.skopiowano": "Copied",
   "akcja.skopiujTresc": "Copy the text and address",
   "akcja.wyjdzieZTwojej": "The message goes out from your mailbox, from you. The MP's reply will come to your address.",
+  "akcja.wyjdzieZTwojejUrzad": "The message goes out from your mailbox, from you. The recipient's reply will come to your address.",
   "akcja.dziekujemy": "Thank you!",
   "akcja.dziekujemy.opis":
     "If your email app did not open, go back and copy the text. One email from a resident counts for more than a hundred from an organisation. Two count for even more.",

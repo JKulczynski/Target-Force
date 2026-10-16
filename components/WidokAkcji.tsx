@@ -19,6 +19,7 @@ export function WidokAkcji({
   wyglad,
   formularz,
   waski = false,
+  doPoslow = true,
 }: {
   nadawca: string;
   tytul: string;
@@ -30,6 +31,8 @@ export function WidokAkcji({
   formularz: ReactNode;
   /** Podgląd telefonu w kreatorze: jedna kolumna niezależnie od szerokości ekranu. */
   waski?: boolean;
+  /** Jak w AkcjaFormularz: „poseł” albo „adresat” w opisie kroków. */
+  doPoslow?: boolean;
 }) {
   const { t } = useT();
   const yt = film ? youtubeId(film) : null;
@@ -98,7 +101,7 @@ export function WidokAkcji({
           <div className="mt-8 rounded-xl bg-slate-100 p-5 text-sm text-slate-600">
             <p className="font-medium text-slate-800">{t("akcja.jakDziala")}</p>
             <ol className="mt-2 list-decimal space-y-1 pl-5">
-              <li>{t("akcja.jak1")}</li>
+              <li>{t(doPoslow ? "akcja.jak1" : "akcja.jak1Urzad")}</li>
               <li>{t("akcja.jak2")}</li>
               <li>{t("akcja.jak3")}</li>
             </ol>
