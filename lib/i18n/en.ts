@@ -104,6 +104,14 @@ export const en: Record<keyof typeof pl, string> = {
 
   // Wizard
   "kreator.bladPropozycji": "Could not prepare a suggestion.",
+  "kreator.krok.forma": "How you want to win",
+  "kreator.forma.etykieta": "How do you want to win this cause?",
+  "kreator.forma.opis": "We start with one approach. You can add the other one later in the same campaign.",
+  "kreator.forma.petycja.nazwa": "Petition",
+  "kreator.forma.petycja.opis": "Collect signatures on the campaign page. Each signature reaches decision-makers as a message.",
+  "kreator.forma.lobbing.nazwa": "Lobbying",
+  "kreator.forma.lobbing.opis": "Persuade specific people: councillors, MPs, offices. Messages from your mailbox, with reminders.",
+  "kreator.blad.forma": "Choose how you want to win this cause.",
   "kreator.krok.1": "What it is about",
   "kreator.krok.2": "Who to reach",
   "kreator.krok.3": "How and when",

@@ -34,11 +34,15 @@ const Z_LICZNIKIEM: ZrodloId[] = [
 ];
 
 /**
- * Kreator w 3 krokach (ustalenie z 26.09): jeden długi formularz pytał o wszystko naraz.
- * Każdy krok odpowiada na jedno pytanie: o co chodzi, do kogo, jak i kiedy.
+ * Kreator krok po kroku (ustalenie z 26.09): jeden długi formularz pytał o wszystko naraz.
+ * Każdy krok odpowiada na jedno pytanie: jak chcesz wygrać, o co chodzi, do kogo, jak i kiedy.
+ * Krok "forma" z makiet Piotra 27.10: petycja (strona z podpisami) albo lobbing (wiadomości do decydentów).
  */
 
-const KROKI: Klucz[] = ["kreator.krok.1", "kreator.krok.2", "kreator.krok.3"];
+const KROKI: Klucz[] = ["kreator.krok.forma", "kreator.krok.1", "kreator.krok.2", "kreator.krok.3"];
+
+type Forma = "petycja" | "lobbing";
+const FORMY: Forma[] = ["petycja", "lobbing"];
 
 const Etykieta = ({ children }: { children: React.ReactNode }) => (
   <span className="block text-sm font-medium text-slate-700">{children}</span>
@@ -66,6 +70,7 @@ export default function NowaKampania() {
   const [przedSzablonem, setPrzedSzablonem] = useState<typeof dane | null>(null);
   const [propozycja, setPropozycja] = useState<Propozycja | null>(null);
   const [proponuje, setProponuje] = useState(false);
+  const [forma, setForma] = useState<Forma | null>(null);
 
   function uzyjSzablonu(id: SzablonId) {
     const s = daneSzablonu(id, t);
@@ -104,7 +109,7 @@ export default function NowaKampania() {
 
   // Liczniki pobieramy raz, przy pierwszym wejściu w krok 2. Serwer trzyma je w cache przez dobę.
   useEffect(() => {
-    if (krok !== 1) return;
+    if (krok !== 2) return;
     const brakujace = Z_LICZNIKIEM.filter((id) => !liczniki[id]);
     if (brakujace.length === 0) return;
     Promise.resolve().then(() =>
@@ -169,11 +174,12 @@ export default function NowaKampania() {
 
   /** Zwraca komunikat błędu dla bieżącego kroku albo null, jeśli można iść dalej. */
   function sprawdz(k: number): string | null {
-    if (k === 0) {
+    if (k === 0 && !forma) return t("kreator.blad.forma");
+    if (k === 1) {
       if (!dane.nazwa.trim()) return t("kreator.blad.nazwa");
       if (!dane.cel.trim()) return t("kreator.blad.cel");
     }
-    if (k === 1 && dane.zrodla.length === 0) return t("kreator.blad.zrodla");
+    if (k === 2 && dane.zrodla.length === 0) return t("kreator.blad.zrodla");
     return null;
   }
 
@@ -201,11 +207,16 @@ export default function NowaKampania() {
     }
     setZapisuje(true);
     try {
-      const nowa = await dodajKampanie({ ...dane, nazwa: dane.nazwa.trim() });
+      const nowa = await dodajKampanie({
+        ...dane,
+        nazwa: dane.nazwa.trim(),
+        // Petycja: opis strony z podpisami startuje od celu kampanii, osoba poprawia go w następnym ekranie.
+        ...(forma === "petycja" && !dane.akcjaOpis ? { akcjaOpis: dane.cel.trim() } : {}),
+      });
       if (lista && dane.zrodla.includes("wlasna_lista")) {
         await dodajKontakty(nowa.id, lista.wiersze);
       }
-      router.push(`/kampanie/${nowa.id}`);
+      router.push(forma === "petycja" ? `/kampanie/${nowa.id}/strona` : `/kampanie/${nowa.id}`);
     } catch {
       setZapisuje(false);
       setBlad(t("kreator.blad.zapis"));
@@ -264,6 +275,38 @@ export default function NowaKampania() {
 
       <form onSubmit={zapisz} className="mt-8 space-y-8">
         {krok === 0 && (
+          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
+            <div>
+              <Etykieta>{t("kreator.forma.etykieta")}</Etykieta>
+              <Podpowiedz>{t("kreator.forma.opis")}</Podpowiedz>
+            </div>
+            <div className="grid gap-2">
+              {FORMY.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => {
+                    setForma(f);
+                    setBlad(null);
+                  }}
+                  aria-pressed={forma === f}
+                  className={`flex items-start justify-between gap-3 rounded-lg border p-4 text-left transition ${forma === f ? "border-slate-900 bg-slate-50" : "border-slate-200 hover:border-slate-300"}`}
+                >
+                  <span>
+                    <span className="block text-sm font-medium text-slate-900">{t(`kreator.forma.${f}.nazwa`)}</span>
+                    <span className="mt-0.5 block text-xs text-slate-500">{t(`kreator.forma.${f}.opis`)}</span>
+                  </span>
+                  <span
+                    className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border ${forma === f ? "border-slate-900 bg-slate-900" : "border-slate-300"}`}
+                    aria-hidden
+                  />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {krok === 1 && (
           <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6">
             <div>
               <Etykieta>{t("kreator.szablon.etykieta")}</Etykieta>
@@ -364,7 +407,7 @@ export default function NowaKampania() {
           </section>
         )}
 
-        {krok === 1 && (
+        {krok === 2 && (
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -501,7 +544,7 @@ export default function NowaKampania() {
           </section>
         )}
 
-        {krok === 2 && (
+        {krok === 3 && (
           <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6">
             <label className="flex items-start gap-3">
               <input

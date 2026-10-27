@@ -71,6 +71,11 @@ try {
 
   await krok("kreator-krok1", async () => {
     await s.goto(`${adres}/kampanie/nowa`, { waitUntil: "load" });
+    // Krok "Jak chcesz wygrać" (27.10): bez wyboru formy kreator nie puszcza dalej.
+    await s.getByRole("button", { name: "Dalej" }).click();
+    await s.getByText("Wybierz, jak chcesz wygrać tę sprawę.").waitFor({ timeout: 5000 });
+    await s.getByRole("button", { name: /Lobbing/ }).click();
+    await s.getByRole("button", { name: "Dalej" }).click();
     await s.getByRole("button", { name: /Interwencja lokalna/ }).click();
     await s.getByPlaceholder("np. Pokaz filmu, Holandia, październik").fill(`Test automatu ${znacznik}`);
     await s

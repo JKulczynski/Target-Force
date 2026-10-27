@@ -106,6 +106,14 @@ export const pl = {
 
   // Kreator
   "kreator.bladPropozycji": "Nie udało się przygotować propozycji.",
+  "kreator.krok.forma": "Jak chcesz wygrać",
+  "kreator.forma.etykieta": "Jak chcesz wygrać tę sprawę?",
+  "kreator.forma.opis": "Zaczniemy od jednej formy. Drugą możesz dołożyć później w tej samej kampanii.",
+  "kreator.forma.petycja.nazwa": "Petycja",
+  "kreator.forma.petycja.opis": "Zbierz podpisy na stronie kampanii. Każdy podpis trafia jako wiadomość do decydentów.",
+  "kreator.forma.lobbing.nazwa": "Lobbing",
+  "kreator.forma.lobbing.opis": "Przekonaj konkretne osoby: radnych, posłów, urzędy. Wiadomości z Twojej skrzynki, z przypomnieniami.",
+  "kreator.blad.forma": "Wybierz, jak chcesz wygrać tę sprawę.",
   "kreator.krok.1": "O co chodzi",
   "kreator.krok.2": "Do kogo",
   "kreator.krok.3": "Jak i kiedy",
