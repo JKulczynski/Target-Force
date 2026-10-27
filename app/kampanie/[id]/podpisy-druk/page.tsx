@@ -70,7 +70,7 @@ export default function PodpisyDruk() {
       {[...grupy.entries()].map(([adresat, lista]) => (
         <section key={adresat} className="mt-8 break-before-page first:break-before-auto">
           <h2 className="text-lg font-semibold">
-            {adresat} <span className="text-sm font-normal text-slate-500">({lista.length} {t("druk.wiadomosci")})</span>
+            {adresat} <span className="text-sm font-normal text-slate-500">({t.n("druk.wiadomosci", lista.length)})</span>
           </h2>
           <ol className="mt-3 space-y-4">
             {lista.map((w, i) => (

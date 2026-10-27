@@ -306,7 +306,9 @@ export const pl = {
   "wysylka.potwierdzPartie.1": "Wyślesz {n} prawdziwy mail do odbiorców kampanii (nie test). Na pewno?",
   "wysylka.potwierdzPartie.few": "Wyślesz {n} prawdziwe maile do odbiorców kampanii (nie test). Na pewno?",
   "wysylka.potwierdzPartie.many": "Wyślesz {n} prawdziwych maili do odbiorców kampanii (nie test). Na pewno?",
-  "wysylka.wyslijN": "Wyślij {n} maili",
+  "wysylka.wyslijN.1": "Wyślij {n} mail",
+  "wysylka.wyslijN.few": "Wyślij {n} maile",
+  "wysylka.wyslijN.many": "Wyślij {n} maili",
   "wysylka.limitWyczerpany": "Dzienny limit skrzynki wyczerpany. Kolejna partia jutro.",
   "wysylka.k4.tytul": "Przypomnienia",
   "wysylka.k4.opis":
@@ -703,6 +705,7 @@ export const pl = {
   "potw.mailTemat": "Potwierdź wysyłkę wiadomości do: {odbiorca}",
   "potw.mailTresc": "Dzień dobry {imie},\n\nna stronie akcji „{sprawa}” przygotowałeś(-aś) wiadomość do: {odbiorca}.\nŻeby ją wysłać w Twoim imieniu, kliknij link i potwierdź:\n\n{link}\n\nJeśli to nie Ty, zignoruj tego maila. Bez potwierdzenia nic nie wyślemy.\n\nWinOver",
   "potw.tytul": "{imie}, potwierdź wysyłkę",
+  "potw.tytulWyslano": "{imie}, Twoja wiadomość poszła",
   "potw.proba": "Tryb próbny: poczta WinOver nie jest jeszcze podłączona. Po kliknięciu nic nie wyjdzie naprawdę, ale zobaczysz cały przebieg.",
   "potw.od": "Od",
   "potw.odpowiedzDo": "odpowiedź przyjdzie na {email}",
@@ -818,6 +821,8 @@ export const pl = {
   "raport.akcja.tytul": "Strona akcji: głos mieszkańców",
   "raport.akcja.opis":
     "Mieszkańcy pisali do swoich posłów ze strony akcji. Wiadomości wysłane przez WinOver liczymy po potwierdzeniu mailem; wysyłki z własnej poczty liczymy jako kliknięcia „Otwórz w poczcie”.",
+  "raport.akcja.opisUrzad":
+    "Mieszkańcy pisali do adresatów kampanii ze strony akcji. Wiadomości wysłane przez WinOver liczymy po potwierdzeniu mailem; wysyłki z własnej poczty liczymy jako kliknięcia „Otwórz w poczcie”.",
   "raport.akcja.podpisalo": "Podpisało",
   "raport.akcja.tydzien": "+{n} w ostatnich 7 dniach",
   "raport.akcja.otworzylo": "Otworzyło własną pocztę z gotowym mailem",
@@ -1157,7 +1162,9 @@ export const pl = {
   "druk.tytul": "Wiadomości mieszkańców",
   "druk.opis": "Zestawienie wiadomości potwierdzonych przez mieszkańców, pogrupowane według adresata. Do wydruku albo zapisania jako PDF na spotkanie.",
   "druk.drukuj": "Drukuj / zapisz PDF",
-  "druk.wiadomosci": "wiadomości",
+  "druk.wiadomosci.1": "{n} wiadomość",
+  "druk.wiadomosci.few": "{n} wiadomości",
+  "druk.wiadomosci.many": "{n} wiadomości",
   "druk.brak": "Nie ma jeszcze potwierdzonych wiadomości.",
   "klub.dla": "Wysyłaj do:",
   "klub.wszystkie": "wszystkich klubów",

@@ -40,7 +40,7 @@ export default async function Strona({
     <article className="mx-auto max-w-2xl">
       <p className="text-sm text-slate-500">{k?.akcja_tytul || k?.nazwa}</p>
       <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-        {wypisz === "1" ? t("potw.wypiszTytul") : t("potw.tytul", { imie: p.imie })}
+        {wypisz === "1" ? t("potw.wypiszTytul") : p.status_wysylki === "wyslany" ? t("potw.tytulWyslano", { imie: p.imie }) : t("potw.tytul", { imie: p.imie })}
       </h1>
       {wypisz !== "1" && trybProbny() && (
         <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-100">{t("potw.proba")}</p>

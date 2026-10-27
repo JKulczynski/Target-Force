@@ -12,6 +12,7 @@ import {
 import type { Kampania } from "@/lib/types";
 import type { TrescOswiadczenia } from "@/lib/oswiadczenie";
 import { useT } from "@/lib/i18n/klient";
+import { doPoslow } from "@/lib/akcja";
 import { OdpowiedziMieszkancow } from "@/components/OdpowiedziMieszkancow";
 
 type Odbiorca = {
@@ -254,7 +255,7 @@ export default function RaportKampanii() {
           <h2 className="text-base font-semibold tracking-tight text-slate-900">
             {t("raport.akcja.tytul")}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">{t("raport.akcja.opis")}</p>
+          <p className="mt-1 text-sm text-slate-500">{t(doPoslow(k.zrodla) ? "raport.akcja.opis" : "raport.akcja.opisUrzad")}</p>
           <div className="mt-4 grid grid-cols-3 gap-4">
             {[
               [t("raport.akcja.podpisalo"), akcja.razem],

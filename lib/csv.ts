@@ -23,6 +23,11 @@ const KOLUMNY: Record<keyof WierszListy, string[]> = {
   stanowisko: ["stanowisko", "funkcja", "rola", "title", "position", "functie"],
 };
 
+/** Separator, który dzieli linię na najwięcej pól (średnik, przecinek albo tabulator). */
+function separatorLinii(linia: string): string {
+  return [";", ",", "\t"].reduce((a, b) => (linia.split(b).length > linia.split(a).length ? b : a));
+}
+
 function podziel(linia: string, sep: string): string[] {
   // Prosty parser z obsługą cudzysłowów, wystarczy do eksportów z Excela i Google Sheets.
   const pola: string[] = [];
@@ -66,7 +71,8 @@ export function parsujListe(tekst: string): WynikImportu {
   let duplikaty = 0;
 
   for (const linia of maNaglowek ? linie.slice(1) : linie) {
-    const pola = podziel(linia, sep);
+    // Bez nagłówka każda linia może mieć inny separator (wklejka z kilku źródeł, N1 27.10).
+    const pola = podziel(linia, maNaglowek ? sep : separatorLinii(linia));
     let w: WierszListy;
     if (maNaglowek) {
       const pole = (k: keyof WierszListy) => (indeks[k] === -1 ? "" : (pola[indeks[k]] ?? ""));

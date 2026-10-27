@@ -94,7 +94,8 @@ export function Potwierdzenie({
       {status === "wyslany" && (
         <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900 ring-1 ring-emerald-100">
           <p className="font-medium">{t("potw.wyslano")}</p>
-          {wyslano && <p className="mt-0.5">{new Date(wyslano).toLocaleString(t.locale)}</p>}
+          {/* Serwer formatuje w UTC, przeglądarka w czasie lokalnym: różnica tekstu jest zamierzona (N5, 27.10). */}
+          {wyslano && <p className="mt-0.5" suppressHydrationWarning>{new Date(wyslano).toLocaleString(t.locale)}</p>}
           <p className="mt-1">{t("potw.odpowiedzTrafi")}</p>
         </div>
       )}

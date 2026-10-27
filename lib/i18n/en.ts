@@ -305,7 +305,9 @@ export const en: Record<keyof typeof pl, string> = {
   "wysylka.potwierdzPartie.1": "You will send {n} real email to campaign recipients (not a test). Are you sure?",
   "wysylka.potwierdzPartie.few": "You will send {n} real emails to campaign recipients (not a test). Are you sure?",
   "wysylka.potwierdzPartie.many": "You will send {n} real emails to campaign recipients (not a test). Are you sure?",
-  "wysylka.wyslijN": "Send {n} emails",
+  "wysylka.wyslijN.1": "Send {n} email",
+  "wysylka.wyslijN.few": "Send {n} emails",
+  "wysylka.wyslijN.many": "Send {n} emails",
   "wysylka.limitWyczerpany": "The mailbox's daily limit is used up. Next batch tomorrow.",
   "wysylka.k4.tytul": "Follow-ups",
   "wysylka.k4.opis":
@@ -703,6 +705,7 @@ export const en: Record<keyof typeof pl, string> = {
   "potw.mailTemat": "Confirm sending your message to: {odbiorca}",
   "potw.mailTresc": "Hello {imie},\n\non the action page “{sprawa}” you prepared a message to: {odbiorca}.\nTo send it on your behalf, click the link and confirm:\n\n{link}\n\nIf this was not you, ignore this email. Nothing is sent without confirmation.\n\nWinOver",
   "potw.tytul": "{imie}, confirm sending",
+  "potw.tytulWyslano": "{imie}, your message is on its way",
   "potw.proba": "Test mode: WinOver mail is not connected yet. Clicking will not really send anything, but you will see the whole flow.",
   "potw.od": "From",
   "potw.odpowiedzDo": "replies go to {email}",
@@ -818,6 +821,8 @@ export const en: Record<keyof typeof pl, string> = {
   "raport.akcja.tytul": "Action page: residents' voice",
   "raport.akcja.opis":
     "Residents wrote to their MPs from the action page. Messages sent through WinOver are counted after the resident confirms by email; messages sent from residents' own mailboxes are counted as “Open in email” clicks.",
+  "raport.akcja.opisUrzad":
+    "Residents wrote to the campaign's recipients from the action page. Messages sent through WinOver are counted after the resident confirms by email; messages sent from residents' own mailboxes are counted as “Open in email” clicks.",
   "raport.akcja.podpisalo": "Signed",
   "raport.akcja.tydzien": "+{n} in the last 7 days",
   "raport.akcja.otworzylo": "Opened their own email app with a ready message",
@@ -1158,7 +1163,9 @@ export const en: Record<keyof typeof pl, string> = {
   "druk.tytul": "Residents' messages",
   "druk.opis": "Messages confirmed by residents, grouped by recipient. Print or save as PDF for a meeting.",
   "druk.drukuj": "Print / save PDF",
-  "druk.wiadomosci": "messages",
+  "druk.wiadomosci.1": "{n} message",
+  "druk.wiadomosci.few": "{n} messages",
+  "druk.wiadomosci.many": "{n} messages",
   "druk.brak": "No confirmed messages yet.",
   "klub.dla": "Send to:",
   "klub.wszystkie": "all groups",

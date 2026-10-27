@@ -402,7 +402,7 @@ export function Wysylka({
               >
                 {pracuje === "partia"
                   ? t("wysylka.wysylam")
-                  : t("wysylka.wyslijN", { n: Math.min(ile, Math.max(maxPartia, 1)) })}
+                  : t.n("wysylka.wyslijN", Math.min(ile, Math.max(maxPartia, 1)))}
               </button>
             </div>
             {stan && stan.zostaloDzis === 0 && stan.limit > 0 && (

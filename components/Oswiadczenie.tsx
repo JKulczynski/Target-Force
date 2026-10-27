@@ -69,8 +69,10 @@ export function Oswiadczenie({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kampa
     };
   }, [k.id]);
 
-  const zm = <K extends keyof TrescOswiadczenia>(klucz: K, wartosc: TrescOswiadczenia[K]) =>
+  const zm = <K extends keyof TrescOswiadczenia>(klucz: K, wartosc: TrescOswiadczenia[K]) => {
+    setBlad(null); // stary komunikat ("Podaj nazwę...") nie ma wisieć po poprawieniu pola (N3, 27.10)
     setT((s) => ({ ...s, [klucz]: wartosc }));
+  };
 
   async function zloz(e: React.FormEvent) {
     e.preventDefault();
