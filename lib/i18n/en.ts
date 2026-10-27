@@ -912,6 +912,7 @@ export const en: Record<keyof typeof pl, string> = {
     "The link has expired or was already used. Ask for a new invitation or send yourself a new link via “Forgot your password?” on the sign-in page.",
   "haslo.pokaz": "Show",
   "haslo.ukryj": "Hide",
+  "haslo.dla": "You are setting the password for: {email}",
   "haslo.nowe": "New password",
   "haslo.zapisuje": "Saving...",
   "haslo.zapisz": "Save password and enter",

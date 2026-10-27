@@ -17,29 +17,36 @@ export default function UstawHaslo() {
   const { t } = useT();
   const router = useRouter();
   const [gotowa, setGotowa] = useState<boolean | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [haslo, setHaslo] = useState("");
   const [blad, setBlad] = useState<string | null>(null);
   const [zapisuje, setZapisuje] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
-    // Sesja z hasha jest zapisywana chwilę po starcie klienta, dlatego nasłuch, nie jednorazowy odczyt.
-    const { data } = supabase.auth.onAuthStateChange((_zdarzenie, sesja) => {
-      setGotowa(!!sesja);
-    });
+    // 27.10: osoba zalogowana na inne konto (np. podgląd) klikała link z zaproszenia i ustawiała hasło
+    // NIE zaproszonemu, tylko sobie, bo stara sesja z cookie wygrywała z sesją z linku. Dlatego sesja
+    // z linku (hash z zaproszenia albo ?code= z resetu) jest ustawiana jawnie i zastępuje poprzednią.
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const accessToken = hash.get("access_token");
+    const refreshToken = hash.get("refresh_token");
     const kod = new URLSearchParams(window.location.search).get("code");
-    const start = kod
-      ? supabase.auth.exchangeCodeForSession(kod).catch(() => null)
-      : Promise.resolve(null);
-    start.then(() =>
-      supabase.auth.getSession().then(({ data: d }) => {
-        if (d.session) setGotowa(true);
-      }),
-    );
-    const czas = setTimeout(() => setGotowa((g) => g ?? false), 4000);
+    const zLinku = accessToken && refreshToken
+      ? supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ data }) => data.session)
+      : kod
+        ? supabase.auth.exchangeCodeForSession(kod).then(({ data }) => data.session)
+        : supabase.auth.getSession().then(({ data }) => data.session);
+    let aktualny = true;
+    zLinku
+      .catch(() => null)
+      .then((sesja) => {
+        if (!aktualny) return;
+        if (accessToken || kod) window.history.replaceState(null, "", window.location.pathname);
+        setEmail(sesja?.user.email ?? null);
+        setGotowa(!!sesja);
+      });
     return () => {
-      data.subscription.unsubscribe();
-      clearTimeout(czas);
+      aktualny = false;
     };
   }, []);
 
@@ -75,6 +82,9 @@ export default function UstawHaslo() {
         >
           {t("haslo.linkWygasl")}
         </p>
+      )}
+      {gotowa && email && (
+        <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">{t("haslo.dla", { email })}</p>
       )}
       {gotowa && (
         <form onSubmit={zapisz} className="mt-6 space-y-4">
