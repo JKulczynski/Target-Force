@@ -364,6 +364,12 @@ export async function wyslijKolejke(
     const pola = polaKontaktu(p.kontakt, glosowania.get(p.kontakt.id));
     const temat = personalizuj(p.temat, pola);
     const tresc = personalizuj(p.tresc, pola);
+    // K1 (27.10): wariant z polem bez danych (np. {okreg} przy własnej liście) dałby mail bez tematu.
+    // Kontakt zostaje w kolejce (bez wiersza w wiadomosci), po poprawieniu wariantu wysyłka ruszy.
+    if (!temat.trim()) {
+      bledy.push(t("wysylka.pustyTemat", { email: p.kontakt.email ?? "", krok: p.krok + 1 }));
+      continue;
+    }
     const { data: wiersz, error } = await supabase
       .from("wiadomosci")
       .insert({

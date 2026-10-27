@@ -54,3 +54,43 @@ export function polaKontaktu(
 
 /** Przykładowe wartości do maila testowego, żeby nadawca zobaczył, jak wygląda personalizacja. */
 export const POLA_TESTOWE: Pola = { imie: "Andrzej", nazwisko: "Adamczyk", okreg: "Kraków", wojewodztwo: "małopolskie" };
+
+export type NazwaPola = (typeof POLA)[number];
+
+/**
+ * Które pola mają odbiorcy z danych źródeł (27.10, błąd K1: własna lista nie ma okręgu, więc temat
+ * z {okreg} wychodził pusty). Sejm daje okręg i głosowanie (lib/zrodla-serwer.ts), samorządy okręg
+ * i województwo; własna lista, PE, Tweede Kamer, ministerstwa i firmy tylko imię i nazwisko.
+ * {gmina} podaje sam mieszkaniec na stronie akcji, więc istnieje tylko w wiadomościach sympatyka.
+ */
+export function polaZrodel(zrodla: readonly string[], rola: "nadawca" | "sympatyk" = "nadawca"): NazwaPola[] {
+  const ma = new Set<NazwaPola>(["imie", "nazwisko"]);
+  if (zrodla.includes("sejm")) {
+    ma.add("okreg");
+    ma.add("glosowanie");
+  }
+  if (zrodla.includes("samorzady")) {
+    ma.add("okreg");
+    ma.add("wojewodztwo");
+  }
+  if (rola === "sympatyk") ma.add("gmina");
+  return POLA.filter((p) => ma.has(p));
+}
+
+/** Pola użyte w tekście, których odbiorcy nie mają: zdanie z takim polem znika z maila, temat byłby pusty. */
+export function polaBezDanych(tekst: string, dostepne: readonly NazwaPola[]): NazwaPola[] {
+  const uzyte = [...tekst.matchAll(WZOR)].map((m) => m[1] as NazwaPola);
+  return [...new Set(uzyte.filter((p) => !dostepne.includes(p)))];
+}
+
+/** Przykładowe pola do testu: tylko te, które odbiorcy kampanii naprawdę mają (test ma pokazywać prawdziwą wysyłkę). */
+export function polaTestowe(zrodla: readonly string[]): Pola {
+  const dostepne = polaZrodel(zrodla);
+  return Object.fromEntries(Object.entries(POLA_TESTOWE).filter(([k]) => dostepne.includes(k as NazwaPola)));
+}
+
+/** Temat bez pól, gdy po personalizacji nic nie zostało (strona akcji: mieszkaniec i tak widzi temat i może poprawić). */
+export function tematAwaryjny(temat: string, zapasowy: string): string {
+  const bez = temat.replace(/\s*\{[^}]*\}/g, "").replace(/\s+([,.;:!?])/g, "$1").replace(/^[\s,;:]+|[\s,;:]+$/g, "").trim();
+  return bez || zapasowy;
+}

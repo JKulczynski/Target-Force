@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { ZRODLA, type ZrodloId } from "@/lib/types";
 import { WARSZTAT } from "@/lib/prompty/pisanie";
+import { POLA, polaZrodel } from "@/lib/personalizacja";
 import { psychografiaDla } from "@/lib/prompty/odbiorcy";
 import { tSerwer } from "@/lib/i18n/serwer";
 import { dataSlownie, type Glosowanie } from "@/lib/glosowania";
@@ -66,6 +67,8 @@ export async function POST(
     return NextResponse.json({ blad: t("api.nieZnalezionoKampanii") }, { status: 404 });
 
   const zrodla = (k.zrodla as ZrodloId[]) ?? [];
+  const polaDozwolone = polaZrodel(zrodla, rola);
+  const polaZakazane = POLA.filter((p) => !polaDozwolone.includes(p));
   const jezyk = zrodla.map((z) => JEZYK[z]).find(Boolean) ?? "polski";
   const liczbaWariantow =
     rola === "sympatyk"
@@ -93,6 +96,8 @@ export async function POST(
     `Materiały: ${k.materialy || "(brak)"}`,
     "",
     `Napisz wiadomości w języku: ${jezyk}. Psychografię napisz po polsku.`,
+    // K1 (27.10): własna lista nie ma okręgu; zdanie z polem bez danych znika z maila, temat z nim jest pusty.
+    `Pola personalizacji dozwolone w tej kampanii: ${polaDozwolone.map((p) => `{${p}}`).join(", ")}.${polaZakazane.length ? ` ZAKAZ używania pól ${polaZakazane.map((p) => `{${p}}`).join(", ")} w temacie i treści: odbiorcy nie mają tych danych, a zdanie z takim polem zostanie usunięte z maila (temat byłby pusty). Zamiast nich pisz ogólnie, bez nazwy miejsca.` : ""}`,
     ...(zrodla.includes("sejm")
       ? [
           "Lokalny argument: odbiorcami są posłowie na Sejm. W jednym zdaniu każdej wiadomości naturalnie użyj pola {okreg} (miasto okręgu wyborczego posła, np. Kraków), najlepiej w zdaniu o skutku sprawy dla mieszkańców, np. „...a w {okreg} dotyczy to kilkuset rodzin”. Nie pisz formułki w stylu „piszę do Pana/Pani jako posła z okręgu”. Pola wstawimy automatycznie, nie wpisuj za nie żadnych nazw. Nie używaj zwrotów zależnych od płci poza formą „Pan/Pani”.",

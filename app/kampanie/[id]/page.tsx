@@ -254,6 +254,7 @@ export default function SzczegolyKampanii() {
           <div id="wiadomosci" className="scroll-mt-20">
             <Wiadomosci
               kampaniaId={k.id}
+              zrodla={k.zrodla}
               fakty={[
                 k.nazwa,
                 k.cel,

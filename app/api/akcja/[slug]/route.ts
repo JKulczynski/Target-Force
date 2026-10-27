@@ -7,7 +7,7 @@ import {
   terytPowiatu,
   type Gmina,
 } from "@/lib/akcja";
-import { personalizuj } from "@/lib/personalizacja";
+import { personalizuj, tematAwaryjny } from "@/lib/personalizacja";
 import { tSerwer } from "@/lib/i18n/serwer";
 
 export const runtime = "nodejs";
@@ -111,7 +111,7 @@ export async function POST(
 
   const { data: k } = await admin
     .from("kampanie")
-    .select("id, akcja_wlaczona, zgoda_zespolu")
+    .select("id, nazwa, akcja_wlaczona, zgoda_zespolu")
     .eq("akcja_slug", slug)
     .maybeSingle();
   if (!k || !k.akcja_wlaczona)
@@ -181,7 +181,7 @@ export async function POST(
         : undefined,
     gmina: nazwaGminyDoTekstu(gmina),
   };
-  const temat = personalizuj(wariant.temat, pola);
+  const temat = tematAwaryjny(personalizuj(wariant.temat, pola), k.nazwa);
   const podpis = [imie, nazwisko].filter(Boolean).join(" ");
   // Zdanie sympatyka wchodzi przed ostatni akapit (prośbę albo pożegnanie), żeby prośba została na końcu.
   const akapity = personalizuj(wariant.tresc, pola).trim().split(/\n\s*\n/);

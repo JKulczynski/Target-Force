@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { kontrolaWiadomosci } from "@/lib/kontrola";
+import { polaZrodel, type NazwaPola } from "@/lib/personalizacja";
 import { WskazowkiPrawne } from "@/components/WskazowkiPrawne";
 import { createClient } from "@/lib/supabase/client";
 import { POLE } from "@/components/ui";
@@ -22,11 +23,14 @@ const pole = POLE;
 export function Wiadomosci({
   kampaniaId,
   fakty,
+  zrodla = [],
   onZmiana,
 }: {
   kampaniaId: string;
   /** Cel, materiały i dane kampanii: na ich tle sprawdzamy liczby w wiadomościach. */
   fakty: string;
+  /** Źródła odbiorców: z nich wynika, które pola personalizacji mają dane (kontrola przed zatwierdzeniem). */
+  zrodla?: readonly string[];
   onZmiana?: () => void;
 }) {
   const { t } = useT();
@@ -161,7 +165,7 @@ export function Wiadomosci({
 
       <div className="mt-5 space-y-4">
         {aktywne.map((w) => (
-          <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} kampaniaId={kampaniaId} kluby={kluby} />
+          <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} kampaniaId={kampaniaId} kluby={kluby} dostepnePola={polaZrodel(zrodla)} />
         ))}
       </div>
     </section>
@@ -175,6 +179,7 @@ export function KartaWariantu({
   kampaniaId,
   rola = "nadawca",
   kluby = [],
+  dostepnePola,
 }: {
   w: Wariant;
   fakty: string;
@@ -184,6 +189,8 @@ export function KartaWariantu({
   rola?: "nadawca" | "sympatyk";
   /** Kluby posłów z listy odbiorców; gdy są, pierwszą wiadomość można przypisać do klubu. */
   kluby?: string[];
+  /** Pola z danymi u odbiorców (lib/personalizacja polaZrodel); pole spoza listy dostaje ostrzeżenie. */
+  dostepnePola?: readonly NazwaPola[];
 }) {
   const { t, jezyk } = useT();
   const [temat, setTemat] = useState(w.temat);
@@ -192,8 +199,8 @@ export function KartaWariantu({
   const [otwarta, setOtwarta] = useState(w.status !== "zatwierdzony");
   const zmieniony = temat !== w.temat || tresc !== w.tresc;
   const uwagi = useMemo(
-    () => kontrolaWiadomosci({ temat, tresc, krok: w.krok }, fakty, jezyk),
-    [temat, tresc, w.krok, fakty, jezyk],
+    () => kontrolaWiadomosci({ temat, tresc, krok: w.krok }, fakty, jezyk, dostepnePola),
+    [temat, tresc, w.krok, fakty, jezyk, dostepnePola],
   );
   const etykieta =
     w.krok === 0

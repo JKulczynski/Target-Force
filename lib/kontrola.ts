@@ -1,4 +1,4 @@
-import { POLA } from "@/lib/personalizacja";
+import { POLA, polaBezDanych, type NazwaPola } from "@/lib/personalizacja";
 import { tlumacz, type Jezyk } from "@/lib/i18n";
 
 /**
@@ -68,6 +68,8 @@ export function kontrolaWiadomosci(
   w: { temat: string; tresc: string; krok: number },
   fakty: string,
   jezyk: Jezyk = "pl",
+  /** Pola, które odbiorcy tej kampanii mają (lib/personalizacja polaZrodel). Bez tego sprawdzamy tylko nazwy pól. */
+  dostepne?: readonly NazwaPola[],
 ): Uwaga[] {
   const t = tlumacz(jezyk);
   const uwagi: Uwaga[] = [];
@@ -117,6 +119,13 @@ export function kontrolaWiadomosci(
         pola: `{${[...new Set(nieznane)].join("}, {")}}`,
         dostepne: `{${POLA.join("}, {")}}`,
       }),
+    });
+  // 7. Pole bez danych u odbiorców (27.10, K1): zdanie z nim znika, temat z nim byłby pusty.
+  const bezDanych = dostepne ? polaBezDanych(caly, dostepne) : [];
+  if (bezDanych.length && dostepne)
+    uwagi.push({
+      rodzaj: "technika",
+      opis: t("kontrola.brakPola", { pola: `{${bezDanych.join("}, {")}}`, dostepne: `{${dostepne.join("}, {")}}` }),
     });
   if (/\[[^\]]{2,40}\]/.test(caly))
     uwagi.push({ rodzaj: "technika", opis: t("kontrola.nawias") });

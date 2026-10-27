@@ -13,6 +13,7 @@ import type { Kampania } from "@/lib/types";
 import { KartaWariantu } from "@/components/Wiadomosci";
 import { Sympatycy } from "@/components/Sympatycy";
 import { useT } from "@/lib/i18n/klient";
+import { polaZrodel } from "@/lib/personalizacja";
 
 /**
  * Panel strony akcji na stronie kampanii: wejście do kreatora strony (12.10), wiadomości dla sympatyków
@@ -262,7 +263,7 @@ export function StronaAkcji({
         </div>
         <div className="mt-4 space-y-4">
           {aktywne.map((w) => (
-            <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} kampaniaId={k.id} rola="sympatyk" />
+            <KartaWariantu key={w.id} w={w} fakty={fakty} onZmiana={wczytaj} kampaniaId={k.id} rola="sympatyk" dostepnePola={polaZrodel(k.zrodla, "sympatyk")} />
           ))}
         </div>
       </div>

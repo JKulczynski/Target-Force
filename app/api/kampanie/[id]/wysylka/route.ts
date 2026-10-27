@@ -5,7 +5,7 @@ import type { FiltrOdbiorcow as Filtr } from "@/lib/types";
 import { odszyfruj } from "@/lib/szyfr";
 import { opiszBladSmtp, transport } from "@/lib/smtp";
 import { przygotujOdbiorcow } from "@/lib/odbiorcy-serwer";
-import { personalizuj, POLA_TESTOWE } from "@/lib/personalizacja";
+import { personalizuj, polaTestowe } from "@/lib/personalizacja";
 import { poleGlosowania, type Glosowanie } from "@/lib/glosowania";
 import { tSerwer } from "@/lib/i18n/serwer";
 import {
@@ -210,7 +210,7 @@ export async function POST(
     // {glosowanie} w teście: przykład głosu "za" z wybranego głosowania kampanii.
     const { data: kg } = await supabase.from("kampanie").select("glosowanie").eq("id", id).maybeSingle();
     const g = kg?.glosowanie as Glosowanie | null;
-    const polaTestu = { ...POLA_TESTOWE, glosowanie: g ? poleGlosowania(g, "YES") : undefined };
+    const polaTestu = { ...polaTestowe((k.zrodla as string[]) ?? []), glosowanie: g ? poleGlosowania(g, "YES") : undefined };
     try {
       for (const w of doTestu) {
         const etykieta =
