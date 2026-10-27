@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { POLE } from "@/components/ui";
+
+import { PoleHasla } from "@/components/PoleHasla";
 import { useT } from "@/lib/i18n/klient";
 
-const pole = `mt-2 ${POLE}`;
 
 /**
  * Tu trafia link z zaproszenia do zespołu i link "zapomniałem hasła".
@@ -80,15 +80,7 @@ export default function UstawHaslo() {
         <form onSubmit={zapisz} className="mt-6 space-y-4">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">{t("haslo.nowe")}</span>
-            <input
-              type="password"
-              required
-              minLength={6}
-              autoComplete="new-password"
-              value={haslo}
-              onChange={(e) => setHaslo(e.target.value)}
-              className={pole}
-            />
+            <PoleHasla autoComplete="new-password" value={haslo} onChange={setHaslo} />
             <span className="mt-1.5 block text-xs text-slate-500">{t("login.min6")}</span>
           </label>
           {blad && (

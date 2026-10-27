@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { przypomnijHaslo, zaloguj, zalozKonto } from "./actions";
 import { POLE } from "@/components/ui";
+import { PoleHasla } from "@/components/PoleHasla";
 import { tlumacz, type Klucz } from "@/lib/i18n";
 import { jezykZCookie } from "@/lib/i18n/serwer";
 
@@ -93,14 +94,7 @@ export default async function Logowanie({
           </label>
           <label className="block">
             <span className="text-sm font-medium text-slate-700">{t("login.haslo")}</span>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={6}
-              autoComplete={rejestracja ? "new-password" : "current-password"}
-              className={pole}
-            />
+            <PoleHasla name="password" autoComplete={rejestracja ? "new-password" : "current-password"} />
             {rejestracja && (
               <span className="mt-1.5 block text-xs text-slate-500">{t("login.min6")}</span>
             )}

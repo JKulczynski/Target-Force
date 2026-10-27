@@ -911,6 +911,8 @@ export const pl = {
   "haslo.linkWygasl":
     "Link wygasł albo został już użyty. Poproś o nowe zaproszenie albo wyślij sobie nowy link przez „Nie pamiętasz hasła?” na stronie logowania.",
   "haslo.nowe": "Nowe hasło",
+  "haslo.pokaz": "Pokaż",
+  "haslo.ukryj": "Ukryj",
   "haslo.zapisuje": "Zapisuję...",
   "haslo.zapisz": "Zapisz hasło i wejdź",
 
