@@ -398,6 +398,7 @@ export const en: Record<keyof typeof pl, string> = {
 
   // Action page panel (inside the campaign)
   "akcjaPanel.bladSlug": "Page address: lowercase letters, digits and hyphens, 2-60 characters.",
+  "akcjaPanel.bladOpis": "The page needs a description of the cause (for residents) before you enable it.",
   "akcjaPanel.bladTytul": "The page needs a title before you enable it.",
   "akcjaPanel.slugZajety": "This page address is already taken by another campaign.",
   "akcjaPanel.tytul": "Action page for supporters",
@@ -919,6 +920,8 @@ export const en: Record<keyof typeof pl, string> = {
     "You enter your name, municipality and email. We match the MP for your constituency or your local office.",
   "akcja.jak1Urzad":
     "You enter your name, municipality and email. We match the office responsible for this matter in your area.",
+  "akcja.jak1Lista":
+    "You enter your name, municipality and email. Your message goes to one of the recipients chosen by the campaign organiser.",
   "akcja.jak2":
     "You get a ready message. You can change it in your own words.",
   "akcja.jak3":

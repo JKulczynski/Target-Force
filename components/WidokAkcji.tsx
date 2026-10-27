@@ -20,6 +20,7 @@ export function WidokAkcji({
   formularz,
   waski = false,
   doPoslow = true,
+  zListy = false,
 }: {
   nadawca: string;
   tytul: string;
@@ -33,6 +34,8 @@ export function WidokAkcji({
   waski?: boolean;
   /** Jak w AkcjaFormularz: „poseł” albo „adresat” w opisie kroków. */
   doPoslow?: boolean;
+  /** Własna lista organizatora: adresat z listy, nie po gminie (inny opis kroku 1). */
+  zListy?: boolean;
 }) {
   const { t } = useT();
   const yt = film ? youtubeId(film) : null;
@@ -101,7 +104,7 @@ export function WidokAkcji({
           <div className="mt-8 rounded-xl bg-slate-100 p-5 text-sm text-slate-600">
             <p className="font-medium text-slate-800">{t("akcja.jakDziala")}</p>
             <ol className="mt-2 list-decimal space-y-1 pl-5">
-              <li>{t(doPoslow ? "akcja.jak1" : "akcja.jak1Urzad")}</li>
+              <li>{t(zListy ? "akcja.jak1Lista" : doPoslow ? "akcja.jak1" : "akcja.jak1Urzad")}</li>
               <li>{t("akcja.jak2")}</li>
               <li>{t("akcja.jak3")}</li>
             </ol>

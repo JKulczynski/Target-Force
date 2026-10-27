@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AkcjaFormularz } from "@/components/AkcjaFormularz";
 import { WidokAkcji } from "@/components/WidokAkcji";
 import { oczyscWyglad, type WygladAkcji } from "@/lib/wyglad";
-import { doPoslow } from "@/lib/akcja";
+import { doPoslow, zWlasnejListy } from "@/lib/akcja";
 import { tlumacz } from "@/lib/i18n";
 import { jezykZCookie } from "@/lib/i18n/serwer";
 import type { TrescOswiadczenia } from "@/lib/oswiadczenie";
@@ -27,6 +27,7 @@ type Akcja = {
   gotowa: boolean;
   wyglad: WygladAkcji;
   doPoslow: boolean;
+  zListy: boolean;
   /** Z zaakceptowanego oświadczenia zleceniodawcy; null, gdy go nie ma. */
   prowadzi: {
     zleceniodawca: string;
@@ -97,6 +98,7 @@ async function akcja(slug: string, domyslnyTytul: string): Promise<Akcja | null>
     gotowa: (warianty ?? 0) > 0 && (odbiorcy ?? 0) > 0,
     wyglad: oczyscWyglad(k.akcja_wyglad),
     doPoslow: doPoslow(k.zrodla),
+    zListy: zWlasnejListy(k.zrodla),
   };
 }
 
@@ -142,6 +144,7 @@ export default async function StronaAkcjiPubliczna({
       prowadzi={prowadzi}
       wyglad={a.wyglad}
       doPoslow={a.doPoslow}
+      zListy={a.zListy}
       formularz={
         <AkcjaFormularz
           slug={slug}
@@ -152,6 +155,7 @@ export default async function StronaAkcjiPubliczna({
           przycisk={a.wyglad.przycisk}
           dziekujemy={a.wyglad.dziekujemy}
           doPoslow={a.doPoslow}
+          zListy={a.zListy}
         />
       }
     />

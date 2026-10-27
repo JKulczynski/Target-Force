@@ -88,6 +88,8 @@ export default function KreatorStrony() {
     const s = slug.trim();
     if (!POPRAWNY_SLUG.test(s)) return setBlad(t("akcjaPanel.bladSlug"));
     if (wlaczona && !tytul.trim()) return setBlad(t("akcjaPanel.bladTytul"));
+    // S2 (27.10): bez opisu mieszkaniec widział "Opis sprawy pojawi się wkrótce" na włączonej stronie.
+    if (wlaczona && !opis.trim()) return setBlad(t("akcjaPanel.bladOpis"));
     setZapisuje(true);
     try {
       const nowa = await zmienKampanie(k.id, {

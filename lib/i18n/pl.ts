@@ -399,6 +399,7 @@ export const pl = {
 
   // Panel strony akcji (w kampanii)
   "akcjaPanel.bladSlug": "Adres strony: małe litery, cyfry i myślniki, 2-60 znaków.",
+  "akcjaPanel.bladOpis": "Strona potrzebuje opisu sprawy (dla mieszkańców), zanim ją włączysz.",
   "akcjaPanel.bladTytul": "Strona potrzebuje tytułu, zanim ją włączysz.",
   "akcjaPanel.slugZajety": "Ten adres strony jest już zajęty przez inną kampanię.",
   "akcjaPanel.tytul": "Strona akcji dla sympatyków",
@@ -919,6 +920,8 @@ export const pl = {
     "Podajesz imię, nazwisko, gminę i e-mail. Dobieramy posła z Twojego okręgu albo Twój urząd.",
   "akcja.jak1Urzad":
     "Podajesz imię, nazwisko, gminę i e-mail. Dobieramy adresata, który odpowiada za tę sprawę w Twojej okolicy.",
+  "akcja.jak1Lista":
+    "Podajesz imię, nazwisko, gminę i e-mail. Wiadomość trafi do jednego z adresatów wskazanych przez organizatora kampanii.",
   "akcja.jak2":
     "Dostajesz gotową wiadomość. Możesz ją zmienić po swojemu.",
   "akcja.jak3":

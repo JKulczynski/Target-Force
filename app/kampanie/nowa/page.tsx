@@ -210,8 +210,8 @@ export default function NowaKampania() {
       const nowa = await dodajKampanie({
         ...dane,
         nazwa: dane.nazwa.trim(),
-        // Petycja: opis strony z podpisami startuje od celu kampanii, osoba poprawia go w następnym ekranie.
-        ...(forma === "petycja" && !dane.akcjaOpis ? { akcjaOpis: dane.cel.trim() } : {}),
+        // Opis strony akcji startuje od celu kampanii (każda forma; S2 27.10), osoba poprawia go w kreatorze strony.
+        ...(!dane.akcjaOpis ? { akcjaOpis: dane.cel.trim() } : {}),
       });
       if (lista && dane.zrodla.includes("wlasna_lista")) {
         await dodajKontakty(nowa.id, lista.wiersze);

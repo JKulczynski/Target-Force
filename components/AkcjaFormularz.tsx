@@ -61,6 +61,7 @@ export function AkcjaFormularz({
   przycisk,
   dziekujemy,
   doPoslow = true,
+  zListy = false,
 }: {
   slug: string;
   razem: number;
@@ -72,6 +73,8 @@ export function AkcjaFormularz({
   dziekujemy?: string;
   /** Kampania do posłów (Sejm, PE, Tweede Kamer) czy do urzędów: zmienia słowo „poseł” w podpowiedziach. */
   doPoslow?: boolean;
+  /** Własna lista organizatora: nie pokazujemy adresu e-mail adresata każdemu odwiedzającemu (S3, 27.10). */
+  zListy?: boolean;
 }) {
   const { t } = useT();
   const [krok, setKrok] = useState<"dane" | "wiadomosc" | "potwierdz" | "dzieki">("dane");
@@ -420,7 +423,7 @@ export function AkcjaFormularz({
             <p className="text-xs font-medium text-slate-500">{t("akcja.do")}</p>
             <p className="mt-0.5 font-medium text-slate-900">{w.odbiorca.nazwa}</p>
             <p className="text-slate-600">
-              {w.odbiorca.email}
+              {!zListy && w.odbiorca.email}
               {w.odbiorca.okreg && t("akcja.okreg", { okreg: w.odbiorca.okreg })}
             </p>
           </div>
