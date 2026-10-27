@@ -57,6 +57,7 @@ export default function RaportKampanii() {
   const [oswiadczenie, setOswiadczenie] = useState<{ tresc: TrescOswiadczenia; utworzone: string; wersja_tresci: number } | null>(null);
   const [akcja, setAkcja] = useState<{
     razem: number;
+    tydzien: number;
     otworzyli: number;
     udostepnili: number;
     zrodla: { nazwa: string; ile: number }[];
@@ -74,7 +75,7 @@ export default function RaportKampanii() {
       .then((d) => d?.oswiadczenie && setOswiadczenie(d.oswiadczenie))
       .catch(() => {});
     podpisyKampanii(id, 1)
-      .then((p) => setAkcja({ razem: p.razem, otworzyli: p.otworzyli, udostepnili: p.udostepnili, zrodla: p.zrodla }))
+      .then((p) => setAkcja({ razem: p.razem, tydzien: p.tydzien, otworzyli: p.otworzyli, udostepnili: p.udostepnili, zrodla: p.zrodla }))
       .catch(() => {});
     fetch(`/api/kampanie/${id}/odbiorcy`)
       .then((odp) => (odp.ok ? odp.json() : null))
@@ -259,10 +260,13 @@ export default function RaportKampanii() {
               [t("raport.akcja.podpisalo"), akcja.razem],
               [t("raport.akcja.otworzylo"), akcja.otworzyli],
               [t("raport.akcja.udostepnilo"), akcja.udostepnili],
-            ].map(([e, v]) => (
+            ].map(([e, v], i) => (
               <div key={String(e)}>
                 <p className="text-3xl font-semibold tracking-tight">{v}</p>
-                <p className="mt-1 text-xs text-slate-500">{e}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {e}
+                  {i === 0 && akcja.tydzien > 0 && <span className="text-emerald-700"> · {t("raport.akcja.tydzien", { n: akcja.tydzien })}</span>}
+                </p>
               </div>
             ))}
           </div>

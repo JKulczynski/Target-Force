@@ -413,6 +413,7 @@ export const pl = {
   "akcjaPanel.skad": "Skąd przyszli podpisujący",
   "akcjaPanel.utm": "W reklamach i postach używaj linku z parametrami, np. {adres}. Bez nich liczymy domenę, z której ktoś przyszedł.",
   "akcjaPanel.podpisow": "Podpisów",
+  "akcjaPanel.dzis": "+{n} dziś",
   "akcjaPanel.otworzyloPoczte": "Otworzyło pocztę",
   "akcjaPanel.udostepnilo": "Udostępniło",
   "akcjaPanel.tytulStrony": "Tytuł strony",
@@ -816,6 +817,7 @@ export const pl = {
   "raport.akcja.opis":
     "Mieszkańcy pisali do swoich posłów ze strony akcji. Wiadomości wysłane przez WinOver liczymy po potwierdzeniu mailem; wysyłki z własnej poczty liczymy jako kliknięcia „Otwórz w poczcie”.",
   "raport.akcja.podpisalo": "Podpisało",
+  "raport.akcja.tydzien": "+{n} w ostatnich 7 dniach",
   "raport.akcja.otworzylo": "Otworzyło własną pocztę z gotowym mailem",
   "raport.akcja.udostepnilo": "Udostępniło dalej",
   "raport.skad": "Skąd przyszli: ",

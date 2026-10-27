@@ -204,10 +204,15 @@ export function StronaAkcji({
             [t("akcjaPanel.otworzyloPoczte"), podpisy.otworzyli],
             [t("akcjaPanel.odpowiedzi"), podpisy.odpowiedzi],
             [t("akcjaPanel.udostepnilo"), podpisy.udostepnili],
-          ].map(([e, v]) => (
+          ].map(([e, v], i) => (
             <div key={String(e)}>
               <dt className="text-xs text-slate-500">{e}</dt>
-              <dd className="text-xl font-semibold tabular-nums text-slate-900">{v}</dd>
+              <dd className="text-xl font-semibold tabular-nums text-slate-900">
+                {v}
+                {i === 0 && podpisy.dzis > 0 && (
+                  <span className="ml-1.5 text-xs font-medium text-emerald-700">{t("akcjaPanel.dzis", { n: podpisy.dzis })}</span>
+                )}
+              </dd>
             </div>
           ))}
         </dl>

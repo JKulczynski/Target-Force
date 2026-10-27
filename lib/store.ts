@@ -274,9 +274,15 @@ export async function podpisyKampanii(
   czekaja: number;
   odpowiedzi: number;
   zgodyKontakt: number;
+  /** Podpisy od północy (czas przeglądarki) i z ostatnich 7 dni: "+N dziś" w panelu, "+N w 7 dni" w raporcie. */
+  dzis: number;
+  tydzien: number;
   zrodla: { nazwa: string; ile: number }[];
 }> {
   const supabase = createClient();
+  const polnoc = new Date();
+  polnoc.setHours(0, 0, 0, 0);
+  const tydzienTemu = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const [
     { data, error },
     { count: razem },
@@ -287,6 +293,8 @@ export async function podpisyKampanii(
     { count: czekaja },
     { count: odpowiedzi },
     { count: zgodyKontakt },
+    { count: dzis },
+    { count: tydzien },
   ] = await Promise.all([
     supabase
       .from("podpisy")
@@ -306,6 +314,8 @@ export async function podpisyKampanii(
       .in("status_wysylki", ["czeka_na_potwierdzenie", "w_kolejce"]),
     supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).not("zglosil_odpowiedz", "is", null),
     supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).eq("zgoda_informacje", true),
+    supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).gte("utworzony", polnoc.toISOString()),
+    supabase.from("podpisy").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId).gte("utworzony", tydzienTemu.toISOString()),
   ]);
   if (error) throw error;
   // Źródło wejścia: utm_source, w drugiej kolejności domena odsyłacza, reszta "bezpośrednio / nieznane".
@@ -341,6 +351,8 @@ export async function podpisyKampanii(
     czekaja: czekaja ?? 0,
     odpowiedzi: odpowiedzi ?? 0,
     zgodyKontakt: zgodyKontakt ?? 0,
+    dzis: dzis ?? 0,
+    tydzien: tydzien ?? 0,
   };
 }
 

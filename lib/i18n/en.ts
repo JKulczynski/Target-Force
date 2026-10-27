@@ -412,6 +412,7 @@ export const en: Record<keyof typeof pl, string> = {
   "akcjaPanel.skad": "Where the signers came from",
   "akcjaPanel.utm": "In ads and posts use a link with parameters, e.g. {adres}. Without them we count the domain the visitor came from.",
   "akcjaPanel.podpisow": "Signatures",
+  "akcjaPanel.dzis": "+{n} today",
   "akcjaPanel.otworzyloPoczte": "Opened email",
   "akcjaPanel.udostepnilo": "Shared",
   "akcjaPanel.tytulStrony": "Page title",
@@ -816,6 +817,7 @@ export const en: Record<keyof typeof pl, string> = {
   "raport.akcja.opis":
     "Residents wrote to their MPs from the action page. Messages sent through WinOver are counted after the resident confirms by email; messages sent from residents' own mailboxes are counted as “Open in email” clicks.",
   "raport.akcja.podpisalo": "Signed",
+  "raport.akcja.tydzien": "+{n} in the last 7 days",
   "raport.akcja.otworzylo": "Opened their own email app with a ready message",
   "raport.akcja.udostepnilo": "Shared further",
   "raport.skad": "Where they came from: ",
