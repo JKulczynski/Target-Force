@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/klient";
+import { liczPostawy, POSTAWY, type Postawa } from "@/lib/postawa";
 
 type Odbiorca = {
   id: string;
@@ -17,9 +18,16 @@ type Odbiorca = {
   kliknal: boolean;
   odpowiedzial: string | null;
   wypisany: boolean;
+  postawa: Postawa | null;
 };
 
-type Widok = "wszyscy" | "wyslane" | "kliknieci" | "odpisali";
+type Widok = "wszyscy" | "wyslane" | "kliknieci" | "odpisali" | Postawa;
+
+const KOLOR_POSTAWY: Record<Postawa, string> = {
+  za: "bg-emerald-600",
+  waha_sie: "bg-amber-400",
+  przeciw: "bg-slate-800",
+};
 
 /**
  * Lista odbiorców ze statusem. "Odpisał" zaznacza nadawca ręcznie, bo odpowiedzi trafiają do jego skrzynki.
@@ -85,13 +93,27 @@ export function Odbiorcy({
     }).catch(() => {});
   }
 
+  async function ustawPostawe(o: Odbiorca, postawa: Postawa | null) {
+    setLista((l) => l?.map((x) => (x.id === o.id ? { ...x, postawa } : x)) ?? null);
+    await fetch(`/api/kampanie/${kampaniaId}/odbiorcy`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kontaktId: o.id, postawa }),
+    }).catch(() => {});
+  }
+
   if (!lista || lista.length === 0) return null;
+
+  const postawy = liczPostawy(lista);
 
   const licz = {
     wszyscy: lista.length,
     wyslane: lista.filter((o) => o.wyslanychKrokow > 0).length,
     kliknieci: lista.filter((o) => o.kliknal).length,
     odpisali: lista.filter((o) => o.odpowiedzial).length,
+    za: postawy.za,
+    waha_sie: postawy.wahaSie,
+    przeciw: postawy.przeciw,
   };
   const fraza = szukaj.trim().toLowerCase();
   const widoczni = lista
@@ -102,7 +124,9 @@ export function Odbiorcy({
           ? o.kliknal
           : widok === "odpisali"
             ? !!o.odpowiedzial
-            : true,
+            : widok === "wszyscy"
+              ? true
+              : o.postawa === widok,
     )
     .filter(
       (o) =>
@@ -112,7 +136,7 @@ export function Odbiorcy({
         ),
     );
 
-  const zakladki: Widok[] = ["wszyscy", "wyslane", "kliknieci", "odpisali"];
+  const zakladki: Widok[] = ["wszyscy", "wyslane", "kliknieci", "odpisali", ...POSTAWY];
 
   return (
     <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
@@ -154,6 +178,22 @@ export function Odbiorcy({
           </button>
         ))}
       </div>
+      <div className="mt-4">
+        <div className="flex h-2 overflow-hidden rounded-full bg-slate-100">
+          {POSTAWY.map((p) => (
+            <div
+              key={p}
+              className={KOLOR_POSTAWY[p]}
+              style={{ width: `${((p === "za" ? postawy.za : p === "waha_sie" ? postawy.wahaSie : postawy.przeciw) / postawy.wszyscy) * 100}%` }}
+            />
+          ))}
+        </div>
+        <p className="mt-1.5 text-xs text-slate-600">
+          {t("odbiorcy.postawa.podsumowanie", { za: postawy.za, wszyscy: postawy.wszyscy, prog: postawy.prog })}
+          {postawy.brakuje > 0 ? ` · ${t("odbiorcy.postawa.brakuje", { n: postawy.brakuje })}` : ` · ${t("odbiorcy.postawa.wiekszosc")}`}
+          {postawy.nieWiadomo > 0 && <span className="text-slate-400"> · {t("odbiorcy.postawa.nieWiadomoIle", { n: postawy.nieWiadomo })}</span>}
+        </p>
+      </div>
       <p className="mt-2 text-xs text-slate-400">{t("odbiorcy.info")}</p>
       {infoOdpowiedzi && (
         <p className="mt-2 text-sm text-slate-700">{infoOdpowiedzi}</p>
@@ -165,6 +205,7 @@ export function Odbiorcy({
             <tr>
               <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.osoba")}</th>
               <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.klubOkreg")}</th>
+              <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.postawa")}</th>
               <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.wyslane")}</th>
               <th className="py-2 pr-3 font-medium">{t("odbiorcy.kol.kliknal")}</th>
               <th className="py-2 font-medium">{t("odbiorcy.kol.odpisal")}</th>
@@ -181,6 +222,24 @@ export function Odbiorcy({
                 </td>
                 <td className="py-2 pr-3 text-xs text-slate-500">
                   {[o.klub, o.okreg].filter(Boolean).join(" · ")}
+                </td>
+                <td className="py-2 pr-3 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <span className={`h-2 w-2 rounded-full ${o.postawa ? KOLOR_POSTAWY[o.postawa] : "bg-slate-200"}`} />
+                    <select
+                      aria-label={t("odbiorcy.kol.postawa")}
+                      className="rounded border border-slate-200 bg-white px-1 py-0.5 text-xs text-slate-700"
+                      value={o.postawa ?? ""}
+                      onChange={(e) => ustawPostawe(o, (e.target.value || null) as Postawa | null)}
+                    >
+                      <option value="">{t("odbiorcy.postawa.nieWiadomo")}</option>
+                      {POSTAWY.map((p) => (
+                        <option key={p} value={p}>
+                          {t(`odbiorcy.zakladka.${p}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </span>
                 </td>
                 <td className="py-2 pr-3 text-xs">
                   {o.blad ? (

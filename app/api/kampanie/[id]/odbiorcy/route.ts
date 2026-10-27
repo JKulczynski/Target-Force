@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { tSerwer } from "@/lib/i18n/serwer";
+import { czyPostawa } from "@/lib/postawa";
 
 export const runtime = "nodejs";
 
@@ -10,7 +11,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const supabase = await createClient();
 
   const [{ data: kontakty, error }, { data: wiad }] = await Promise.all([
-    supabase.from("kontakty").select("id, imie, nazwisko, email, organizacja, dane, odpowiedzial, wypisany").eq("kampania_id", id).order("nazwisko"),
+    supabase.from("kontakty").select("id, imie, nazwisko, email, organizacja, dane, odpowiedzial, wypisany, postawa").eq("kampania_id", id).order("nazwisko"),
     supabase.from("wiadomosci").select("id, kontakt_id, krok, status, wyslana, blad").eq("kampania_id", id),
   ]);
   if (error) {
@@ -43,25 +44,34 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
       kliknal: moje.some((w) => kliknieteWiad.has(w.id)),
       odpowiedzial: c.odpowiedzial,
       wypisany: c.wypisany,
+      postawa: czyPostawa(c.postawa) ? c.postawa : null,
     };
   });
   return NextResponse.json({ odbiorcy: lista });
 }
 
-/** Zaznaczenie "odpisał" (odpowiedzi trafiają do skrzynki nadawcy, nie do aplikacji). Odpisani nie dostają przypomnień. */
+/**
+ * Zaznaczenie "odpisał" (odpowiedzi trafiają do skrzynki nadawcy, nie do aplikacji; odpisani nie dostają przypomnień)
+ * albo postawy wobec sprawy (za / waha się / przeciw, null = nie wiadomo). W jednym żądaniu jedno albo drugie.
+ */
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const body = await req.json().catch(() => ({}));
   const kontaktId = String(body.kontaktId ?? "");
+  const t = await tSerwer();
+  let zmiana: Record<string, string | null>;
+  if ("postawa" in body) {
+    if (body.postawa !== null && !czyPostawa(body.postawa)) return NextResponse.json({ blad: t("api.nieudanoZapisac") }, { status: 400 });
+    zmiana = { postawa: body.postawa, postawa_zmieniona: new Date().toISOString() };
+  } else {
+    zmiana = { odpowiedzial: body.odpisal ? new Date().toISOString() : null };
+  }
   const supabase = await createClient();
   const { error } = await supabase
     .from("kontakty")
-    .update({ odpowiedzial: body.odpisal ? new Date().toISOString() : null })
+    .update(zmiana)
     .eq("id", kontaktId)
     .eq("kampania_id", id);
-  if (error) {
-    const t = await tSerwer();
-    return NextResponse.json({ blad: t("api.nieudanoZapisac") }, { status: 500 });
-  }
+  if (error) return NextResponse.json({ blad: t("api.nieudanoZapisac") }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
