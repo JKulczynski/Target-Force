@@ -187,6 +187,7 @@ const PRYWATNOSC: Record<Jezyk, Dokument> = {
         tytul: "6. Pliki cookie",
         akapity: [
           "Używamy wyłącznie niezbędnych plików cookie: sesji logowania i wybranego języka. Nie używamy cookie reklamowych.",
+          "Na stronie akcji liczymy wejścia (czas, źródło wejścia, rodzaj urządzenia: telefon lub komputer), żeby organizator widział, jak działa kampania. Nie zapisujemy przy tym plików cookie, adresu IP ani niczego, co pozwala rozpoznać osobę.",
         ],
       },
     ],
@@ -230,7 +231,10 @@ const PRYWATNOSC: Record<Jezyk, Dokument> = {
       },
       {
         tytul: "6. Cookies",
-        akapity: ["We use only necessary cookies: the login session and the chosen language. We use no advertising cookies."],
+        akapity: [
+          "We use only necessary cookies: the login session and the chosen language. We use no advertising cookies.",
+          "On action pages we count visits (time, traffic source, device type: phone or computer) so the organiser can see how the campaign performs. We store no cookies, no IP address and nothing that identifies a person.",
+        ],
       },
     ],
   },
