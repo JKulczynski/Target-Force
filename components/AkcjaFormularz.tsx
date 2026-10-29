@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { etykietaGminy, type Gmina } from "@/lib/akcja";
 import { POLE } from "@/components/ui";
 import { useT } from "@/lib/i18n/klient";
@@ -99,6 +99,23 @@ export function AkcjaFormularz({
   const [skopiowano, setSkopiowano] = useState(false);
   const [skopiowanoLink, setSkopiowanoLink] = useState(false);
   const ladowanie = useRef(false);
+
+  // Analityka (29.10): jedno wejście na załadowanie strony. Bez ciasteczek i bez zapisu w przeglądarce.
+  const wejscieZapisane = useRef(false);
+  useEffect(() => {
+    if (wejscieZapisane.current) return;
+    wejscieZapisane.current = true;
+    fetch(`/api/akcja/${slug}/wejscie`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        zrodlo: zrodloWejscia(),
+        urzadzenie: window.matchMedia("(pointer: coarse)").matches ? "telefon" : "komputer",
+        osadzona: new URLSearchParams(window.location.search).get("osadzona") === "1",
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [slug]);
 
   function wczytajGminy() {
     if (gminy || ladowanie.current) return;

@@ -356,6 +356,39 @@ export async function podpisyKampanii(
   };
 }
 
+/**
+ * Wejścia na stronę akcji (analityka, 29.10): góra lejka do raportu. Liczby z count (pełne),
+ * źródła z ostatnich 1000 wejść (limit odpowiedzi Supabase).
+ */
+export async function wejsciaKampanii(kampaniaId: string): Promise<{
+  razem: number;
+  tydzien: number;
+  telefon: number;
+  zrodla: { nazwa: string; ile: number }[];
+}> {
+  const supabase = createClient();
+  const tydzienTemu = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const baza = () => supabase.from("akcja_wejscia").select("id", { count: "exact", head: true }).eq("kampania_id", kampaniaId);
+  const [{ count: razem, error }, { count: tydzien }, { count: telefon }, { data: ostatnie }] = await Promise.all([
+    baza(),
+    baza().gte("utworzone", tydzienTemu.toISOString()),
+    baza().eq("urzadzenie", "telefon"),
+    supabase.from("akcja_wejscia").select("zrodlo").eq("kampania_id", kampaniaId).order("utworzone", { ascending: false }).limit(1000),
+  ]);
+  if (error) throw error;
+  const licz = new Map<string, number>();
+  for (const w of ostatnie ?? []) {
+    const nazwa = nazwaZrodla((w.zrodlo ?? {}) as Record<string, string>);
+    licz.set(nazwa, (licz.get(nazwa) ?? 0) + 1);
+  }
+  return {
+    razem: razem ?? 0,
+    tydzien: tydzien ?? 0,
+    telefon: telefon ?? 0,
+    zrodla: [...licz.entries()].map(([nazwa, ile]) => ({ nazwa, ile })).sort((a, b) => b.ile - a.ile),
+  };
+}
+
 /** Źródło wejścia do wyświetlenia: utm_source / utm_medium, potem domena odsyłacza. */
 function nazwaZrodla(z: Record<string, string>): string {
   return z.utm_source ? `${z.utm_source}${z.utm_medium ? ` / ${z.utm_medium}` : ""}` : z.ref || "bezpośrednio / nieznane";

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   kampania,
   podpisyKampanii,
+  wejsciaKampanii,
   wydarzenia,
   type Wydarzenie,
 } from "@/lib/store";
@@ -63,6 +64,7 @@ export default function RaportKampanii() {
     udostepnili: number;
     zrodla: { nazwa: string; ile: number }[];
   } | null>(null);
+  const [wejscia, setWejscia] = useState<Awaited<ReturnType<typeof wejsciaKampanii>> | null>(null);
 
   useEffect(() => {
     kampania(id)
@@ -77,6 +79,9 @@ export default function RaportKampanii() {
       .catch(() => {});
     podpisyKampanii(id, 1)
       .then((p) => setAkcja({ razem: p.razem, tydzien: p.tydzien, otworzyli: p.otworzyli, udostepnili: p.udostepnili, zrodla: p.zrodla }))
+      .catch(() => {});
+    wejsciaKampanii(id)
+      .then(setWejscia)
       .catch(() => {});
     fetch(`/api/kampanie/${id}/odbiorcy`)
       .then((odp) => (odp.ok ? odp.json() : null))
@@ -256,6 +261,38 @@ export default function RaportKampanii() {
             {t("raport.akcja.tytul")}
           </h2>
           <p className="mt-1 text-sm text-slate-500">{t(doPoslow(k.zrodla) ? "raport.akcja.opis" : "raport.akcja.opisUrzad")}</p>
+          {wejscia && (
+            <div className="mt-4 rounded-lg bg-slate-50 px-4 py-3">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <div>
+                  <p className="text-3xl font-semibold tracking-tight">{wejscia.razem}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {t("raport.wejscia.razem")}
+                    {wejscia.tydzien > 0 && <span className="text-emerald-700"> · {t("raport.akcja.tydzien", { n: wejscia.tydzien })}</span>}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-3xl font-semibold tracking-tight">
+                    {wejscia.razem ? `${Math.round((akcja.razem / wejscia.razem) * 100)}%` : "-"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{t("raport.wejscia.konwersja")}</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-semibold tracking-tight">
+                    {wejscia.razem ? `${Math.round((wejscia.telefon / wejscia.razem) * 100)}%` : "-"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{t("raport.wejscia.telefon")}</p>
+                </div>
+              </div>
+              {wejscia.zrodla.length > 0 && (
+                <p className="mt-3 text-sm text-slate-600">
+                  <span className="text-slate-400">{t("raport.wejscia.skad")}</span>
+                  {wejscia.zrodla.map((z) => `${z.nazwa} ${z.ile}`).join(" · ")}
+                </p>
+              )}
+              <p className="mt-2 text-xs text-slate-400">{t("raport.wejscia.info")}</p>
+            </div>
+          )}
           <div className="mt-4 grid grid-cols-3 gap-4">
             {[
               [t("raport.akcja.podpisalo"), akcja.razem],
