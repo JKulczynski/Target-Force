@@ -144,7 +144,7 @@ export default function KreatorStrony() {
           <h1 className="text-2xl font-semibold tracking-tight">{t("strona.tytul")}</h1>
           <p className="mt-1 text-sm text-slate-600">{t("strona.opis")}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {k.akcjaWlaczona && k.akcjaSlug && (
             <a href={`/a/${k.akcjaSlug}`} target="_blank" rel="noreferrer" className={PRZYCISK_DRUGI}>
               {t("akcjaPanel.otworz")}

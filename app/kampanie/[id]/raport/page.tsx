@@ -304,7 +304,8 @@ export default function RaportKampanii() {
           <h2 className="text-base font-semibold tracking-tight text-slate-900">
             {t("raport.wedlugKlubow")}
           </h2>
-          <table className="mt-3 w-full text-left text-sm">
+          <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-left text-sm">
             <thead className="text-xs text-slate-400">
               <tr>
                 <th className="py-2 pr-3 font-medium">{t("raport.kol.klub")}</th>
@@ -334,6 +335,7 @@ export default function RaportKampanii() {
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       )}
 
@@ -344,7 +346,8 @@ export default function RaportKampanii() {
         {zaangazowani.length === 0 ? (
           <p className="mt-3 text-sm text-slate-400">{t("raport.niktNie")}</p>
         ) : (
-          <table className="mt-3 w-full text-left text-sm">
+          <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-left text-sm">
             <tbody>
               {zaangazowani.map((o) => (
                 <tr
@@ -366,6 +369,7 @@ export default function RaportKampanii() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 

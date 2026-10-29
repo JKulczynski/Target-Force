@@ -144,7 +144,7 @@ export function Odbiorcy({
         <h2 className="text-base font-semibold tracking-tight text-slate-900">
           {t("odbiorcy.tytul")}
         </h2>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={sprawdzOdpowiedzi}
@@ -199,7 +199,7 @@ export function Odbiorcy({
         <p className="mt-2 text-sm text-slate-700">{infoOdpowiedzi}</p>
       )}
 
-      <div className="mt-4 max-h-[28rem] overflow-y-auto">
+      <div className="mt-4 max-h-[28rem] overflow-auto">
         <table className="w-full text-left text-sm">
           <thead className="sticky top-0 bg-white text-xs text-slate-400">
             <tr>

@@ -56,7 +56,8 @@ export function OdpowiedziMieszkancow({ kampaniaId }: { kampaniaId: string }) {
           </div>
         ))}
       </div>
-      <table className="mt-5 w-full text-left text-sm">
+      <div className="mt-5 overflow-x-auto">
+          <table className="w-full text-left text-sm">
         <thead className="text-xs text-slate-500">
           <tr>
             <th className="py-2 font-medium">{t("raport.odp.kolAdresat")}</th>
@@ -74,6 +75,7 @@ export function OdpowiedziMieszkancow({ kampaniaId }: { kampaniaId: string }) {
           ))}
         </tbody>
       </table>
+          </div>
     </section>
   );
 }

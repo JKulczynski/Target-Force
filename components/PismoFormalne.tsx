@@ -97,7 +97,7 @@ export function PismoFormalne({ k, onZmiana }: { k: Kampania; onZmiana: (k: Kamp
         )}
         <p className="text-xs text-slate-500">{t("pismo.info.kpa")}</p>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button disabled={zapisuje} className={PRZYCISK_GLOWNY}>
             {zapisuje ? t("osw.zapisuje") : t("pismo.zapisz")}
           </button>

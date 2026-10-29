@@ -90,8 +90,9 @@ export default async function RootLayout({
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
         <JezykProvider jezyk={jezyk}>
           <header className="sticky top-0 z-20 bg-slate-950 text-white print:hidden">
-            <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-6">
-              <Link href="/" className="flex items-center gap-2.5">
+            {/* Telefon: dwa rzędy (logo + wyloguj + język, pod spodem zakładki); od md jeden rząd jak wcześniej. */}
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 px-4 sm:px-6 md:h-14 md:flex-nowrap">
+              <Link href="/" className="flex h-14 items-center gap-2.5">
                 <span
                   aria-hidden
                   className="grid h-7 w-7 place-items-center rounded-md bg-brand-600"
@@ -118,14 +119,18 @@ export default async function RootLayout({
                   WinOver
                 </span>
               </Link>
-              <nav className="flex items-center gap-1">
+              {dostep && (
+                <nav className="order-last -mx-4 flex w-[calc(100%+2rem)] items-center gap-1 overflow-x-auto px-4 pb-2.5 sm:-mx-6 sm:w-[calc(100%+3rem)] sm:px-6 md:order-none md:mx-0 md:w-auto md:flex-1 md:justify-end md:overflow-visible md:p-0">
+                  <NavLink href="/">{t("nav.kampanie")}</NavLink>
+                  <NavLink href="/zrodla">{t("nav.zrodla")}</NavLink>
+                  <NavLink href="/ustawienia">{t("nav.ustawienia")}</NavLink>
+                  {dostep.admin && <NavLink href="/admin">{t("nav.admin")}</NavLink>}
+                </nav>
+              )}
+              <div className="flex items-center gap-1">
                 {dostep && (
                   <>
-                    <NavLink href="/">{t("nav.kampanie")}</NavLink>
-                    <NavLink href="/zrodla">{t("nav.zrodla")}</NavLink>
-                    <NavLink href="/ustawienia">{t("nav.ustawienia")}</NavLink>
-                    {dostep.admin && <NavLink href="/admin">{t("nav.admin")}</NavLink>}
-                    <span className="mx-2 h-5 w-px bg-white/15" aria-hidden />
+                    <span className="mx-2 hidden h-5 w-px bg-white/15 md:block" aria-hidden />
                     <span className="hidden max-w-48 truncate text-xs text-slate-400 md:inline">
                       {dostep.email}
                     </span>
@@ -138,18 +143,18 @@ export default async function RootLayout({
                   </>
                 )}
                 <PrzelacznikJezyka ciemny />
-              </nav>
+              </div>
             </div>
           </header>
           {dostep && !dostep.wZespole && (
             <div className="border-b border-amber-200 bg-amber-50 print:hidden">
-              <p className="mx-auto max-w-6xl px-6 py-3 text-sm text-amber-900">
+              <p className="mx-auto max-w-6xl px-4 py-3 text-sm text-amber-900 sm:px-6">
                 <span className="font-semibold">{t("layout.brakDostepu.tytul")}</span>{" "}
                 {t("layout.brakDostepu.tresc", { email: dostep.email })}
               </p>
             </div>
           )}
-          <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
+          <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
         </JezykProvider>
       </body>
     </html>

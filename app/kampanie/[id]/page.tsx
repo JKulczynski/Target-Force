@@ -180,7 +180,7 @@ export default function SzczegolyKampanii() {
             {k.kogoSzukamy && <> · {k.kogoSzukamy}</>}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href={`/kampanie/${k.id}/raport`}
             className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-slate-900 hover:text-slate-900"
