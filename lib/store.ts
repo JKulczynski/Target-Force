@@ -364,6 +364,8 @@ export async function wejsciaKampanii(kampaniaId: string): Promise<{
   razem: number;
   tydzien: number;
   telefon: number;
+  /** Podpisy od pierwszego zapisanego wejścia: do konwersji (starsze podpisy nie mają wejść w tabeli). */
+  podpisyOdStartu: number;
   zrodla: { nazwa: string; ile: number }[];
 }> {
   const supabase = createClient();
@@ -376,6 +378,20 @@ export async function wejsciaKampanii(kampaniaId: string): Promise<{
     supabase.from("akcja_wejscia").select("zrodlo").eq("kampania_id", kampaniaId).order("utworzone", { ascending: false }).limit(1000),
   ]);
   if (error) throw error;
+  const { data: pierwsze } = await supabase
+    .from("akcja_wejscia")
+    .select("utworzone")
+    .eq("kampania_id", kampaniaId)
+    .order("utworzone", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const { count: podpisyOdStartu } = pierwsze
+    ? await supabase
+        .from("podpisy")
+        .select("id", { count: "exact", head: true })
+        .eq("kampania_id", kampaniaId)
+        .gte("utworzony", pierwsze.utworzone)
+    : { count: 0 };
   const licz = new Map<string, number>();
   for (const w of ostatnie ?? []) {
     const nazwa = nazwaZrodla((w.zrodlo ?? {}) as Record<string, string>);
@@ -385,6 +401,7 @@ export async function wejsciaKampanii(kampaniaId: string): Promise<{
     razem: razem ?? 0,
     tydzien: tydzien ?? 0,
     telefon: telefon ?? 0,
+    podpisyOdStartu: podpisyOdStartu ?? 0,
     zrodla: [...licz.entries()].map(([nazwa, ile]) => ({ nazwa, ile })).sort((a, b) => b.ile - a.ile),
   };
 }

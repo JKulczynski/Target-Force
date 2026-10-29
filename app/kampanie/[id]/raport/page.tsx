@@ -273,7 +273,7 @@ export default function RaportKampanii() {
                 </div>
                 <div>
                   <p className="text-3xl font-semibold tracking-tight">
-                    {wejscia.razem ? `${Math.round((akcja.razem / wejscia.razem) * 100)}%` : "-"}
+                    {wejscia.razem ? `${Math.min(100, Math.round((wejscia.podpisyOdStartu / wejscia.razem) * 100))}%` : "-"}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">{t("raport.wejscia.konwersja")}</p>
                 </div>
